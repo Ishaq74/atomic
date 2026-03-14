@@ -146,3 +146,92 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  a11y-perf:
+    name: Accessibility & Performance
+    runs-on: ubuntu-latest
+    needs: [lint-and-check]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: atomic_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL_LOCAL: postgresql://test:test@localhost:5432/atomic_test
+      DB_ENV: LOCAL
+      NODE_ENV: test
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: http://localhost:4321
+      SITE_URL: ${{ vars.SITE_URL }}
+      SMTP_PROVIDER: NODEMAILER
+      SMTP_FROM_EMAIL: ci@test.local
+      SMTP_HOST: localhost
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chrome
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Migrations
+        run: pnpm db:migrate
+
+      - name: Build
+        run: pnpm build
+
+      - name: Start Preview Server
+        run: pnpm preview &
+
+      - name: Wait for Server
+        run: npx wait-on http://localhost:4321 --timeout 30000
+
+      - name: Setup A11y Seed Users
+        run: pnpm a11y:setup
+
+      - name: Pa11y-ci (WCAG AAA)
+        run: pnpm a11y:pa11y
+
+      - name: Lighthouse CI (Public Pages)
+        run: pnpm a11y:lighthouse
+
+      - name: Rename Lighthouse Reports (Public)
+        if: ${{ !cancelled() }}
+        run: pnpm a11y:lighthouse:rename
+
+      - name: Lighthouse CI (Authenticated Pages)
+        run: pnpm a11y:lighthouse:authed
+
+      - name: Rename Lighthouse Reports (Authenticated)
+        if: ${{ !cancelled() }}
+        run: pnpm a11y:lighthouse:rename
+
+      - name: Teardown A11y Seed Users
+        if: always()
+        run: pnpm a11y:teardown
+
+      - name: Upload Lighthouse Reports
+        uses: actions/upload-artifact@v5
+        if: ${{ !cancelled() }}
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 7

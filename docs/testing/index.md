@@ -1,8 +1,8 @@
 # Testing — Rapport & Index
 
 > **Projet** : Atomic  
-> **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright  
-> **Couverture globale** : **179 tests** · **20 fichiers de test** · **~85 % des modules couverts**
+> **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright + Pa11y + Lighthouse  
+> **Couverture globale** : **179 tests** · **78 audits a11y/perf** · **20 fichiers de test** · **~85 % des modules couverts**
 
 ---
 
@@ -14,7 +14,8 @@
 | [unit.md](unit.md) | Tests unitaires — détail de chaque test, matrice de couverture |
 | [integration.md](integration.md) | Tests d'intégration — better-auth testUtils, sessions, admin, orgs, audit, export |
 | [e2e.md](e2e.md) | Tests E2E Playwright — pages publiques, guards, auth flow, global-setup |
-| [ci.md](ci.md) | Pipeline GitHub Actions — lint, unit, e2e |
+| [a11y.md](a11y.md) | **Accessibilité & Performance** — Pa11y-ci (WCAG AAA) + Lighthouse CI |
+| [ci.md](ci.md) | Pipeline GitHub Actions — lint, unit, e2e, a11y-perf (4 jobs) |
 | [gaps.md](gaps.md) | **Failles & manques** — tout ce qui reste à tester, par priorité |
 
 ---
@@ -23,12 +24,14 @@
 
 ### Par type de test
 
-| Type | Fichiers | Tests | Status |
+| Type | Fichiers | Tests/Audits | Status |
 | :-- | :-- | :-- | :-- |
 | Unit | 10 | 108 | ✅ 108/108 |
 | Integration | 8 | 49 | ✅ 49/49 |
 | E2E (Playwright) | 2 | 22 | ✅ 22/22 |
-| **Total** | **20** (+3 support) | **179** | **✅ 179/179** |
+| A11y — Pa11y-ci (WCAG AAA) | 1 config | 40 URLs | ⚠️ 8/40 (contrastes AAA + labels) |
+| A11y — Lighthouse CI | 3 configs | 38 URLs | ✅ 32/38 (6 perf < 0.9) |
+| **Total** | **20** (+8 support) | **179 tests + 78 audits** | |
 
 ### Fichiers support
 
@@ -37,6 +40,12 @@
 | `tests/helpers/auth.ts` | Helper partagé : `getTestHelpers()`, ré-exporte `auth` |
 | `tests/e2e/global-setup.ts` | Seed un user vérifié avant les E2E |
 | `tests/e2e/global-teardown.ts` | Supprime le seed user après les E2E |
+| `tests/a11y/setup.ts` | Seed 2 users (normal + admin) + export cookies pour Pa11y/LHCI |
+| `tests/a11y/run.cjs` | Orchestrateur : build + serveur + audits + teardown |
+| `tests/a11y/lhci-authed.cjs` | Exécute LHCI pour les pages authentifiées/admin |
+| `tests/a11y/lhci-rename.cjs` | Renomme les rapports LHCI en noms lisibles |
+| `.pa11yci.cjs` | Configuration Pa11y-ci (40 URLs, WCAG AAA, axe) |
+| `lighthouserc.cjs` | Configuration Lighthouse CI (26 URLs publiques, ≥0.9 gates) |
 
 ### Par module source — Couverture fonctionnelle
 

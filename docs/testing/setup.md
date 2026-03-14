@@ -18,7 +18,7 @@ tests/
 │   ├── i18n-translations.test.ts      #  16 tests — 4 loaders × 4 locales
 │   ├── send-email.test.ts             #   5 tests — routage providers (mock)
 │   ├── schema-validation.test.ts      #  12 tests — 8 table exports + 4 colonnes critiques
-│   └── cli-utils.test.ts              #  12 tests — formatPgError + ANSI colors
+│   └── cli-utils.test.ts             #  12 tests — formatPgError + ANSI colors
 │                                      # ─────────
 │                                      # 108 tests unitaires
 ├── integration/                       # Tests d'intégration (Vitest + PostgreSQL)
@@ -32,16 +32,32 @@ tests/
 │   └── db-health.test.ts             #   3 tests — checkConnection, singleton, raw query
 │                                      # ─────────
 │                                      #  49 tests d'intégration
-└── e2e/                               # Tests E2E (Playwright)
-    ├── global-setup.ts                #  Setup : seed user vérifié
-    ├── global-teardown.ts             #  Teardown : cleanup user
-    ├── app.spec.ts                    #  10 tests — homepage, i18n, guest guards
-    └── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
-                                       # ─────────
-                                       #  22 tests E2E
+├── e2e/                               # Tests E2E (Playwright)
+│   ├── global-setup.ts                #  Setup : seed user vérifié
+│   ├── global-teardown.ts             #  Teardown : cleanup user
+│   ├── app.spec.ts                    #  10 tests — homepage, i18n, guest guards
+│   └── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
+│                                      # ─────────
+│                                      #  22 tests E2E
+├── a11y/                              # Accessibilité & Performance
+│   ├── setup.ts                       #  Seed 2 users (normal + admin) + export cookies
+│   ├── run.cjs                        #  Orchestrateur : build → server → audits → teardown
+│   ├── lhci-authed.cjs                #  LHCI pour pages authentifiées/admin (configs temporaires)
+│   └── lhci-rename.cjs               #  Renomme rapports LHCI en noms lisibles
+│                                      # ─────────
+│                                      #  40 URLs Pa11y + 38 URLs Lighthouse
+└── helpers/
+    └── auth.ts                        #  getTestHelpers(), ré-exporte auth
+
+Configs racine :
+├── .pa11yci.cjs                       # Pa11y-ci (WCAG AAA, axe, 40 URLs)
+├── lighthouserc.cjs                   # Lighthouse CI (26 URLs publiques, ≥0.9 gates)
+├── vitest.config.ts                   # Vitest (unit + integration)
+└── playwright.config.ts               # Playwright (E2E)
 
 TOTAL : 179 tests (157 Vitest + 22 Playwright)
-        20 fichiers de test
+        78 audits a11y/perf (40 Pa11y + 38 Lighthouse)
+        20 fichiers de test + 6 fichiers a11y
 ```
 
 ---
@@ -213,6 +229,19 @@ npx playwright show-report   # Rapport HTML
 
 # Validation complète (séquentielle)
 pnpm lint && npx astro check && pnpm build && pnpm test && pnpm test:e2e
+
+# Accessibilité & Performance (Pa11y + Lighthouse)
+pnpm a11y                    # Tout-en-un : build, serveur, audits, teardown
+pnpm a11y:pa11y-only         # Pa11y seulement (avec orchestrateur)
+pnpm a11y:lighthouse-only    # Lighthouse seulement (avec orchestrateur)
+
+# Commandes individuelles a11y (serveur requis)
+pnpm a11y:setup              # Seed users + export cookies
+pnpm a11y:pa11y              # Pa11y-ci (40 URLs, WCAG AAA)
+pnpm a11y:lighthouse         # LHCI (26 URLs publiques)
+pnpm a11y:lighthouse:authed  # LHCI (8 user + 4 admin URLs)
+pnpm a11y:lighthouse:rename  # Renommer rapports LHCI
+pnpm a11y:teardown           # Supprime users seed + cookies
 ```
 
 ---

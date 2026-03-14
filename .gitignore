@@ -31,3 +31,7 @@ public/uploads/*
 # tests results and temporary files
 tests-results/
 playwright-report/
+
+# a11y audit artifacts
+.a11y-cookies.json
+.lighthouseci/
