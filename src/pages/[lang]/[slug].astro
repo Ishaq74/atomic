@@ -1,0 +1,42 @@
+---
+import { LOCALES, type PageId } from '@i18n/config';
+import { toLocale, getCommonTranslations, getAboutTranslations, getContactTranslations, getLegalTranslations } from '@i18n/utils';
+import BaseLayout from '@layouts/BaseLayout.astro';
+import AboutPage from '@pages/AboutPage/AboutPage.astro';
+import ContactPage from '@pages/ContactPage/ContactPage.astro';
+import LegalPage from '@pages/LegalPage.astro';
+
+export async function getStaticPaths() {
+  const paths = [];
+  for (const lang of LOCALES) {
+    const t = await getCommonTranslations(lang);
+    for (const [pageId, slug] of Object.entries(t.pageRoutes)) {
+      paths.push({ params: { lang, slug }, props: { pageId: pageId as PageId } });
+    }
+  }
+  return paths;
+}
+
+const locale = toLocale(Astro.params.lang);
+const { pageId } = Astro.props;
+
+const translations = {
+  about: () => getAboutTranslations(locale),
+  contact: () => getContactTranslations(locale),
+  legal: () => getLegalTranslations(locale),
+} as const;
+
+const t = await translations[pageId]();
+
+const pages: Record<PageId, any> = {
+  about: AboutPage,
+  contact: ContactPage,
+  legal: LegalPage,
+};
+
+const Page = pages[pageId];
+---
+
+<BaseLayout>
+  <Page t={t} />
+</BaseLayout>

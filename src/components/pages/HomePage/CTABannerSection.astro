@@ -1,0 +1,80 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { tv } from "tailwind-variants";
+
+import { Button } from "@atoms/button";
+
+export interface ButtonConfig {
+  text: string;
+  href: string;
+}
+
+interface Props extends HTMLAttributes<"section"> {
+  /** Main heading text */
+  title?: string;
+  /** Description text */
+  description?: string;
+  /** Background image URL */
+  backgroundImage?: string;
+  /** Primary button configuration */
+  primaryButton?: ButtonConfig;
+  /** Secondary button configuration */
+  secondaryButton?: ButtonConfig;
+}
+
+const cta6Styles = tv({
+  base: "@container w-full",
+});
+
+const {
+  title = "Ready to transform your business?",
+  description = "Join thousands of companies already using our platform to streamline operations and drive growth. Start your journey today.",
+  backgroundImage = "/assets/images/brand/strates-civilization.jpg",
+  primaryButton = { text: "Get Started", href: "/signup" },
+  secondaryButton,
+  class: className,
+  ...rest
+} = Astro.props;
+---
+
+<section class={cta6Styles({ class: className })} {...rest}>
+  <div class="dark bg-background text-foreground relative overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0">
+      <img
+        src={backgroundImage}
+        alt=""
+        class="size-full object-cover"
+        loading="lazy"
+        aria-hidden="true"
+      />
+    </div>
+
+    <!-- Overlay -->
+    <div class="absolute inset-0 bg-black/50"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 px-8 py-12 text-center @lg:px-12 @lg:py-12 @3xl:px-16 @3xl:py-32">
+      <h2
+        class="font-heading mb-4 text-3xl font-semibold tracking-tight @lg:text-4xl @2xl:text-5xl"
+      >
+        {title}
+      </h2>
+      <p class="text-foreground/80 mx-auto mb-8 max-w-2xl text-pretty @lg:text-lg">
+        {description}
+      </p>
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <Button variant="primary" href={primaryButton.href}>
+          {primaryButton.text}
+        </Button>
+        {
+          secondaryButton && (
+            <Button variant="default" href={secondaryButton.href}>
+              {secondaryButton.text}
+            </Button>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</section>

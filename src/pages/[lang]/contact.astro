@@ -1,0 +1,17 @@
+---
+import { LOCALES } from '@i18n/config';
+import { toLocale, getContactTranslations } from '@i18n/utils';
+import BaseLayout from '@layouts/BaseLayout.astro';
+import ContactPage from '@pages/ContactPage/ContactPage.astro';
+
+export function getStaticPaths() {
+  return LOCALES.map((lang) => ({ params: { lang } }));
+}
+
+const locale = toLocale(Astro.params.lang);
+const t = await getContactTranslations(locale);
+---
+
+<BaseLayout>
+  <ContactPage t={t} />
+</BaseLayout>

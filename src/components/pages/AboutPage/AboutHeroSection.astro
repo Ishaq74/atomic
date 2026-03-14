@@ -1,0 +1,97 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { tv } from "tailwind-variants";
+import { Badge } from "@atoms/badge";
+
+interface Props extends HTMLAttributes<"section"> {
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+}
+
+const heroStyles = tv({
+  base: "@container mx-auto w-full max-w-7xl px-4 py-16",
+});
+
+const { eyebrow, title, description, class: className, ...rest } = Astro.props;
+---
+
+<section class={heroStyles({ class: className })} {...rest}>
+  <div class="about-hero-parallax relative overflow-hidden rounded-2xl">
+    <div class="about-hero-bg absolute inset-0 scale-110">
+      <img
+        src="/assets/images/brand/strates-civilization.jpg"
+        alt=""
+        class="size-full object-cover"
+        loading="eager"
+        aria-hidden="true"
+      />
+    </div>
+    <div class="absolute inset-0 bg-black/60"></div>
+    <div class="relative z-10 px-6 py-20 text-center @lg:px-12 @lg:py-28 @3xl:py-36">
+      {eyebrow && (
+        <Badge variant="primary" size="md" class="about-hero-badge mb-6">
+          {eyebrow}
+        </Badge>
+      )}
+      <h1 class="about-hero-title font-heading mx-auto mb-6 max-w-3xl text-4xl font-bold tracking-tight text-white @lg:text-5xl @3xl:text-6xl">
+        {title}
+      </h1>
+      <p class="about-hero-desc mx-auto max-w-2xl text-lg text-white/80 @lg:text-xl">
+        {description}
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  function setupHeroParallax() {
+    const bg = document.querySelector<HTMLElement>(".about-hero-bg");
+    if (!bg) return;
+
+    const section = bg.closest<HTMLElement>(".about-hero-parallax");
+    if (!section) return;
+
+    function onScroll() {
+      const rect = section!.getBoundingClientRect();
+      const progress = -rect.top / (rect.height + window.innerHeight);
+      const offset = progress * 60;
+      bg!.style.transform = `scale(1.1) translateY(${offset}px)`;
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  setupHeroParallax();
+  document.addEventListener("astro:after-swap", setupHeroParallax);
+</script>
+
+<style>
+  .about-hero-badge {
+    animation: hero-float 3s ease-in-out infinite;
+  }
+
+  .about-hero-title {
+    animation: hero-fade-up 0.8s ease-out both;
+  }
+
+  .about-hero-desc {
+    animation: hero-fade-up 0.8s ease-out 0.2s both;
+  }
+
+  @keyframes hero-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes hero-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

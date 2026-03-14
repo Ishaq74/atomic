@@ -1,0 +1,110 @@
+---
+import "@styles/global.css";
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { toLocale, getCommonTranslations, getAuthTranslations, getDirection, getPageUrl } from '@i18n/utils';
+import type { Locale } from '@i18n/config';
+import Header, { type NavLink } from "@organisms/Header/Header.astro";
+import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
+import { Toaster } from "@atoms/toast";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title: titleOverride, description: descriptionOverride } = Astro.props;
+const locale = toLocale(Astro.currentLocale) as Locale;
+const direction = getDirection(locale);
+const t = await getCommonTranslations(locale);
+const authT = await getAuthTranslations(locale);
+
+const user = Astro.locals.user;
+const session = Astro.locals.session;
+const isImpersonating = !!(session as any)?.impersonatedBy;
+
+const links: NavLink[] = [
+  { label: t.nav.about, href: getPageUrl(locale, 'about', t) },
+  { label: t.nav.contact, href: getPageUrl(locale, 'contact', t) },
+];
+
+const footerNavLinks: FooterLink[] = [
+  { label: t.footer.home, href: getRelativeLocaleUrl(locale, '/') },
+  { label: t.footer.aboutLink, href: getPageUrl(locale, 'about', t) },
+  { label: t.footer.contact, href: getPageUrl(locale, 'contact', t) },
+];
+
+const footerNavLinksSecondary: FooterLink[] = [
+  { label: t.nav.pricing, href: "#pricing" },
+  { label: t.nav.blog, href: "#blog" },
+];
+
+const footerLegalLinks: FooterLink[] = [
+  { label: t.footer.legalNotice, href: getPageUrl(locale, 'legal', t) + '#section-0' },
+  { label: t.footer.privacyPolicy, href: getPageUrl(locale, 'legal', t) + '#section-1' },
+  { label: t.footer.termsOfSale, href: getPageUrl(locale, 'legal', t) + '#section-2' },
+];
+
+const footerSocialLinks: SocialLink[] = [
+  { name: "Facebook", href: "#", icon: "mdi:facebook" },
+  { name: "Instagram", href: "#", icon: "mdi:instagram" },
+  { name: "Twitter / X", href: "#", icon: "mdi:twitter" },
+];
+---
+
+<html lang={locale} dir={direction}>
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width" />
+    <title>{titleOverride ?? t.meta.title}</title>
+    <meta name="description" content={descriptionOverride ?? t.meta.description} />
+</head>
+
+<body class="flex min-h-screen flex-col">
+    {isImpersonating && (
+      <div class="bg-warning text-warning-foreground flex items-center justify-center gap-3 px-4 py-2 text-sm font-medium" id="impersonation-banner">
+        <span>{authT.admin.impersonation.banner.replace('{name}', user?.name ?? '')}</span>
+        <button
+          type="button"
+          class="rounded-md bg-warning-foreground/10 px-3 py-1 text-xs font-semibold hover:bg-warning-foreground/20 transition-colors"
+          id="stop-impersonation-btn"
+        >
+          {authT.admin.impersonation.stop}
+        </button>
+      </div>
+    )}
+    <Header
+        siteName="Starwind Pro"
+        links={links}
+        ctaText={t.cta.getStarted}
+        ctaHref="#get-started"
+        user={user}
+        authTranslations={authT}
+        locale={locale}
+    />
+    <main class="flex-1">
+        <slot />
+    </main>
+    <Footer
+        navLinks={footerNavLinks}
+        navLinksSecondary={footerNavLinksSecondary}
+        legalLinks={footerLegalLinks}
+        socialLinks={footerSocialLinks}
+        copyrightText={t.footer.copyright}
+        socialHeading={t.footer.socialHeading}
+        navPrimaryHeading={t.footer.navPrimary}
+        navSecondaryHeading={t.footer.navSecondary}
+        legalHeading={t.footer.legalHeading}
+    />
+    <Toaster position="bottom-right" />
+    <script>
+      import { authClient } from '@/lib/auth-client';
+      const btn = document.getElementById('stop-impersonation-btn');
+      btn?.addEventListener('click', async () => {
+        await authClient.admin.stopImpersonating();
+        location.reload();
+      });
+    </script>
+</body>
+</html>

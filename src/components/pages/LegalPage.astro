@@ -1,0 +1,78 @@
+---
+import type { LegalTranslations } from '@i18n/config';
+import { Badge } from '@atoms/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@atoms/accordion';
+
+interface Props {
+  t: LegalTranslations;
+}
+
+const { t } = Astro.props;
+const firstTab = `section-0`;
+---
+
+<section class="mx-auto w-full max-w-5xl px-4 py-16 md:py-24">
+  <div class="mb-12">
+    <Badge variant="primary" size="sm">{t.eyebrow}</Badge>
+    <h1 class="font-heading mt-3 text-3xl font-semibold tracking-tight md:text-4xl lg:text-5xl">
+      {t.heading}
+    </h1>
+  </div>
+
+  <Tabs defaultValue={firstTab}>
+    <TabsList class="mb-8 flex w-full flex-wrap gap-2">
+      {t.sections.map((section, i) => (
+        <TabsTrigger value={`section-${i}`}>
+          {section.title}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+
+    {t.sections.map((section, i) => (
+      <TabsContent value={`section-${i}`}>
+        {section.intro && (
+          <p class="text-muted-foreground mb-6 text-pretty leading-relaxed">
+            {section.intro}
+          </p>
+        )}
+        <Accordion type="single">
+          {section.items.map((item, j) => (
+            <AccordionItem value={`section-${i}-item-${j}`}>
+              <AccordionTrigger>{item.question}</AccordionTrigger>
+              <AccordionContent>
+                <p class="text-muted-foreground leading-relaxed whitespace-pre-line">
+                  {item.answer}
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </TabsContent>
+    ))}
+  </Tabs>
+</section>
+
+<script>
+  function activateTabFromHash() {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+
+    const trigger = document.querySelector<HTMLButtonElement>(
+      `[role="tab"][data-value="${hash}"]`
+    );
+    if (trigger) trigger.click();
+
+    const target = document.getElementById(hash);
+    if (target) target.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  activateTabFromHash();
+  window.addEventListener('hashchange', activateTabFromHash);
+  document.addEventListener('astro:after-swap', activateTabFromHash);
+</script>

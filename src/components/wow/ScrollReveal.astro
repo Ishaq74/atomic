@@ -1,0 +1,113 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { tv } from "tailwind-variants";
+
+interface Props extends HTMLAttributes<"div"> {
+  /**
+   * Animation direction
+   * @default "up"
+   */
+  direction?: "up" | "down" | "left" | "right";
+  /**
+   * Animation delay in milliseconds
+   * @default 0
+   */
+  delay?: number;
+  /**
+   * Animation duration in milliseconds
+   * @default 600
+   */
+  duration?: number;
+  /**
+   * Distance to travel in pixels
+   * @default 30
+   */
+  distance?: number;
+  /**
+   * Whether to animate only once
+   * @default true
+   */
+  once?: boolean;
+  /**
+   * Threshold for IntersectionObserver (0-1)
+   * @default 0.1
+   */
+  threshold?: number;
+}
+
+const revealStyles = tv({
+  base: "scroll-reveal",
+});
+
+const {
+  direction = "up",
+  delay = 0,
+  duration = 600,
+  distance = 30,
+  once = true,
+  threshold = 0.1,
+  class: className,
+  ...rest
+} = Astro.props;
+---
+
+<div
+  class={revealStyles({ class: className })}
+  data-reveal
+  data-reveal-direction={direction}
+  data-reveal-delay={delay}
+  data-reveal-duration={duration}
+  data-reveal-distance={distance}
+  data-reveal-once={once}
+  data-reveal-threshold={threshold}
+  {...rest}
+>
+  <slot />
+</div>
+
+<script>
+  function setupScrollReveal() {
+    const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
+
+    elements.forEach((el) => {
+      const direction = el.dataset.revealDirection || "up";
+      const delay = parseInt(el.dataset.revealDelay || "0", 10);
+      const duration = parseInt(el.dataset.revealDuration || "600", 10);
+      const distance = parseInt(el.dataset.revealDistance || "30", 10);
+      const once = el.dataset.revealOnce !== "false";
+      const threshold = parseFloat(el.dataset.revealThreshold || "0.1");
+
+      const transforms: Record<string, string> = {
+        up: `translateY(${distance}px)`,
+        down: `translateY(-${distance}px)`,
+        left: `translateX(${distance}px)`,
+        right: `translateX(-${distance}px)`,
+      };
+
+      el.style.opacity = "0";
+      el.style.transform = transforms[direction] || transforms.up;
+      el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`;
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              el.style.opacity = "1";
+              el.style.transform = "translate(0)";
+              if (once) observer.unobserve(el);
+            } else if (!once) {
+              el.style.opacity = "0";
+              el.style.transform = transforms[direction] || transforms.up;
+            }
+          });
+        },
+        { threshold }
+      );
+
+      observer.observe(el);
+    });
+  }
+
+  setupScrollReveal();
+  document.addEventListener("astro:after-swap", setupScrollReveal);
+</script>

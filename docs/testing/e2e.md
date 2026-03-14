@@ -1,0 +1,155 @@
+# Testing — Tests End-to-End (E2E)
+
+> Retour à l'[index](index.md) · Voir aussi [setup](setup.md)
+
+---
+
+## Vue d'ensemble
+
+| Fichier | Scope | Tests | Status |
+| :-- | :-- | --: | :-- |
+| `tests/e2e/app.spec.ts` | Homepage, i18n, guest guards | 10 | ✅ |
+| `tests/e2e/auth.spec.ts` | Sign-up/in, dashboard, profile, pages publiques | 12 | ✅ |
+| **Total** | | **22** | **✅** |
+
+### Infrastructure
+
+| Fichier | Rôle |
+| :-- | :-- |
+| `tests/e2e/global-setup.ts` | Seed un user vérifié dans la DB avant les tests |
+| `tests/e2e/global-teardown.ts` | Supprime le user seed après les tests |
+
+### Prérequis
+
+- **Astro build** : `pnpm build` doit avoir été fait avant de lancer les E2E
+- **PostgreSQL** : base migrée avec un user seed vérifié
+- **Playwright** : `npx playwright install --with-deps chromium`
+
+### Seed User
+
+```ts
+// tests/e2e/global-setup.ts
+SEED_EMAIL    = 'e2e-seed@test.com'
+SEED_PASSWORD = 'E2eTest1234!'
+SEED_NAME     = 'E2E Seed User'
+```
+
+Le `global-setup` :
+
+1. Supprime le user précédent (cleanup)
+2. Inscrit le user via `auth.api.signUpEmail()`
+3. Force `emailVerified: true` en DB (SQL direct)
+
+Le `global-teardown` :
+
+1. Supprime les lignes `account`, `session`, `user` par email
+
+---
+
+## `app.spec.ts` — Homepage, i18n, Guest Guards
+
+### Homepage & i18n (5 tests)
+
+| # | Test | URL | Assertion |
+| :-- | :-- | :-- | :-- |
+| 1 | `homepage redirects to default locale /fr/` | `/` | `page.url()` termine par `/fr/` |
+| 2 | `French page has lang="fr" and dir="ltr"` | `/fr/` | `<html lang="fr" dir="ltr">` |
+| 3 | `English page has lang="en"` | `/en/` | `<html lang="en">` |
+| 4 | `Arabic page has dir="rtl"` | `/ar/` | `<html dir="rtl">` |
+| 5 | `navigation and footer are rendered` | `/fr/` | `<nav>` et `<footer>` visibles |
+
+### Auth — Guest guards (5 tests)
+
+| # | Test | URL | Assertion |
+| :-- | :-- | :-- | :-- |
+| 6 | `sign-in page renders the login form` | `/fr/connexion/` | Formulaire avec input email visible |
+| 7 | `sign-up page renders the registration form` | `/fr/inscription/` | Formulaire avec input name visible |
+| 8 | `dashboard redirects unauthenticated user to sign-in` | `/fr/tableau-de-bord/` | Redirigé vers page de connexion |
+| 9 | `profile redirects unauthenticated user to sign-in` | `/fr/profil/` | Redirigé vers page de connexion |
+| 10 | `admin redirects unauthenticated user to sign-in` | `/fr/admin/` | Redirigé vers page de connexion |
+
+### Stratégie
+
+- **Navigation pure** : aucune authentication, teste le HTML rendu
+- **i18n complet** : vérifie `lang` et `dir` pour fr, en, ar
+- **Guards** : les pages protégées redirigent vers `/connexion/`
+
+---
+
+## `auth.spec.ts` — Sign-up, Sign-in, Dashboard, Profile, Pages publiques
+
+### Sign-up flow (2 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 1 | `sign-up form submits and redirects to sign-in page` | Remplit le formulaire → submit → redirigé vers connexion |
+| 2 | `sign-in form rejects unverified email` | Tente de se connecter avec un email non vérifié → erreur affichée |
+
+### Authenticated flow (2 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 3 | `verified user can sign in and reach dashboard` | Login du seed user → dashboard accessible |
+| 4 | `authenticated user can access profile page` | Après login → page profil contient les infos user |
+
+### Auth guards (3 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 5 | `organisations page redirects to sign-in` | `/fr/organisations/` sans auth → redirigé |
+| 6 | `verify-email page is accessible without auth` | `/fr/verification-email/` → accessible (pas de redirect) |
+| 7 | `reset-password page is accessible without auth` | `/fr/reinitialiser-mot-de-passe/` → accessible |
+
+### Public pages (5 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 8 | `about page loads` | `/fr/a-propos/` → status 200, contenu visible |
+| 9 | `contact page loads` | `/fr/contact/` → status 200, contenu visible |
+| 10 | `legal page loads` | `/fr/mentions-legales/` → status 200, contenu visible |
+| 11 | `forgot password page loads` | `/fr/mot-de-passe-oublie/` → accessible |
+| 12 | `Spanish locale loads correctly` | `/es/` → `lang="es"`, contenu espagnol |
+
+### Stratégie — auth.spec.ts
+
+- **Seed user** : tests 3-4 utilisent le user vérifié du `global-setup`
+- **Formulaire réel** : tests 1-2 remplissent et soumettent les vrais formulaires HTML
+- **Locales multiples** : test 12 vérifie l'espagnol en plus du français
+- **Pages publiques** : vérifie que about, contact, legal, forgot-password, verify-email, reset-password sont accessibles sans auth
+
+---
+
+## Commandes
+
+```bash
+# Lancer tous les E2E
+pnpm test:e2e
+
+# Lancer un seul fichier
+npx playwright test tests/e2e/auth.spec.ts
+
+# Mode debug (browser visible)
+npx playwright test --headed
+
+# Mode UI
+npx playwright test --ui
+
+# Voir le rapport HTML
+npx playwright show-report
+```
+
+---
+
+## Résumé couverture E2E
+
+```md
+Pages testées :              12 URLs distinctes
+Locales testées :            4 (fr, en, ar, es)
+Auth guards :                5 redirections vérifiées
+Formulaires :                2 (sign-up, sign-in)
+Flow authentifié :           2 (dashboard, profil)
+Pages publiques :            5
+Total tests E2E :            22
+Fichiers :                   2 (+2 setup/teardown)
+Temps d'exécution :          ~15–25 s
+```

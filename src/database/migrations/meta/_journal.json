@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1773424852271,
+      "tag": "0000_aberrant_nemesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773454132997,
+      "tag": "0001_fresh_zaran",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773473504761,
+      "tag": "0002_loose_wolfpack",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+---
+import type { HTMLAttributes } from "astro/types";
+
+type LayoutOption = "row" | "col";
+
+interface Props extends HTMLAttributes<"a"> {
+  siteName?: string;
+  href?: string;
+  logoSrc?: string;
+  logoDarkSrc?: string;
+  logoAlt?: string;
+  logoHeight?: string;
+  hideLogo?: boolean;
+  hideName?: boolean;
+  hideMobileLogo?: boolean;
+  hideMobileName?: boolean;
+  layout?: LayoutOption;
+  layoutMobile?: LayoutOption;
+}
+
+const {
+  siteName = "Starwind Pro",
+  href = "/",
+  logoSrc = "/assets/images/brand/logo.png",
+  logoDarkSrc = "/assets/images/brand/logo-dark.png",
+  logoAlt,
+  logoHeight = "h-8",
+  hideLogo = false,
+  hideName = false,
+  hideMobileLogo,
+  hideMobileName,
+  layout = "row",
+  layoutMobile,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const alt = logoAlt ?? siteName ?? "Logo";
+
+const logoOnDesktop = !hideLogo;
+const nameOnDesktop = !hideName;
+const logoOnMobile  = !(hideMobileLogo ?? hideLogo);
+const nameOnMobile  = !(hideMobileName ?? hideName);
+
+function vis(mobile: boolean, desktop: boolean, display = "flex"): string {
+  if ( mobile &&  desktop) return display;
+  if (!mobile &&  desktop) return `hidden sm:${display}`;
+  if ( mobile && !desktop) return `${display} sm:hidden`;
+  return "hidden";
+}
+
+const logoVis = vis(logoOnMobile, logoOnDesktop, "flex");
+const nameVis = vis(nameOnMobile, nameOnDesktop, "block");
+
+const mob  = layoutMobile ?? layout;
+const desk = layout;
+
+const mobDir  = mob  === "col" ? "flex-col"    : "flex-row";
+const deskDir = desk === "col" ? "sm:flex-col" : "sm:flex-row";
+const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
+---
+
+<a
+  href={href}
+  class:list={["inline-flex shrink-0 items-center gap-2", dirClass, className]}
+  {...rest}
+>
+  <span class:list={["items-center", logoVis]}>
+    <img
+      src={logoSrc}
+      alt={alt}
+      class:list={[logoHeight, "w-auto dark:hidden"]}
+      loading="eager"
+    />
+    <img
+      src={logoDarkSrc}
+      alt={alt}
+      class:list={["hidden", logoHeight, "w-auto dark:block"]}
+      loading="eager"
+    />
+  </span>
+
+  {siteName && (
+    <span class:list={["font-semibold text-lg leading-none", nameVis]}>
+      {siteName}
+    </span>
+  )}
+</a>

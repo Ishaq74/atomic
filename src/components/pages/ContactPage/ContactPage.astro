@@ -1,0 +1,249 @@
+---
+import IconArrowRight from "@tabler/icons/outline/arrow-right.svg";
+import IconCheck from "@tabler/icons/outline/check.svg";
+import type { ContactTranslations } from "@i18n/config";
+import { tv } from "tailwind-variants";
+
+import { Badge } from "@atoms/badge";
+import { Button } from "@atoms/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@atoms/card";
+import { Checkbox } from "@atoms/checkbox";
+import { Input } from "@atoms/input";
+import { Label } from "@atoms/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@atoms/select";
+import { Textarea } from "@atoms/textarea";
+import ScrollReveal from "@wow/ScrollReveal.astro";
+
+interface Props {
+  t: ContactTranslations;
+}
+
+const sectionStyles = tv({
+  base: "@container mx-auto w-full max-w-7xl px-4 py-24",
+});
+
+const { t } = Astro.props;
+---
+
+<section id="contact-section" class={sectionStyles()}>
+  <!-- Header -->
+  <ScrollReveal direction="up" duration={600}>
+    <div class="mb-12 text-center">
+      <Badge variant="primary" class="mb-4">{t.badge}</Badge>
+      <h2 class="font-heading text-3xl font-bold tracking-tight @xl:text-4xl @3xl:text-5xl">
+        {t.heading}
+      </h2>
+      <p class="text-muted-foreground mx-auto mt-4 max-w-2xl text-lg">
+        {t.description}
+      </p>
+    </div>
+  </ScrollReveal>
+
+  <div class="grid gap-8 @4xl:grid-cols-2">
+    <!-- Reasons Grid -->
+    <ScrollReveal direction="up" duration={700} delay={100}>
+      <div class="space-y-4">
+        <h3 class="font-heading mb-6 text-lg font-semibold">{t.reasonsHeading}</h3>
+        <div class="grid gap-4 @xl:grid-cols-2">
+          {
+            t.reasons.map((reason) => (
+              <Card
+                class:list={[
+                  "relative overflow-hidden transition-all hover:shadow-lg",
+                  reason.popular && "border-primary ring-primary/20 ring-2",
+                ]}
+              >
+                {reason.popular && (
+                  <div class="bg-primary text-primary-foreground absolute top-0 inset-e-0 rounded-es-lg px-3 py-1 text-xs font-medium">
+                    {t.popularLabel}
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle class="text-base">{reason.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p class="text-muted-foreground mb-4 text-sm">{reason.description}</p>
+                  <ul class="flex flex-col gap-1">
+                    {reason.features.map((feature) => (
+                      <li class="flex items-center gap-2 text-sm">
+                        <IconCheck class="text-primary size-4 shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    class="mt-4 w-full justify-between"
+                    data-reason-select={reason.value}
+                  >
+                    {t.selectReasonButton}
+                    <IconArrowRight class="size-4 rtl:-scale-x-100" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          }
+        </div>
+      </div>
+    </ScrollReveal>
+
+    <!-- Contact Form -->
+    <ScrollReveal direction="up" duration={700} delay={200}>
+      <div>
+        <Card class="@container/form sticky top-20 border-2">
+          <CardContent>
+            <h3 class="font-heading mb-2 text-xl font-semibold">{t.form.heading}</h3>
+            <p class="text-muted-foreground mb-6 text-sm">
+              {t.form.description}
+            </p>
+
+            <form class="space-y-5" id="contact-form" name="contact-form">
+              <div class="grid gap-5 @md/form:grid-cols-2">
+                <div class="flex flex-col gap-1">
+                  <Label for="contact-firstname">{t.form.firstName}</Label>
+                  <Input
+                    id="contact-firstname"
+                    name="firstName"
+                    type="text"
+                    placeholder={t.form.firstNamePlaceholder}
+                    required
+                  />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <Label for="contact-lastname">{t.form.lastName}</Label>
+                  <Input
+                    id="contact-lastname"
+                    name="lastName"
+                    type="text"
+                    placeholder={t.form.lastNamePlaceholder}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <Label for="contact-email">{t.form.email}</Label>
+                <Input
+                  id="contact-email"
+                  name="email"
+                  type="email"
+                  placeholder={t.form.emailPlaceholder}
+                  required
+                />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <Label for="contact-phone">{t.form.phone}</Label>
+                <Input
+                  id="contact-phone"
+                  name="phone"
+                  type="tel"
+                  placeholder={t.form.phonePlaceholder}
+                  required
+                />
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <Label for="contact-reason">{t.form.reason}</Label>
+                <Select id="contact-reason" name="reason">
+                  <SelectTrigger class="w-full">
+                    <SelectValue placeholder={t.form.reasonPlaceholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {
+                        t.reasons.map((reason) => (
+                          <SelectItem value={reason.value}>{reason.title}</SelectItem>
+                        ))
+                      }
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div class="flex flex-col gap-1">
+                <Label for="contact-message">{t.form.message}</Label>
+                <Textarea
+                  id="contact-message"
+                  name="message"
+                  placeholder={t.form.messagePlaceholder}
+                  rows={4}
+                  required
+                />
+              </div>
+
+              <div class="flex items-start gap-2">
+                <div class="mt-0.5">
+                  <Checkbox id="contact-urgent" variant="primary" name="urgent" />
+                </div>
+                <div>
+                  <Label for="contact-urgent" class="cursor-pointer">{t.form.urgent}</Label>
+                  <p class="text-muted-foreground text-xs">
+                    {t.form.urgentDescription}
+                  </p>
+                </div>
+              </div>
+
+              <Button variant="primary" type="submit" class="w-full">{t.form.submit}</Button>
+
+              <p class="text-muted-foreground text-center text-xs">
+                {t.form.disclaimer}
+              </p>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </ScrollReveal>
+  </div>
+</section>
+
+<script>
+  function initContactForm() {
+    const section = document.getElementById("contact-section");
+    const form = document.getElementById("contact-form") as HTMLFormElement;
+    const reasonButtons = section?.querySelectorAll("[data-reason-select]");
+
+    // Handle reason card selection — set the reason select
+    reasonButtons?.forEach((button) => {
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        const value = (button as HTMLElement).dataset.reasonSelect;
+        document.dispatchEvent(
+          new CustomEvent("starwind-select:select", {
+            detail: {
+              selectId: "contact-reason",
+              value,
+            },
+          }),
+        );
+
+        // Scroll to form
+        const formCard = form?.closest(".sticky");
+        if (formCard) {
+          formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+
+    // Handle form submission
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const formValues = Object.fromEntries(formData.entries());
+        console.log("Contact form:", formValues);
+      });
+    }
+  }
+
+  initContactForm();
+  document.addEventListener("astro:after-swap", initContactForm);
+</script>
