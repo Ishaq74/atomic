@@ -18,8 +18,10 @@
  */
 
 const { execSync, spawn } = require('node:child_process');
+const fs = require('node:fs');
 const http = require('node:http');
 const net = require('node:net');
+const path = require('node:path');
 
 const PORT = 4321;
 const HOST = process.platform === 'win32' ? '[::1]' : 'localhost';
@@ -132,6 +134,13 @@ async function main() {
     }
 
     if (runLighthouse) {
+      // Clean previous reports so they don't accumulate across runs
+      const lhDir = path.resolve(__dirname, '../../.lighthouseci');
+      if (fs.existsSync(lhDir)) {
+        fs.rmSync(lhDir, { recursive: true });
+        log('Cleaned previous .lighthouseci/ reports');
+      }
+
       log('─── Lighthouse CI (public) ───');
       if (!run('pnpm a11y:lighthouse', 'lighthouse')) exitCode = 1;
       run('pnpm a11y:lighthouse:rename', 'lighthouse:rename');

@@ -1,4 +1,6 @@
 import type { HomeTranslations } from '../config';
+import { houseCivilization, stratesCivilization, stone, polish, bronze, fer } from '../../assets/images/brand';
+import { avatar1, avatar2, avatar3 } from '../../assets/images/avatars';
 
 export default {
   hero: {
@@ -11,15 +13,15 @@ export default {
     socialProofHeading: 'انضم إلى أكثر من 10,000 بنّاء',
     socialProofSubtext: 'نبني المستقبل معًا',
     carouselImages: [
-      { src: '/assets/images/brand/house-civilization.jpg', alt: 'منزل تراثي يرمز إلى طبقات الحضارة' },
-      { src: '/assets/images/brand/strates-civilization.jpg', alt: 'طبقات جيولوجية ترمز إلى تراكم المعارف' },
+      { src: houseCivilization, alt: 'منزل تراثي يرمز إلى طبقات الحضارة' },
+      { src: stratesCivilization, alt: 'طبقات جيولوجية ترمز إلى تراكم المعارف' },
     ],
   },
   logos: [
-    { name: 'مؤسسة أطلس', src: '/assets/images/brand/stone.png' },
-    { name: 'شبكة التراث', src: '/assets/images/brand/polish.png' },
-    { name: 'جماعة الجذور', src: '/assets/images/brand/bronze.png' },
-    { name: 'تحالف البنّائين', src: '/assets/images/brand/fer.png' },
+    { name: 'مؤسسة أطلس', src: stone },
+    { name: 'شبكة التراث', src: polish },
+    { name: 'جماعة الجذور', src: bronze },
+    { name: 'تحالف البنّائين', src: fer },
   ],
   pillars: {
     badge: 'الركائز المؤسسة',
@@ -42,28 +44,28 @@ export default {
         role: 'مؤسسة، جماعة الجذور',
         content: 'ساعدنا كلان في هيكلة نقلنا بين الأجيال. كل طبقة من المعرفة محفوظة ومتاحة.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=1',
+        image: avatar1,
       },
       {
         name: 'يوسف منصوري',
         role: 'مدير، معهد الذاكرة',
         content: 'رؤية كلان تتردد بعمق مع مهمتنا. البناء على أسس من سبقونا.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=3',
+        image: avatar2,
       },
       {
         name: 'سارة دوبون',
         role: 'مسؤولة المجتمع',
         content: 'أداة لا غنى عنها لتوحيد مجتمعنا. نهج الطبقات يعطي معنى لكل مساهمة.',
         rating: 4,
-        image: 'https://i.pravatar.cc/150?img=5',
+        image: avatar3,
       },
       {
         name: 'كريم وعدة',
         role: 'مهندس، تحالف البنّائين',
         content: 'كلان يجسد ما يجب أن تكون عليه كل منصة مجتمعية: صرح جماعي يساهم فيه الجميع.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=8',
+        image: avatar1,
       },
     ],
   },

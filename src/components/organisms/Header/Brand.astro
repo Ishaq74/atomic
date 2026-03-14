@@ -1,13 +1,17 @@
 ---
 import type { HTMLAttributes } from "astro/types";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import logo from "../../../assets/images/brand/logo.png";
+import logoDark from "../../../assets/images/brand/logo-dark.png";
 
 type LayoutOption = "row" | "col";
 
 interface Props extends HTMLAttributes<"a"> {
   siteName?: string;
   href?: string;
-  logoSrc?: string;
-  logoDarkSrc?: string;
+  logoSrc?: ImageMetadata;
+  logoDarkSrc?: ImageMetadata;
   logoAlt?: string;
   logoHeight?: string;
   hideLogo?: boolean;
@@ -21,8 +25,8 @@ interface Props extends HTMLAttributes<"a"> {
 const {
   siteName = "Starwind Pro",
   href = "/",
-  logoSrc = "/assets/images/brand/logo.png",
-  logoDarkSrc = "/assets/images/brand/logo-dark.png",
+  logoSrc = logo,
+  logoDarkSrc = logoDark,
   logoAlt,
   logoHeight = "h-8",
   hideLogo = false,
@@ -66,17 +70,23 @@ const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
   {...rest}
 >
   <span class:list={["items-center", logoVis]}>
-    <img
+    <Image
       src={logoSrc}
       alt={alt}
       class:list={[logoHeight, "w-auto dark:hidden"]}
       loading="eager"
+      fetchpriority="high"
+      width={120}
+      height={32}
     />
-    <img
+    <Image
       src={logoDarkSrc}
       alt={alt}
       class:list={["hidden", logoHeight, "w-auto dark:block"]}
       loading="eager"
+      fetchpriority="high"
+      width={120}
+      height={32}
     />
   </span>
 

@@ -3,6 +3,7 @@ import IconStar from "@tabler/icons/filled/star.svg";
 import IconArrowLeft from "@tabler/icons/outline/arrow-left.svg";
 import IconArrowRight from "@tabler/icons/outline/arrow-right.svg";
 import type { HTMLAttributes } from "astro/types";
+import type { ImageMetadata } from "astro";
 import { tv } from "tailwind-variants";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@atoms/avatar";
@@ -21,8 +22,8 @@ export interface Testimonial {
   content: string;
   /** Star rating (1-5) */
   rating: number;
-  /** Profile image URL */
-  image: string;
+  /** Profile image */
+  image: ImageMetadata;
 }
 
 interface Props extends HTMLAttributes<"section"> {
@@ -124,7 +125,7 @@ const {
                           {/* Author Info */}
                           <div class="mt-2 flex items-center gap-3">
                             <Avatar>
-                              <AvatarImage src={testimonial.image} alt={testimonial.name} />
+                              <AvatarImage image={testimonial.image} alt={testimonial.name} />
                               <AvatarFallback>
                                 {testimonial.name
                                   .split(" ")

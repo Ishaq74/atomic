@@ -231,7 +231,7 @@ const uniqueActions = [...new Set(adminAuditLogs.map((l: any) => l.action))].sor
                 <TableRow>
                   <TableCell>
                     <div class="flex items-center gap-2">
-                      {org.logo && <img src={org.logo} alt="" class="w-6 h-6 rounded" />}
+                      {org.logo && <img src={org.logo} alt={org.name} class="w-6 h-6 rounded" />}
                       <span class="font-medium">{org.name}</span>
                     </div>
                   </TableCell>

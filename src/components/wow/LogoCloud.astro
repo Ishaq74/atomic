@@ -1,5 +1,7 @@
 ---
 import type { HTMLAttributes } from "astro/types";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
 import { tv } from "tailwind-variants";
 
 /** Logo item data */
@@ -7,7 +9,7 @@ export interface LogoData {
   /** Logo name for alt text */
   name: string;
   /** Logo image source */
-  src: string;
+  src: ImageMetadata;
 }
 
 interface Props extends HTMLAttributes<"section"> {
@@ -45,7 +47,7 @@ const { logos = [], class: className, ...rest } = Astro.props;
         {
           logos.map((logo) => (
             <div class="flex h-10 w-28 items-center justify-center opacity-70 grayscale transition-opacity hover:opacity-100 @xl:h-12 @xl:w-32 dark:invert">
-              <img src={logo.src} alt={logo.name} class="h-full w-full object-contain" />
+              <Image src={logo.src} alt={logo.name} class="h-full w-full object-contain" width={128} height={48} loading="lazy" />
             </div>
           ))
         }
@@ -56,7 +58,7 @@ const { logos = [], class: className, ...rest } = Astro.props;
         {
           logos.map((logo) => (
             <div class="flex h-10 w-28 items-center justify-center opacity-70 grayscale transition-opacity hover:opacity-100 @xl:h-12 @xl:w-32 dark:invert">
-              <img src={logo.src} alt={logo.name} class="h-full w-full object-contain" />
+              <Image src={logo.src} alt={logo.name} class="h-full w-full object-contain" width={128} height={48} loading="lazy" />
             </div>
           ))
         }

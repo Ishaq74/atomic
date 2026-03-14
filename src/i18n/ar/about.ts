@@ -1,4 +1,6 @@
 import type { AboutTranslations } from '../config';
+import { stone, bronze, houseCivilization, polish } from '../../assets/images/brand';
+import { avatar1, avatar2, avatar3 } from '../../assets/images/avatars';
 
 export default {
   meta: {
@@ -35,25 +37,25 @@ export default {
       {
         title: 'الإرث',
         description: 'نؤمن بأن الماضي كنز. كل معرفة وكل تجربة تستحق أن تُحفظ وتُنقل إلى الأجيال القادمة. الإرث ليس عبئًا، بل هو نقطة انطلاق.',
-        image: '/assets/images/brand/stone.png',
+        image: stone,
         value: 'heritage',
       },
       {
         title: 'النقل',
         description: 'المعرفة التي لا تُنقل هي معرفة مفقودة. نبذل كل ما في وسعنا لضمان تدفق الحكمة بحرية بين الأجيال والمجتمعات.',
-        image: '/assets/images/brand/bronze.png',
+        image: bronze,
         value: 'transmission',
       },
       {
         title: 'المجتمع',
         description: 'وحدك تسير سريعًا، معًا نصل بعيدًا. يضع كلان المجتمع في صميم كل شيء. في الجماعة تولد المشاريع الأكثر طموحًا واستدامة.',
-        image: '/assets/images/brand/house-civilization.jpg',
+        image: houseCivilization,
         value: 'community',
       },
       {
         title: 'النزاهة',
         description: 'البناء على أسس صلبة يتطلب الشفافية والأصالة. نلتزم بالتصرف بأمانة تجاه مجتمعنا وشركائنا وأنفسنا.',
-        image: '/assets/images/brand/polish.png',
+        image: polish,
         value: 'integrity',
       },
     ],
@@ -67,7 +69,7 @@ export default {
         name: 'يوسف منصوري',
         role: 'المؤسس والرئيس التنفيذي',
         bio: 'صاحب رؤية شغوف بالنقل بين الأجيال وبناء المجتمعات.',
-        image: 'https://i.pravatar.cc/300?img=11',
+        image: avatar2,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },
@@ -78,7 +80,7 @@ export default {
         name: 'أمينة بلقاسم',
         role: 'مديرة العمليات',
         bio: 'خبيرة في إدارة المجتمعات والتطوير المؤسسي.',
-        image: 'https://i.pravatar.cc/300?img=1',
+        image: avatar1,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'Email', icon: 'mail', href: 'mailto:amina@klan.com' },
@@ -88,7 +90,7 @@ export default {
         name: 'كريم وعدة',
         role: 'المدير التقني',
         bio: 'مهندس برمجيات متخصص في منصات المجتمعات واسعة النطاق.',
-        image: 'https://i.pravatar.cc/300?img=8',
+        image: avatar3,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },
@@ -99,7 +101,7 @@ export default {
         name: 'سارة دوبون',
         role: 'مسؤولة المجتمع',
         bio: 'منشّطة مجتمعات ملتزمة تنسج الروابط بين أعضاء كلان.',
-        image: 'https://i.pravatar.cc/300?img=5',
+        image: avatar1,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },

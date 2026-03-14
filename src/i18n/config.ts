@@ -1,3 +1,5 @@
+import type { ImageMetadata } from 'astro';
+
 export const LOCALES = ['fr', 'en', 'es', 'ar'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'fr';
@@ -58,9 +60,9 @@ export interface HomeTranslations {
     ctaSecondary: string;
     socialProofHeading: string;
     socialProofSubtext: string;
-    carouselImages: { src: string; alt: string }[];
+    carouselImages: { src: ImageMetadata; alt: string }[];
   };
-  logos: { name: string; src: string }[];
+  logos: { name: string; src: ImageMetadata }[];
   pillars: {
     badge: string;
     title: string;
@@ -76,7 +78,7 @@ export interface HomeTranslations {
       role: string;
       content: string;
       rating: number;
-      image: string;
+      image: ImageMetadata;
     }[];
   };
   pricing: {
@@ -152,7 +154,7 @@ export interface AboutTranslations {
     items: {
       title: string;
       description: string;
-      image: string;
+      image: ImageMetadata;
       value: string;
     }[];
   };
@@ -164,7 +166,7 @@ export interface AboutTranslations {
       name: string;
       role: string;
       bio: string;
-      image: string;
+      image: ImageMetadata;
       socials: {
         name: string;
         icon: string;

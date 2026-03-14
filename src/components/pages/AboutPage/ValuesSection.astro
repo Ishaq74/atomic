@@ -1,5 +1,7 @@
 ---
 import type { HTMLAttributes } from "astro/types";
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
 import { tv } from "tailwind-variants";
 import {
   Accordion,
@@ -11,7 +13,7 @@ import {
 interface ValueItem {
   title: string;
   description: string;
-  image: string;
+  image: ImageMetadata;
   value: string;
 }
 
@@ -77,10 +79,13 @@ const defaultValue = items[0]?.value;
             data-index={index}
             data-active={item.value === defaultValue ? "true" : "false"}
           >
-            <img
+            <Image
               src={item.image}
               alt={item.title}
               class="h-full w-full object-cover transition-transform duration-700"
+              width={800}
+              height={600}
+              loading="lazy"
               data-index={index}
               data-active={item.value === defaultValue ? "true" : "false"}
             />

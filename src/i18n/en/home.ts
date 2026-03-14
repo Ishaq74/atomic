@@ -1,4 +1,6 @@
 import type { HomeTranslations } from '../config';
+import { houseCivilization, stratesCivilization, stone, polish, bronze, fer } from '../../assets/images/brand';
+import { avatar1, avatar2, avatar3 } from '../../assets/images/avatars';
 
 export default {
   hero: {
@@ -11,15 +13,15 @@ export default {
     socialProofHeading: 'Join 10,000+ builders',
     socialProofSubtext: 'Building the future together',
     carouselImages: [
-      { src: '/assets/images/brand/house-civilization.jpg', alt: 'Ancestral house symbolizing the layers of civilization' },
-      { src: '/assets/images/brand/strates-civilization.jpg', alt: 'Geological strata symbolizing the accumulation of knowledge' },
+      { src: houseCivilization, alt: 'Ancestral house symbolizing the layers of civilization' },
+      { src: stratesCivilization, alt: 'Geological strata symbolizing the accumulation of knowledge' },
     ],
   },
   logos: [
-    { name: 'Atlas Foundation', src: '/assets/images/brand/stone.png' },
-    { name: 'Heritage Network', src: '/assets/images/brand/polish.png' },
-    { name: 'Roots Collective', src: '/assets/images/brand/bronze.png' },
-    { name: 'Builders Alliance', src: '/assets/images/brand/fer.png' },
+    { name: 'Atlas Foundation', src: stone },
+    { name: 'Heritage Network', src: polish },
+    { name: 'Roots Collective', src: bronze },
+    { name: 'Builders Alliance', src: fer },
   ],
   pillars: {
     badge: 'Founding pillars',
@@ -42,28 +44,28 @@ export default {
         role: 'Founder, Roots Collective',
         content: 'KLAN helped us structure our intergenerational transmission. Every layer of knowledge is preserved and accessible.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=1',
+        image: avatar1,
       },
       {
         name: 'Youssef Mansouri',
         role: 'Director, Memory Institute',
         content: 'KLAN\'s vision deeply resonates with our mission. Building on the foundations of those who came before us.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=3',
+        image: avatar2,
       },
       {
         name: 'Sarah Dupont',
         role: 'Community Manager',
         content: 'An essential tool for uniting our community. The layered approach gives meaning to every contribution.',
         rating: 4,
-        image: 'https://i.pravatar.cc/150?img=5',
+        image: avatar3,
       },
       {
         name: 'Karim Ouadah',
         role: 'Architect, Builders Alliance',
         content: 'KLAN embodies what every community platform should be: a collective edifice where everyone contributes their stone.',
         rating: 5,
-        image: 'https://i.pravatar.cc/150?img=8',
+        image: avatar1,
       },
     ],
   },

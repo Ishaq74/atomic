@@ -1,4 +1,6 @@
 import type { AboutTranslations } from '../config';
+import { stone, bronze, houseCivilization, polish } from '../../assets/images/brand';
+import { avatar1, avatar2, avatar3 } from '../../assets/images/avatars';
 
 export default {
   meta: {
@@ -35,25 +37,25 @@ export default {
       {
         title: 'Héritage',
         description: 'Nous croyons que le passé est un trésor. Chaque savoir, chaque expérience mérite d\'être préservé et transmis aux générations futures. L\'héritage n\'est pas un poids, c\'est un tremplin.',
-        image: '/assets/images/brand/stone.png',
+        image: stone,
         value: 'heritage',
       },
       {
         title: 'Transmission',
         description: 'Le savoir qui n\'est pas transmis est un savoir perdu. Nous mettons tout en œuvre pour que les connaissances circulent librement entre les générations et les communautés.',
-        image: '/assets/images/brand/bronze.png',
+        image: bronze,
         value: 'transmission',
       },
       {
         title: 'Communauté',
         description: 'Seul on va vite, ensemble on va loin. KLAN place la communauté au centre de tout. C\'est dans le collectif que naissent les projets les plus ambitieux et les plus durables.',
-        image: '/assets/images/brand/house-civilization.jpg',
+        image: houseCivilization,
         value: 'community',
       },
       {
         title: 'Intégrité',
         description: 'Construire sur des fondations solides exige transparence et authenticité. Nous nous engageons à agir avec honnêteté envers notre communauté, nos partenaires et nous-mêmes.',
-        image: '/assets/images/brand/polish.png',
+        image: polish,
         value: 'integrity',
       },
     ],
@@ -67,7 +69,7 @@ export default {
         name: 'Youssef Mansouri',
         role: 'Fondateur & CEO',
         bio: 'Visionnaire passionné par la transmission intergénérationnelle et la construction communautaire.',
-        image: 'https://i.pravatar.cc/300?img=11',
+        image: avatar2,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },
@@ -78,7 +80,7 @@ export default {
         name: 'Amina Belkacem',
         role: 'Directrice des Opérations',
         bio: 'Experte en gestion de communautés et en développement organisationnel.',
-        image: 'https://i.pravatar.cc/300?img=1',
+        image: avatar1,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'Email', icon: 'mail', href: 'mailto:amina@klan.com' },
@@ -88,7 +90,7 @@ export default {
         name: 'Karim Ouadah',
         role: 'Directeur Technique',
         bio: 'Architecte logiciel spécialisé dans les plateformes communautaires à grande échelle.',
-        image: 'https://i.pravatar.cc/300?img=8',
+        image: avatar3,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },
@@ -99,7 +101,7 @@ export default {
         name: 'Sarah Dupont',
         role: 'Responsable Communauté',
         bio: 'Animatrice de communautés engagée, elle tisse les liens entre les membres de KLAN.',
-        image: 'https://i.pravatar.cc/300?img=5',
+        image: avatar1,
         socials: [
           { name: 'LinkedIn', icon: 'linkedin', href: '#' },
           { name: 'X', icon: 'twitter', href: '#' },
