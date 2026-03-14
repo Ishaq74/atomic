@@ -43,7 +43,8 @@ tests/
 │   ├── setup.ts                       #  Seed 2 users (normal + admin) + export cookies
 │   ├── run.cjs                        #  Orchestrateur : build → server → audits → teardown
 │   ├── lhci-authed.cjs                #  LHCI pour pages authentifiées/admin (configs temporaires)
-│   └── lhci-rename.cjs               #  Renomme rapports LHCI en noms lisibles
+│   ├── lhci-rename.cjs               #  Renomme rapports LHCI en noms lisibles
+│   └── lhci-report.cjs               #  Analyse des rapports (scores + CWV + contrast)
 │                                      # ─────────
 │                                      #  40 URLs Pa11y + 38 URLs Lighthouse
 └── helpers/

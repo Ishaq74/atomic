@@ -41,7 +41,7 @@ const forgotPasswordUrl = getAuthUrl(locale, 'forgot-password', t);
         </div>
 
         <div class="flex justify-end">
-          <a href={forgotPasswordUrl} class="text-primary hover:underline text-sm font-medium">{t.signIn.forgotPassword}</a>
+          <a href={forgotPasswordUrl} class="text-primary-deep hover:underline text-sm font-medium">{t.signIn.forgotPassword}</a>
         </div>
 
         <AsyncButton
@@ -58,7 +58,7 @@ const forgotPasswordUrl = getAuthUrl(locale, 'forgot-password', t);
       <Separator />
       <p class="text-muted-foreground text-sm">
         {t.signIn.noAccount}{' '}
-        <a href={signUpUrl} class="text-primary hover:underline font-medium">{t.signIn.createAccount}</a>
+        <a href={signUpUrl} class="text-primary-deep hover:underline font-medium">{t.signIn.createAccount}</a>
       </p>
     </CardFooter>
   </Card>

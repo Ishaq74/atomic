@@ -63,7 +63,7 @@ const initials = user?.name
           </button>
           <div>
             <p class="text-sm text-muted-foreground">{t.profile.identity.avatarLabel}</p>
-            <p class="text-xs text-muted-foreground/70">JPEG, PNG, WebP, AVIF · 2 MB max</p>
+            <p class="text-xs text-muted-foreground">JPEG, PNG, WebP, AVIF · 2 MB max</p>
           </div>
         </div>
 
@@ -82,8 +82,8 @@ const initials = user?.name
           </div>
 
           <div class="grid gap-2">
-            <Label>{t.dashboard.profile.email}</Label>
-            <Input value={user?.email ?? ''} disabled class="opacity-60" />
+            <Label for="profile-email">{t.dashboard.profile.email}</Label>
+            <Input id="profile-email" value={user?.email ?? ''} disabled class="opacity-60" />
             <p class="text-xs text-muted-foreground italic">Non modifiable</p>
           </div>
 
@@ -128,7 +128,7 @@ const initials = user?.name
 
         <!-- Export Data -->
         <div class="mb-6">
-          <h3 class="text-sm font-semibold mb-1">{t.profile.dangerZone.exportData}</h3>
+          <h2 class="text-sm font-semibold mb-1">{t.profile.dangerZone.exportData}</h2>
           <p class="text-xs text-muted-foreground mb-3">{t.profile.dangerZone.exportDataDescription}</p>
           <Button id="export-data-btn" variant="outline" size="sm">{t.profile.dangerZone.exportDataButton}</Button>
         </div>
@@ -137,7 +137,7 @@ const initials = user?.name
 
         <!-- Delete Account -->
         <div>
-          <h3 class="text-sm font-semibold text-destructive mb-1">{t.profile.dangerZone.deleteAccount}</h3>
+          <h2 class="text-sm font-semibold text-destructive mb-1">{t.profile.dangerZone.deleteAccount}</h2>
           <p class="text-xs text-muted-foreground mb-3">{t.profile.dangerZone.deleteAccountDescription}</p>
           <div id="delete-section">
             <Button id="delete-reveal-btn" variant="error" size="sm">{t.profile.dangerZone.deleteAccountButton}</Button>

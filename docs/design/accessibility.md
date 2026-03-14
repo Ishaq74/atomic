@@ -20,6 +20,7 @@ Tous les tokens du design system respectent les seuils suivants :
 | :-- | :-- | :-- | :-- |
 | `background` ↔ `foreground` | ~20:1 | ~16:1 | 7:1 AAA ✅ |
 | `primary` ↔ `primary-foreground` | ~11:1 | ~11:1 | 7:1 AAA ✅ |
+| `primary-deep` ↔ `background` | ~5:1 | N/A | 4.5:1 AA ✅ (texte sur fond clair) |
 | `card` ↔ `card-foreground` | ~18:1 | ~14:1 | 7:1 AAA ✅ |
 | `muted` ↔ `muted-foreground` | ~5:1 | ~4.5:1 | 4.5:1 AA ✅ |
 | `error` ↔ `error-foreground` | ~7.7:1 | ~7:1 | 7:1 AAA ✅ |

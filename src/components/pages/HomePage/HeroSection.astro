@@ -190,7 +190,7 @@ const {
                 <button
                   type="button"
                   data-index={index}
-                  class="carousel-dot bg-foreground/20 hover:bg-muted-foreground/50 size-2 shrink-0 rounded-full transition-all"
+                  class="carousel-dot group flex items-center justify-center size-6 shrink-0 rounded-full transition-all"
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))
@@ -203,9 +203,23 @@ const {
 </section>
 
 <style>
-  .carousel-dot.active {
+  .carousel-dot::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--color-foreground) 20%, transparent);
+    transition: all 0.2s;
+  }
+
+  .carousel-dot:hover::after {
+    background: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+  }
+
+  .carousel-dot.active::after {
     background: var(--color-foreground);
-    width: calc(var(--spacing) * 4) /* 2rem = 32px */;
+    width: 2rem;
   }
 
   /* Staggered entrance for hero text elements */

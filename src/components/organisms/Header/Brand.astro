@@ -39,7 +39,7 @@ const {
   ...rest
 } = Astro.props;
 
-const alt = logoAlt ?? siteName ?? "Logo";
+const alt = logoAlt ?? "";
 
 const logoOnDesktop = !hideLogo;
 const nameOnDesktop = !hideName;
@@ -73,7 +73,7 @@ const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
     <Image
       src={logoSrc}
       alt={alt}
-      class:list={[logoHeight, "w-auto dark:hidden"]}
+      class:list={[logoHeight, "w-[120px] dark:hidden"]}
       loading="eager"
       fetchpriority="high"
       width={120}
@@ -82,7 +82,7 @@ const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
     <Image
       src={logoDarkSrc}
       alt={alt}
-      class:list={["hidden", logoHeight, "w-auto dark:block"]}
+      class:list={["hidden", logoHeight, "w-[120px] dark:block"]}
       loading="eager"
       fetchpriority="high"
       width={120}

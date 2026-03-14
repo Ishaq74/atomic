@@ -58,6 +58,7 @@ Toutes les couleurs du design system sont définies en **OKLCH** (`oklch(L C H)`
 | `--primary` | `oklch(0.880 0.200 68)` | 11:1 ✅ AAA | Golden yellow |
 | `--primary-foreground` | `oklch(0.148 0.018 75)` | — | Near-black sur primary |
 | `--primary-accent` | `oklch(0.820 0.205 68)` | — | Deeper yellow (hover) |
+| `--primary-deep` | `oklch(0.500 0.120 68)` | ≥5:1 AA | Dark gold — texte sur fond clair (liens, eyebrows) |
 
 ### Secondary — Warm Stone
 

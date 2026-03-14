@@ -41,19 +41,19 @@ const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
       <div id="verify-email-success" class="hidden text-center py-4">
         <div class="text-success mb-2 text-lg font-semibold" id="success-title"></div>
         <p class="text-muted-foreground text-sm mb-4" id="success-description"></p>
-        <a id="success-link" href={dashboardUrl} class="text-primary hover:underline font-medium">{t.verifyEmail.goToSignIn}</a>
+        <a id="success-link" href={dashboardUrl} class="text-primary-deep hover:underline font-medium">{t.verifyEmail.goToSignIn}</a>
       </div>
 
       <div id="verify-email-error" class="hidden text-center py-4">
         <div class="text-destructive mb-2 text-lg font-semibold" id="error-title"></div>
         <p class="text-muted-foreground text-sm mb-4" id="error-description"></p>
-        <button id="resend-btn" class="text-primary hover:underline font-medium cursor-pointer">{t.verifyEmail.resend}</button>
+        <button id="resend-btn" class="text-primary-deep hover:underline font-medium cursor-pointer">{t.verifyEmail.resend}</button>
       </div>
     </CardContent>
     <CardFooter class="flex-col gap-4">
       <Separator />
       <p class="text-muted-foreground text-sm">
-        <a href={signInUrl} class="text-primary hover:underline font-medium">{t.verifyEmail.goToSignIn}</a>
+        <a href={signInUrl} class="text-primary-deep hover:underline font-medium">{t.verifyEmail.goToSignIn}</a>
       </p>
     </CardFooter>
   </Card>

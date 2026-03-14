@@ -10,9 +10,10 @@ Audits automatisés Lighthouse sur les 4 locales (fr, en, es, ar) avec des gates
 ├── .lighthouseci/                     # Rapports HTML + JSON (généré, gitignored)
 └── tests/a11y/
     ├── setup.ts                       # Seed users + export cookies
+    ├── run.cjs                        # Orchestrateur tout-en-un
     ├── lhci-authed.cjs                # Config dynamique — pages authentifiées/admin
     ├── lhci-rename.cjs                # Renomme rapports timestamp → noms lisibles
-    └── run.cjs                        # Orchestrateur tout-en-un
+    └── lhci-report.cjs                # Analyse des rapports (scores + CWV + contrast)
 ```
 
 ## Configuration
@@ -141,6 +142,10 @@ pnpm a11y:lighthouse              # Pages publiques (26 URLs)
 pnpm a11y:lighthouse:authed       # Pages authentifiées + admin (12 URLs)
 pnpm a11y:lighthouse:rename       # Renommer les rapports
 pnpm a11y:teardown                # Cleanup users + cookies
+
+# Analyse des rapports
+pnpm a11y:lighthouse:report            # Scores + Core Web Vitals par page
+pnpm a11y:lighthouse:report:contrast   # Idem + détails color-contrast
 ```
 
 ### Prérequis pour les commandes individuelles
@@ -195,20 +200,22 @@ Le job `a11y-perf` dans `.github/workflows/ci.yml` exécute les audits Lighthous
 
 Voir `docs/testing/ci.md` pour le détail complet.
 
-## Résultats actuels
+## Résultats actuels (32 pages)
 
-| Batch | URLs | Performance | Accessibility | Best Practices | SEO |
-| :-- | --: | :-- | :-- | :-- | :-- |
-| Public | 26 | ⚠️ 20/26 ≥ 0.9 | ✅ 26/26 | ✅ 26/26 | ✅ 26/26 |
-| Authenticated | 8 | ✅ 8/8 | ✅ 8/8 | ✅ 8/8 | ✅ 8/8 |
-| Admin | 4 | ✅ 4/4 | ✅ 4/4 | ✅ 4/4 | ✅ 4/4 |
+| Catégorie | Résultat |
+| :-- | :-- |
+| **Accessibility** | ✅ **32/32 = 100/100** |
+| **Best Practices** | ✅ **32/32 = 100/100** |
+| **SEO** | ✅ **32/32 = 100/100** |
+| **Performance** | ⚠️ **25/32 ≥ 90** |
 
-6 pages publiques ont un score performance entre 0.74 et 0.89 (homepages + pages legal). Voir `docs/testing/gaps.md` pour le plan de correction.
+7 pages sous le seuil perf : homepages (LCP/SI sur images hero), about (LCP image), pages légales (CLS logo). Voir `docs/testing/gaps.md` pour le plan.
 
 ## Dépendances
 
 | Package | Version | Rôle |
 | :-- | :-- | :-- |
-| `@lhci/cli` | ^0.15 | CLI Lighthouse CI (`lhci autorun`) |
-| `wait-on` | ^8 | Attente du serveur avant audits |
-| `pa11y-ci` | ^3 | Audits Pa11y (fichier séparé, même setup) |
+| `@lhci/cli` | ^0.15.1 | CLI Lighthouse CI (`lhci autorun`) |
+| `wait-on` | ^9 | Attente du serveur avant audits |
+| `pa11y-ci` | ^4.1 | Audits Pa11y (fichier séparé, même setup) |
+| `sharp` | ^0.34.5 | Optimisation des images (requis en production) |
