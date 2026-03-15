@@ -102,9 +102,9 @@
   --secondary-foreground:    oklch(0.148  0.018  75  );
   --secondary-accent:        oklch(0.148  0.018  75  );
 
-  /* Muted — warm stone-100 bg, stone-700 text : 8.7:1 ✅ AAA */
+  /* Muted — warm stone-100 bg, stone-700 text : 9.5:1 ✅ AAA (card bg ≥ 8:1) */
   --muted:                   oklch(0.962  0.008  78  );
-  --muted-foreground:        oklch(0.440  0.016  75  );
+  --muted-foreground:        oklch(0.400  0.016  75  );
 
   /* Accent — warm stone-100 bg + near-black : 13:1 ✅ AAA */
   --accent:                  oklch(0.962  0.008  78  );

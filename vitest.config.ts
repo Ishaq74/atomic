@@ -19,5 +19,9 @@ export default defineConfig({
       NODE_ENV: 'test',
     },
     testTimeout: 15_000,
+    reporters: ['default', 'json'],
+    outputFile: {
+      json: 'tests/reports/vitest-results.json',
+    },
   },
 });

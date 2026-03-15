@@ -64,17 +64,13 @@ const {
   <div
     id="feature-25-marquee"
     class="relative flex flex-col gap-(--gap) overflow-x-clip"
-    style={{ "--gap": "1.25rem", "--marquee-duration": "60s" }}
+    style={{
+      "--gap": "1.25rem",
+      "--marquee-duration": "60s",
+      "mask-image": "linear-gradient(to right, transparent, black 6rem, black calc(100% - 6rem), transparent)",
+      "-webkit-mask-image": "linear-gradient(to right, transparent, black 6rem, black calc(100% - 6rem), transparent)",
+    }}
   >
-    <!-- Gradient fade edges -->
-    <div
-      class="from-background pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-linear-to-r to-transparent"
-    >
-    </div>
-    <div
-      class="from-background pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-linear-to-l to-transparent"
-    >
-    </div>
 
     <!-- Row 1: Normal direction -->
     <div class="feature-25-row flex gap-(--gap)">
@@ -90,10 +86,10 @@ const {
                     class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/60 via-black/10 to-transparent p-5">
+                  <div class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/80 via-black/20 to-transparent p-5">
                     <h3 class="text-base font-semibold text-white @2xl:text-lg">{item.title}</h3>
                     {item.tagline && (
-                      <p class="mt-1 text-sm leading-snug text-white/75">{item.tagline}</p>
+                      <p class="mt-1 text-sm leading-snug text-white">{item.tagline}</p>
                     )}
                   </div>
                 </AspectRatio>
@@ -118,10 +114,10 @@ const {
                     class="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
                   />
-                  <div class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/60 via-black/10 to-transparent p-5">
+                  <div class="absolute inset-0 flex flex-col justify-end bg-linear-to-t from-black/80 via-black/20 to-transparent p-5">
                     <h3 class="text-base font-semibold text-white @2xl:text-lg">{item.title}</h3>
                     {item.tagline && (
-                      <p class="mt-1 text-sm leading-snug text-white/75">{item.tagline}</p>
+                      <p class="mt-1 text-sm leading-snug text-white">{item.tagline}</p>
                     )}
                   </div>
                 </AspectRatio>

@@ -38,11 +38,13 @@ const row2 = [...t.items].reverse();
   <div
     id="pillars-marquee"
     class="relative flex flex-col gap-(--gap) overflow-x-clip"
-    style={{ "--gap": "1.25rem", "--marquee-duration": "40s" }}
+    style={{
+      "--gap": "1.25rem",
+      "--marquee-duration": "40s",
+      "mask-image": "linear-gradient(to right, transparent, black 6rem, black calc(100% - 6rem), transparent)",
+      "-webkit-mask-image": "linear-gradient(to right, transparent, black 6rem, black calc(100% - 6rem), transparent)",
+    }}
   >
-    <!-- Gradient fade edges -->
-    <div class="from-background pointer-events-none absolute inset-y-0 inset-s-0 z-10 w-24 bg-linear-to-r to-transparent"></div>
-    <div class="from-background pointer-events-none absolute inset-y-0 inset-e-0 z-10 w-24 bg-linear-to-l to-transparent"></div>
 
     <!-- Row 1: Normal direction -->
     <div class="pillars-row flex gap-(--gap)">

@@ -111,6 +111,17 @@ export default {
       roleChanged: 'تم تحديث الدور.',
       deleted: 'تم حذف المستخدم.',
       noResults: 'لم يتم العثور على مستخدمين.',
+      sort: {
+        label: 'ترتيب',
+        nameAsc: 'الاسم أ→ي',
+        nameDesc: 'الاسم ي→أ',
+        newest: 'الأحدث أولاً',
+        oldest: 'الأقدم أولاً',
+      },
+      filter: {
+        allRoles: 'جميع الأدوار',
+        allStatuses: 'جميع الحالات',
+      },
     },
     organizations: {
       columns: {

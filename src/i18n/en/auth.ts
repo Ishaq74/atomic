@@ -111,6 +111,17 @@ export default {
       roleChanged: 'Role updated.',
       deleted: 'User deleted.',
       noResults: 'No users found.',
+      sort: {
+        label: 'Sort',
+        nameAsc: 'Name A→Z',
+        nameDesc: 'Name Z→A',
+        newest: 'Newest first',
+        oldest: 'Oldest first',
+      },
+      filter: {
+        allRoles: 'All roles',
+        allStatuses: 'All statuses',
+      },
     },
     organizations: {
       columns: {

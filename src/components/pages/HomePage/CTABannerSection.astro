@@ -55,17 +55,14 @@ const {
       />
     </div>
 
-    <!-- Overlay -->
-    <div class="absolute inset-0 bg-black/50"></div>
-
-    <!-- Content -->
-    <div class="relative z-10 px-8 py-12 text-center @lg:px-12 @lg:py-12 @3xl:px-16 @3xl:py-32">
+    <!-- Content (bg-black/75 on this ancestor so axe resolves the overlay background) -->
+    <div id="cta-banner-overlay" class="relative z-10 bg-black/75 px-8 py-12 text-center @lg:px-12 @lg:py-12 @3xl:px-16 @3xl:py-32">
       <h2
         class="font-heading mb-4 text-3xl font-semibold tracking-tight @lg:text-4xl @2xl:text-5xl"
       >
         {title}
       </h2>
-      <p class="text-foreground/80 mx-auto mb-8 max-w-2xl text-pretty @lg:text-lg">
+      <p class="text-foreground mx-auto mb-8 max-w-2xl text-pretty @lg:text-lg">
         {description}
       </p>
       <div class="flex flex-wrap items-center justify-center gap-4">

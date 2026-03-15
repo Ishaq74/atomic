@@ -30,7 +30,9 @@ public/uploads/*
 
 # tests results and temporary files
 tests-results/
+test-results/
 playwright-report/
+tests/reports/*/
 
 # a11y audit artifacts
 .a11y-cookies.json

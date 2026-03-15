@@ -1,20 +1,17 @@
 ---
 import { toLocale, getAuthTranslations, resolveAuthSlug } from '@i18n/utils';
-import type { Locale, AuthPageId } from '@i18n/config';
+import type { Locale } from '@i18n/config';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import AuthLayout from '@organisms/AuthLayout/AuthLayout.astro';
+import AuthSidebar from '@organisms/AuthSidebar/AuthSidebar.astro';
 import SignInPage from '@pages/auth/SignInPage.astro';
 import SignUpPage from '@pages/auth/SignUpPage.astro';
 import DashboardPage from '@pages/auth/DashboardPage.astro';
-import AdminPage from '@pages/auth/AdminPage.astro';
 import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.astro';
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage.astro';
 import VerifyEmailPage from '@pages/auth/VerifyEmailPage.astro';
 import ProfilePage from '@pages/auth/ProfilePage.astro';
-import OrganizationsPage from '@pages/auth/OrganizationsPage.astro';
-import { auth } from '@/lib/auth';
-import { getDrizzle } from '@database/drizzle';
-import { auditLog, user as userTable } from '@database/schemas';
-import { desc, count, gte, eq } from 'drizzle-orm';
+import { fetchUserOrganizations, fetchUserInvitations } from '@/lib/auth-data';
 
 export const prerender = false;
 
@@ -29,159 +26,49 @@ if (!pageId) return Astro.redirect(`/${locale}/`);
 
 const user = Astro.locals.user;
 
+// ─── Backward compat redirects: admin & organizations now have dedicated routes ───
+if (pageId === 'admin') {
+  return Astro.redirect(`/${locale}/admin/stats`);
+}
+if (pageId === 'organizations') {
+  const orgSlug = Astro.url.searchParams.get('org');
+  if (orgSlug) {
+    return Astro.redirect(
+      `/${locale}/organizations/${orgSlug}/members` +
+      (Astro.url.searchParams.get('invitation')
+        ? `?invitation=${encodeURIComponent(Astro.url.searchParams.get('invitation')!)}`
+        : '')
+    );
+  }
+  return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
+}
+
 // Route protection
 const isGuest = !user;
-const isAdmin = user?.role === 'admin';
 
 if ((pageId === 'sign-in' || pageId === 'sign-up' || pageId === 'forgot-password') && !isGuest) {
   return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
 }
 
-if (pageId === 'dashboard' && isGuest) {
+if ((pageId === 'dashboard' || pageId === 'profile') && isGuest) {
   return Astro.redirect(`/${locale}/auth/${authT.routes['sign-in']}`);
-}
-
-if (pageId === 'profile' && isGuest) {
-  return Astro.redirect(`/${locale}/auth/${authT.routes['sign-in']}`);
-}
-
-if (pageId === 'organizations' && isGuest) {
-  return Astro.redirect(`/${locale}/auth/${authT.routes['sign-in']}`);
-}
-
-// Organizations page is now detail-only; redirect to dashboard if no ?org= param
-if (pageId === 'organizations' && !Astro.url.searchParams.get('org') && !Astro.url.searchParams.get('invitation')) {
-  return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
-}
-
-if (pageId === 'admin') {
-  if (isGuest) return Astro.redirect(`/${locale}/auth/${authT.routes['sign-in']}`);
-  if (!isAdmin) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
 }
 
 // reset-password and verify-email are accessible to anyone (token-based)
 
-// ─── Admin: server-side data fetching ───
-let adminUsers: any[] = [];
-let adminOrgs: any[] = [];
-let adminAuditLogs: any[] = [];
-let adminStats = { totalUsers: 0, totalOrganizations: 0, recentSignups: 0 };
-
-if (pageId === 'admin' && user) {
-  const headers = Astro.request.headers;
-  const db = getDrizzle();
-
-  // Fetch all users via admin API
-  const usersResult = await auth.api.listUsers({
-    query: { limit: 100 },
-    headers,
-  });
-  adminUsers = (usersResult as any)?.users ?? [];
-
-  // Fetch all organizations
-  const allOrgs = await auth.api.listOrganizations({ headers });
-  adminOrgs = allOrgs ?? [];
-
-  // Fetch recent audit logs (last 50) with user names
-  adminAuditLogs = await db
-    .select({
-      id: auditLog.id,
-      userId: auditLog.userId,
-      userName: userTable.name,
-      action: auditLog.action,
-      resource: auditLog.resource,
-      resourceId: auditLog.resourceId,
-      ipAddress: auditLog.ipAddress,
-      createdAt: auditLog.createdAt,
-    })
-    .from(auditLog)
-    .leftJoin(userTable, eq(auditLog.userId, userTable.id))
-    .orderBy(desc(auditLog.createdAt))
-    .limit(50);
-
-  // Build stats
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-  const [recentCount] = await db
-    .select({ value: count() })
-    .from(userTable)
-    .where(gte(userTable.createdAt, sevenDaysAgo));
-
-  adminStats = {
-    totalUsers: adminUsers.length,
-    totalOrganizations: adminOrgs.length,
-    recentSignups: recentCount?.value ?? 0,
-  };
-}
-
-// ─── Organizations: server-side data fetching ───
+// ─── Dashboard: server-side data fetching ───
 let organizations: any[] = [];
 let userInvitations: any[] = [];
-let activeOrg: any | null = null;
-let activeOrgMembers: any[] = [];
-let activeOrgInvitations: any[] = [];
-let activeOrgRole: string | null = null;
 
-// Fetch user's organizations for dashboard
 if (pageId === 'dashboard' && user) {
   const headers = Astro.request.headers;
-
-  // Fetch user's organizations
-  const orgsResult = await auth.api.listOrganizations({ headers });
-  organizations = orgsResult ?? [];
-
-  // Fetch user's pending invitations
-  const invResult = await auth.api.listUserInvitations({
-    query: { email: user.email },
-  });
-  userInvitations = invResult ?? [];
+  [organizations, userInvitations] = await Promise.all([
+    fetchUserOrganizations(headers),
+    fetchUserInvitations(user.email),
+  ]);
 }
 
-if (pageId === 'organizations' && user) {
-  const headers = Astro.request.headers;
-
-  // If ?org=slug, fetch full org detail
-  const orgSlug = Astro.url.searchParams.get('org');
-  if (orgSlug) {
-    const fullOrg = await auth.api.getFullOrganization({
-      query: { organizationSlug: orgSlug },
-      headers,
-    });
-    if (fullOrg) {
-      activeOrg = fullOrg;
-      // Members are included in fullOrg response
-      activeOrgMembers = fullOrg.members ?? [];
-      // Find current user's role
-      const currentMember = activeOrgMembers.find(
-        (m: any) => m.userId === user.id,
-      );
-      activeOrgRole = currentMember?.role ?? null;
-      // Fetch org invitations (admin/owner only)
-      if (activeOrgRole === 'admin' || activeOrgRole === 'owner') {
-        const invList = await auth.api.listInvitations({
-          query: { organizationId: fullOrg.id },
-          headers,
-        });
-        activeOrgInvitations = (invList ?? []).filter(
-          (inv: any) => inv.status === 'pending',
-        );
-      }
-    }
-  }
-
-  // Handle ?invitation= auto-accept
-  const invitationId = Astro.url.searchParams.get('invitation');
-  if (invitationId) {
-    try {
-      await auth.api.acceptInvitation({
-        body: { invitationId },
-        headers,
-      });
-    } catch { /* invitation may be expired or already accepted */ }
-    return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
-  }
-}
-
-const metaKeys: Record<AuthPageId, keyof typeof authT.meta> = {
+const metaKeys: Record<string, keyof typeof authT.meta> = {
   'sign-in': 'signIn',
   'sign-up': 'signUp',
   dashboard: 'dashboard',
@@ -194,37 +81,37 @@ const metaKeys: Record<AuthPageId, keyof typeof authT.meta> = {
 };
 const meta = authT.meta[metaKeys[pageId]];
 
-const pages: Record<AuthPageId, any> = {
+type FlowPageId = 'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password' | 'verify-email' | 'dashboard' | 'profile';
+
+const pages: Record<FlowPageId, any> = {
   'sign-in': SignInPage,
   'sign-up': SignUpPage,
-  dashboard: DashboardPage,
-  admin: AdminPage,
   'forgot-password': ForgotPasswordPage,
   'reset-password': ResetPasswordPage,
   'verify-email': VerifyEmailPage,
+  dashboard: DashboardPage,
   profile: ProfilePage,
-  organizations: OrganizationsPage,
 };
 
-const Page = pages[pageId];
+const Page = pages[pageId as FlowPageId];
+if (!Page) return Astro.redirect(`/${locale}/`);
 
-// Build extra props for pages that need organization data
-const extraProps = pageId === 'organizations' ? {
-  activeOrg,
-  activeOrgMembers,
-  activeOrgInvitations,
-  activeOrgRole,
-} : pageId === 'dashboard' ? {
+// Build extra props
+const extraProps = pageId === 'dashboard' ? {
   organizations,
   userInvitations,
-} : pageId === 'admin' ? {
-  adminUsers,
-  adminOrgs,
-  adminAuditLogs,
-  adminStats,
 } : {};
+
+const needsSidebar = pageId === 'dashboard' || pageId === 'profile';
 ---
 
 <BaseLayout title={meta.title} description={meta.description}>
-  <Page t={authT} locale={locale} user={user} {...extraProps} />
+  {needsSidebar ? (
+    <AuthLayout title={meta.title}>
+      <AuthSidebar slot="sidebar" t={authT} locale={locale} user={user} activeItem={pageId as 'dashboard' | 'profile'} />
+      <Page t={authT} locale={locale} user={user} {...extraProps} />
+    </AuthLayout>
+  ) : (
+    <Page t={authT} locale={locale} user={user} {...extraProps} />
+  )}
 </BaseLayout>

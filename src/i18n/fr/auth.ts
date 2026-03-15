@@ -111,6 +111,17 @@ export default {
       roleChanged: 'Rôle mis à jour.',
       deleted: 'Utilisateur supprimé.',
       noResults: 'Aucun utilisateur trouvé.',
+      sort: {
+        label: 'Trier',
+        nameAsc: 'Nom A→Z',
+        nameDesc: 'Nom Z→A',
+        newest: 'Plus récent',
+        oldest: 'Plus ancien',
+      },
+      filter: {
+        allRoles: 'Tous les rôles',
+        allStatuses: 'Tous les statuts',
+      },
     },
     organizations: {
       columns: {

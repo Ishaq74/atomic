@@ -176,9 +176,13 @@
 | `SignInPage.astro` | ✅ Form + auth flow (app + auth.spec) | — | ✅ E2E |
 | `SignUpPage.astro` | ✅ Form + submit (auth.spec) | — | ✅ E2E |
 | `DashboardPage.astro` | ✅ Guard redirect + auth flow (auth.spec) | — | ✅ E2E |
-| `AdminPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
+| `AdminStatsPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
+| `AdminUsersPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
+| `AdminOrgsPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
+| `AdminAuditPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
 | `ProfilePage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
-| `OrganizationsPage.astro` | ✅ Guard redirect (auth.spec) | — | ⚠️ Guard seul |
+| `OrgMembersPage.astro` | ✅ Guard redirect (auth.spec) | — | ⚠️ Guard seul |
+| `OrgSettingsPage.astro` | ✅ Guard redirect | — | ⚠️ Guard seul |
 | `ForgotPasswordPage.astro` | ✅ Form visible (auth.spec) | — | ⚠️ E2E seul |
 | `ResetPasswordPage.astro` | ✅ Accessible sans auth (auth.spec) | — | ⚠️ E2E seul |
 | `VerifyEmailPage.astro` | ✅ Accessible sans auth (auth.spec) | — | ⚠️ E2E seul |

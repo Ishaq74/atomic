@@ -211,4 +211,9 @@ All providers share the `SMTP_FROM` env var for the sender address.
 | `ResetPasswordPage`      | `/{locale}/auth/reset-password`    | Choose new password (requires `?token=`)        |
 | `VerifyEmailPage`        | `/{locale}/auth/verify-email`      | Token verification + auto-sign-in              |
 | `DashboardPage`          | `/{locale}/auth/dashboard`         | Authenticated user dashboard                   |
-| `AdminPage`              | `/{locale}/auth/admin`             | Admin panel                                    |
+| `AdminStatsPage`         | `/{locale}/admin/stats`            | Admin panel — statistics                       |
+| `AdminUsersPage`         | `/{locale}/admin/users`            | Admin panel — user management                  |
+| `AdminOrgsPage`          | `/{locale}/admin/organizations`    | Admin panel — organizations                    |
+| `AdminAuditPage`         | `/{locale}/admin/audit`            | Admin panel — audit log                        |
+| `OrgMembersPage`         | `/{locale}/organizations/{slug}/members`  | Organization members                    |
+| `OrgSettingsPage`        | `/{locale}/organizations/{slug}/settings` | Organization settings                   |

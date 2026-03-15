@@ -97,6 +97,21 @@ export function resolveAuthSlug(slug: string, authTranslations: AuthTranslations
   return match ? match[0] : null;
 }
 
+// ─── Admin & Org direct routes ──────────────────────────────────────
+
+export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit';
+export type OrgSubpage = 'members' | 'settings';
+
+export function getAdminUrl(locale: Locale, subpage?: AdminSubpage): string {
+  return subpage ? `/${locale}/admin/${subpage}` : `/${locale}/admin`;
+}
+
+export function getOrgUrl(locale: Locale, orgSlug: string, subpage?: OrgSubpage): string {
+  return subpage
+    ? `/${locale}/organizations/${orgSlug}/${subpage}`
+    : `/${locale}/organizations/${orgSlug}`;
+}
+
 // ─── Pages (about / contact / legal) ────────────────────────────────
 
 export function getPageUrl(locale: Locale, pageId: PageId, commonTranslations: CommonTranslations): string {

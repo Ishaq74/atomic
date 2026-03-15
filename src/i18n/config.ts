@@ -327,6 +327,17 @@ export interface AuthTranslations {
       roleChanged: string;
       deleted: string;
       noResults: string;
+      sort: {
+        label: string;
+        nameAsc: string;
+        nameDesc: string;
+        newest: string;
+        oldest: string;
+      };
+      filter: {
+        allRoles: string;
+        allStatuses: string;
+      };
     };
     organizations: {
       columns: {

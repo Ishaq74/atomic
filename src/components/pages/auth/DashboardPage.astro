@@ -1,6 +1,6 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
-import { getAuthUrl } from '@i18n/utils';
+import { getAuthUrl, getOrgUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
 import { Input } from '@atoms/input';
@@ -30,7 +30,6 @@ interface Props {
 const { t, locale, user, organizations = [], userInvitations = [] } = Astro.props;
 const signInUrl = getAuthUrl(locale, 'sign-in', t);
 const profileUrl = getAuthUrl(locale, 'profile', t);
-const organizationsUrl = getAuthUrl(locale, 'organizations', t);
 const initials = user?.name
   ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
   : '?';
@@ -43,7 +42,7 @@ const roleLabels: Record<string, string> = {
 };
 ---
 
-<section class="mx-auto w-full max-w-3xl px-4 py-12">
+<section class="mx-auto w-full max-w-3xl">
   <h1 class="text-3xl font-bold mb-8">{t.dashboard.welcome}, {user?.name ?? ''}</h1>
 
   <div class="grid gap-6">
@@ -82,7 +81,7 @@ const roleLabels: Record<string, string> = {
         </dl>
 
         <div class="mt-4">
-          <a href={profileUrl} class="text-sm text-primary hover:underline font-medium">
+          <a href={profileUrl} class="text-sm text-primary-deep hover:underline font-medium">
             {t.dashboard.editProfile} &rarr;
           </a>
         </div>
@@ -123,8 +122,8 @@ const roleLabels: Record<string, string> = {
     <!-- Organizations card -->
     <Card>
       <CardHeader>
-        <div class="flex items-center justify-between">
-          <CardTitle>{t.dashboard.organizations.title}</CardTitle>
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+          <CardTitle class="min-w-0">{t.dashboard.organizations.title}</CardTitle>
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm">{t.dashboard.organizations.create}</Button>
@@ -165,7 +164,7 @@ const roleLabels: Record<string, string> = {
         ) : (
           <div class="divide-y">
             {organizations.map((org: any) => (
-              <a href={`${organizationsUrl}?org=${org.slug}`} class="flex items-center gap-4 py-3 hover:bg-muted/50 -mx-3 px-3 rounded-md transition-colors">
+              <a href={getOrgUrl(locale, org.slug, 'members')} class="flex items-center gap-4 py-3 hover:bg-muted/50 -mx-3 px-3 rounded-md transition-colors">
                 <Avatar size="sm">
                   {org.logo && <AvatarImage src={org.logo} alt={org.name} />}
                   <AvatarFallback>{org.name.charAt(0).toUpperCase()}</AvatarFallback>
@@ -200,7 +199,7 @@ const roleLabels: Record<string, string> = {
 <div
   id="dashboard-data"
   class="hidden"
-  data-orgs-url={organizationsUrl}
+  data-locale={locale}
   data-t-created={t.organizations.create.success}
   data-t-accepted={t.organizations.pendingInvitations.accepted}
   data-t-rejected={t.organizations.pendingInvitations.rejected}
@@ -216,7 +215,7 @@ const roleLabels: Record<string, string> = {
   function init() {
     const el = document.getElementById('dashboard-data');
     const d = el?.dataset ?? {};
-    const orgsUrl = d.orgsUrl ?? '';
+    const locale = d.locale ?? 'en';
 
     // ─── Sign out ───
     const btn = document.getElementById('sign-out-btn');
@@ -307,7 +306,7 @@ const roleLabels: Record<string, string> = {
         toast.error(error.message ?? 'Error');
       } else {
         toast.success(d.tCreated ?? '');
-        window.location.href = `${orgsUrl}?org=${slug}`;
+        window.location.href = `/${locale}/organizations/${slug}/members`;
       }
     });
 

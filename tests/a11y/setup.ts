@@ -94,7 +94,7 @@ async function setup() {
   const adminCookie = await createAndAuth(SEED_ADMIN);
 
   // Promote admin user
-  const { auth } = await import('../../src/lib/auth');
+  await import('../../src/lib/auth');
   const { getDrizzle, schema } = await import('../../src/database/drizzle');
   const { eq } = await import('drizzle-orm');
   const db = getDrizzle();

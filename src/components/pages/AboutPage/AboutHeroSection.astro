@@ -32,8 +32,7 @@ const { eyebrow, title, description, class: className, ...rest } = Astro.props;
         fetchpriority="high"
       />
     </div>
-    <div class="absolute inset-0 bg-black/60"></div>
-    <div class="relative z-10 px-6 py-20 text-center @lg:px-12 @lg:py-28 @3xl:py-36">
+    <div id="about-hero-overlay" class="relative z-10 bg-black/75 px-6 py-20 text-center @lg:px-12 @lg:py-28 @3xl:py-36">
       {eyebrow && (
         <Badge variant="primary" size="md" class="about-hero-badge mb-6">
           {eyebrow}
@@ -42,7 +41,7 @@ const { eyebrow, title, description, class: className, ...rest } = Astro.props;
       <h1 class="about-hero-title font-heading mx-auto mb-6 max-w-3xl text-4xl font-bold tracking-tight text-white @lg:text-5xl @3xl:text-6xl">
         {title}
       </h1>
-      <p class="about-hero-desc mx-auto max-w-2xl text-lg text-white/80 @lg:text-xl">
+      <p class="about-hero-desc mx-auto max-w-2xl text-lg text-white @lg:text-xl">
         {description}
       </p>
     </div>

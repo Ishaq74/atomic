@@ -73,7 +73,7 @@ Chaque composant définit ses styles via `tv()` :
 | **Atoms** | Composants indivisibles | Button, Input, Badge, Label |
 | **Molecules** | Combinaisons d'atoms | (à venir) |
 | **Organisms** | Sections de page | Header, Footer, Testimonials |
-| **Pages** | Compositions full-page | HomePage, ContactPage, AdminPage |
+| **Pages** | Compositions full-page | HomePage, ContactPage, AdminStatsPage |
 | **Wow** | Effets visuels | ScrollReveal, Particles, Marquee |
 
 ### 4. CSS Variables comme contrat

@@ -108,15 +108,14 @@ const {
                       <Card class="hover:cursor-grab">
                         <CardContent class="flex flex-col gap-4">
                           {/* Rating Stars */}
-                          <div
+                          <figure
                             class="flex gap-1"
-                            role="img"
                             aria-label={`Rating: ${testimonial.rating} out of 5 stars`}
                           >
                             {Array.from({ length: testimonial.rating }).map(() => (
                               <IconStar class="size-5 text-yellow-500" aria-hidden="true" />
                             ))}
-                          </div>
+                          </figure>
 
                           {/* Testimonial Content */}
                           <blockquote class="text-foreground text-base leading-relaxed text-pretty">

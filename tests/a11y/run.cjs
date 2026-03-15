@@ -1,15 +1,17 @@
 /**
  * A11y/Lighthouse orchestrator — single command to run all audits.
  *
- * 1. Checks if preview server is already running
- * 2. If not → builds + starts it in background
- * 3. Waits for server readiness
- * 4. Runs a11y setup (seed users + auth cookies)
- * 5. Runs Pa11y-ci
- * 6. Runs Lighthouse CI (public + authenticated)
- * 7. Renames LHCI reports to readable names
- * 8. Tears down (cleanup seeded users)
- * 9. Kills server if we started it
+ * 1. Checks if a server (dev or preview) is already running on port 4321
+ * 2. If yes → kills it to ensure a clean build+preview cycle
+ * 3. Builds the project (pnpm build)
+ * 4. Starts the preview server in background
+ * 5. Waits for server readiness
+ * 6. Runs a11y setup (seed users + auth cookies)
+ * 7. Runs Pa11y-ci
+ * 8. Runs Lighthouse CI (public + authenticated)
+ * 9. Renames LHCI reports to readable names
+ * 10. Tears down (cleanup seeded users)
+ * 11. Kills server
  *
  * Usage:
  *   node tests/a11y/run.cjs                  # run everything
@@ -24,9 +26,10 @@ const net = require('node:net');
 const path = require('node:path');
 
 const PORT = 4321;
-const HOST = process.platform === 'win32' ? '[::1]' : 'localhost';
-const MAX_WAIT = 60_000; // 60s max wait for server
+const HOST = '127.0.0.1';
+const MAX_WAIT = 90_000; // 90s max wait for server
 const POLL_INTERVAL = 1_000;
+const REPORTS_DIR = path.resolve(__dirname, '../reports');
 
 const args = process.argv.slice(2);
 const runPa11y = args.length === 0 || args.includes('--pa11y');
@@ -56,6 +59,247 @@ function run(cmd, label) {
   }
 }
 
+/** Run a command and return its stdout (still logs stderr) */
+function runCapture(cmd, label) {
+  log(`Running: ${label || cmd}`);
+  try {
+    return execSync(cmd, { encoding: 'utf-8', shell: true, cwd: process.cwd(), maxBuffer: 10 * 1024 * 1024 });
+  } catch (e) {
+    logError(`"${label || cmd}" exited with code ${e.status}`);
+    // pa11y-ci --json exits non-zero when URLs fail, but stdout still has the JSON
+    return e.stdout || '';
+  }
+}
+
+/** Ensure reports directory exists */
+function ensureReportsDir() {
+  if (!fs.existsSync(REPORTS_DIR)) fs.mkdirSync(REPORTS_DIR, { recursive: true });
+}
+
+/** Generate readable Pa11y report from JSON data and save to files */
+function savePa11yReport(jsonStr) {
+  ensureReportsDir();
+
+  // Save raw JSON
+  const jsonPath = path.join(REPORTS_DIR, 'pa11y-results.json');
+  fs.writeFileSync(jsonPath, jsonStr, 'utf-8');
+
+  // Parse and build readable report
+  let data;
+  try { data = JSON.parse(jsonStr); } catch { logError('Failed to parse Pa11y JSON'); return; }
+  
+  const lines = [];
+  const hr = '═'.repeat(80);
+  const hr2 = '─'.repeat(80);
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+  lines.push(hr);
+  lines.push('  PA11Y ACCESSIBILITY REPORT — WCAG 2.1 AAA');
+  lines.push(`  Generated: ${now}`);
+  lines.push(hr);
+  lines.push('');
+
+  const passes = data.passes || 0;
+  const failures = data.errors || 0;
+  const results = data.results || {};
+  const urls = Object.keys(results);
+
+  lines.push(`  Total URLs tested:  ${urls.length}`);
+  lines.push(`  Passed:             ${passes}/${urls.length}  ${passes === urls.length ? '✅' : '⚠️'}`);
+  lines.push(`  Failed:             ${failures}/${urls.length}`);
+  lines.push('');
+  lines.push(hr2);
+
+  // Group errors by type for summary
+  const errorsByRule = {};
+  const failedUrls = [];
+
+  for (const [url, issues] of Object.entries(results)) {
+    if (!Array.isArray(issues) || issues.length === 0) continue;
+    failedUrls.push({ url, count: issues.length });
+    for (const issue of issues) {
+      const rule = issue.code || 'unknown';
+      if (!errorsByRule[rule]) errorsByRule[rule] = [];
+      errorsByRule[rule].push({ url, ...issue });
+    }
+  }
+
+  // Summary by rule
+  if (Object.keys(errorsByRule).length > 0) {
+    lines.push('');
+    lines.push('  ISSUES BY RULE:');
+    lines.push(hr2);
+    for (const [rule, items] of Object.entries(errorsByRule).sort((a, b) => b[1].length - a[1].length)) {
+      lines.push(`  ${rule}  (${items.length} occurrence${items.length > 1 ? 's' : ''})`);
+    }
+  }
+
+  // Detailed failures per URL
+  if (failedUrls.length > 0) {
+    lines.push('');
+    lines.push(hr);
+    lines.push('  DETAILED FAILURES');
+    lines.push(hr);
+
+    for (const { url } of failedUrls) {
+      const issues = results[url];
+      lines.push('');
+      lines.push(`  URL: ${url}`);
+      lines.push(`  Issues: ${issues.length}`);
+      lines.push(hr2);
+
+      for (const issue of issues) {
+        lines.push(`    Rule:     ${issue.code || 'N/A'}`);
+        lines.push(`    Message:  ${issue.message || 'N/A'}`);
+        lines.push(`    Selector: ${issue.selector || 'N/A'}`);
+        lines.push(`    Context:  ${(issue.context || 'N/A').slice(0, 120)}`);
+        lines.push('');
+      }
+    }
+  }
+
+  // Passing URLs
+  const passingUrls = urls.filter(u => !Array.isArray(results[u]) || results[u].length === 0);
+  if (passingUrls.length > 0) {
+    lines.push('');
+    lines.push(hr);
+    lines.push('  PASSING URLS');
+    lines.push(hr);
+    for (const u of passingUrls) {
+      lines.push(`  ✅ ${u}`);
+    }
+  }
+
+  lines.push('');
+  lines.push(hr);
+  lines.push(`  END OF REPORT — ${passes}/${urls.length} passed`);
+  lines.push(hr);
+
+  const reportPath = path.join(REPORTS_DIR, 'pa11y-report.txt');
+  fs.writeFileSync(reportPath, lines.join('\n'), 'utf-8');
+  log(`Pa11y report saved: ${reportPath}`);
+  log(`Pa11y JSON saved:   ${jsonPath}`);
+
+  // Print summary to console too
+  console.log('');
+  console.log(`  Pa11y: ${passes}/${urls.length} URLs passed ${passes === urls.length ? '✅' : '⚠️'}`);
+  if (failedUrls.length > 0) {
+    for (const { url, count } of failedUrls) {
+      console.log(`    ❌ ${url} (${count} issue${count > 1 ? 's' : ''})`);
+    }
+  }
+  console.log('');
+
+  return failures > 0;
+}
+
+/** Copy Lighthouse reports to tests/reports/ and generate text summary */
+function copyLighthouseReports() {
+  const lhDir = path.resolve(__dirname, '../../.lighthouseci');
+  if (!fs.existsSync(lhDir)) {
+    logError('No .lighthouseci directory found — skipping Lighthouse report copy');
+    return;
+  }
+
+  const destDir = path.join(REPORTS_DIR, 'lighthouse');
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
+  // Copy all JSON and HTML files
+  const allFiles = fs.readdirSync(lhDir).filter(f => f.endsWith('.json') || f.endsWith('.html'));
+  for (const f of allFiles) {
+    fs.copyFileSync(path.join(lhDir, f), path.join(destDir, f));
+  }
+  log(`Copied ${allFiles.length} Lighthouse file(s) to ${destDir}`);
+
+  // Generate text summary report
+  const jsonFiles = allFiles.filter(f => f.endsWith('.json')).sort();
+  if (!jsonFiles.length) return;
+
+  const lines = [];
+  const hr = '═'.repeat(80);
+  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+  lines.push(hr);
+  lines.push('  LIGHTHOUSE CI REPORT');
+  lines.push(`  Generated: ${now}`);
+  lines.push(hr);
+  lines.push('');
+  lines.push(
+    'Page'.padEnd(42) +
+    'Perf  A11y  BP    SEO   ' +
+    'LCP     SI      TBT     CLS'
+  );
+  lines.push('─'.repeat(110));
+
+  let total = 0;
+  let perfPass = 0;
+  const perfFails = [];
+  const a11yFails = [];
+
+  for (const f of jsonFiles) {
+    let r;
+    try { r = JSON.parse(fs.readFileSync(path.join(lhDir, f), 'utf8')); } catch { continue; }
+    if (!r.categories) continue;
+    total++;
+
+    const p = Math.round(r.categories.performance.score * 100);
+    const a = Math.round(r.categories.accessibility.score * 100);
+    const bp = Math.round(r.categories['best-practices'].score * 100);
+    const s = Math.round(r.categories.seo.score * 100);
+
+    if (p >= 90) perfPass++;
+    else perfFails.push({ page: f.replace('.json', ''), score: p });
+    if (a < 90) a11yFails.push({ page: f.replace('.json', ''), score: a });
+
+    const lcp = r.audits['largest-contentful-paint']?.numericValue;
+    const si = r.audits['speed-index']?.numericValue;
+    const tbt = r.audits['total-blocking-time']?.numericValue;
+    const cls = r.audits['cumulative-layout-shift']?.numericValue;
+
+    const name = f.replace('.json', '');
+    lines.push(
+      name.padEnd(42) +
+      String(p).padEnd(6) +
+      String(a).padEnd(6) +
+      String(bp).padEnd(6) +
+      String(s).padEnd(6) +
+      (lcp ? (lcp / 1000).toFixed(1) + 's' : 'N/A').padEnd(8) +
+      (si ? (si / 1000).toFixed(1) + 's' : 'N/A').padEnd(8) +
+      (tbt !== undefined ? Math.round(tbt) + 'ms' : 'N/A').padEnd(8) +
+      (cls !== undefined ? cls.toFixed(3) : 'N/A')
+    );
+  }
+
+  const a11yPass = total - a11yFails.length;
+
+  lines.push('');
+  lines.push(hr);
+  lines.push('  SUMMARY');
+  lines.push(hr);
+  lines.push('');
+  lines.push(`  Total pages audited:  ${total}`);
+  lines.push(`  Performance >=90:     ${perfPass}/${total}  ${perfPass === total ? '✅' : '⚠️'}`);
+  lines.push(`  Accessibility >=90:   ${a11yPass}/${total}  ${a11yPass === 0 ? '✅' : '⚠️'}`);
+
+  if (perfFails.length) {
+    lines.push('');
+    lines.push('  Performance failures (<90):');
+    perfFails.forEach(x => lines.push(`    ❌ ${x.page} — ${x.score}`));
+  }
+  if (a11yFails.length) {
+    lines.push('');
+    lines.push('  Accessibility failures (<90):');
+    a11yFails.forEach(x => lines.push(`    ❌ ${x.page} — ${x.score}`));
+  }
+
+  lines.push('');
+  lines.push(hr);
+
+  const reportPath = path.join(REPORTS_DIR, 'lighthouse-report.txt');
+  fs.writeFileSync(reportPath, lines.join('\n'), 'utf-8');
+  log(`Lighthouse text report saved: ${reportPath}`);
+}
+
 /** Check if something is listening on PORT */
 function isPortOpen() {
   return new Promise((resolve) => {
@@ -74,17 +318,39 @@ async function waitForServer() {
   while (Date.now() - start < MAX_WAIT) {
     try {
       const ok = await new Promise((resolve) => {
-        const req = http.get(`http://${HOST}:${PORT}/`, (res) => {
+        const req = http.get(`http://localhost:${PORT}/`, (res) => {
           resolve(res.statusCode < 400);
         });
         req.on('error', () => resolve(false));
-        req.setTimeout(2000, () => { req.destroy(); resolve(false); });
+        req.setTimeout(3000, () => { req.destroy(); resolve(false); });
       });
       if (ok) return true;
     } catch { /* retry */ }
     await new Promise((r) => setTimeout(r, POLL_INTERVAL));
   }
   return false;
+}
+
+/** Kill any process listening on PORT (dev or stale preview) */
+function killPortProcess() {
+  try {
+    if (process.platform === 'win32') {
+      // Find PID using netstat, then kill it
+      const out = execSync(`netstat -ano | findstr :${PORT} | findstr LISTENING`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+      const pids = [...new Set(out.trim().split('\n').map(l => l.trim().split(/\s+/).pop()).filter(Boolean))];
+      for (const pid of pids) {
+        log(`Killing process ${pid} on port ${PORT}...`);
+        try { execSync(`taskkill /PID ${pid} /F`, { stdio: 'ignore' }); } catch { /* already dead */ }
+      }
+    } else {
+      execSync(`lsof -ti:${PORT} | xargs -r kill -9`, { stdio: 'ignore', shell: true });
+    }
+    // Wait a bit for port to be released
+    return new Promise((r) => setTimeout(r, 2000));
+  } catch {
+    // No process found — that's fine
+    return Promise.resolve();
+  }
 }
 
 // ── Main ─────────────────────────────────────────────────────────────
@@ -97,40 +363,51 @@ async function main() {
     const alreadyRunning = await isPortOpen();
 
     if (alreadyRunning) {
-      log(`Server already running on port ${PORT}`);
-    } else {
-      // 2. Build
-      log('Building project...');
-      run('pnpm build', 'build');
-
-      // 3. Start preview server in background
-      log('Starting preview server...');
-      serverProcess = spawn('node', ['dist/server/entry.mjs'], {
-        cwd: process.cwd(),
-        stdio: 'ignore',
-        detached: false,
-        env: { ...process.env, HOST: '0.0.0.0', PORT: String(PORT) },
-      });
-      weStartedServer = true;
-
-      // 4. Wait for server
-      log(`Waiting for server on ${HOST}:${PORT}...`);
-      const ready = await waitForServer();
-      if (!ready) {
-        logError('Server did not start within 60s, aborting.');
-        process.exit(1);
-      }
-      log('Server is ready!');
+      // A server is running — kill it so we can do a fresh build+preview
+      log(`Port ${PORT} is busy — killing existing server (dev or preview)...`);
+      await killPortProcess();
     }
+
+    // 2. Build
+    log('Building project...');
+    run('pnpm build', 'build');
+
+    // 3. Start preview server in background
+    log('Starting preview server...');
+    serverProcess = spawn('node', ['dist/server/entry.mjs'], {
+      cwd: process.cwd(),
+      stdio: 'ignore',
+      detached: false,
+      env: { ...process.env, HOST: 'localhost', PORT: String(PORT) },
+    });
+    weStartedServer = true;
+
+    // 4. Wait for server
+    log(`Waiting for server on localhost:${PORT}...`);
+    const ready = await waitForServer();
+    if (!ready) {
+      logError('Server did not start within 90s, aborting.');
+      process.exit(1);
+    }
+    log('Server is ready!');
 
     // 5. A11y setup (seed users + export cookies)
     log('Setting up a11y test users...');
     run('pnpm a11y:setup', 'a11y:setup');
 
     // 6. Run audits
+    ensureReportsDir();
+
     if (runPa11y) {
       log('─── Pa11y-ci ───');
-      if (!run('pnpm a11y:pa11y', 'pa11y-ci')) exitCode = 1;
+      const pa11yJson = runCapture('npx pa11y-ci --config .pa11yci.cjs --json', 'pa11y-ci --json');
+      if (pa11yJson) {
+        const hasFailures = savePa11yReport(pa11yJson);
+        if (hasFailures) exitCode = 1;
+      } else {
+        logError('Pa11y produced no output');
+        exitCode = 1;
+      }
     }
 
     if (runLighthouse) {
@@ -148,6 +425,9 @@ async function main() {
       log('─── Lighthouse CI (authenticated) ───');
       if (!run('pnpm a11y:lighthouse:authed', 'lighthouse:authed')) exitCode = 1;
       run('pnpm a11y:lighthouse:rename', 'lighthouse:rename');
+
+      // Copy Lighthouse reports to tests/reports/
+      copyLighthouseReports();
     }
 
   } finally {
@@ -166,6 +446,7 @@ async function main() {
     }
 
     log(exitCode === 0 ? '✅ All audits passed!' : '⚠️  Some audits had failures (see above)');
+    log(`Reports saved in: ${REPORTS_DIR}`);
   }
 
   process.exit(exitCode);

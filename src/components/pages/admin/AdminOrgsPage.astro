@@ -1,0 +1,141 @@
+---
+import type { AuthTranslations, Locale } from '@i18n/config';
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
+import { Card, CardContent } from '@atoms/card';
+import Button from '@atoms/button/Button.astro';
+import { DataView } from '@molecules/DataView';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+  DialogFooter,
+} from '@atoms/dialog';
+
+interface Props {
+  t: AuthTranslations;
+  locale: Locale;
+  user: any;
+  adminOrgs: any[];
+}
+
+const { t, locale, adminOrgs } = Astro.props;
+const ta = t.admin;
+
+function formatShortDate(d: Date | string | null) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString(locale, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
+}
+---
+
+<DataView>
+  <!-- ─── Table view ─── -->
+  <div slot="table" class="rounded-md border overflow-x-auto">
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>{ta.organizations.columns.name}</TableHead>
+          <TableHead>{ta.organizations.columns.slug}</TableHead>
+          <TableHead>{ta.organizations.columns.members}</TableHead>
+          <TableHead>{ta.organizations.columns.created}</TableHead>
+          <TableHead class="text-right">{ta.organizations.columns.actions}</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {adminOrgs.length === 0 ? (
+          <TableRow>
+            <TableCell colspan={5} class="text-center text-muted-foreground py-8">
+              {ta.organizations.noResults}
+            </TableCell>
+          </TableRow>
+        ) : (
+          adminOrgs.map((org: any) => (
+            <TableRow>
+              <TableCell>
+                <div class="flex items-center gap-2">
+                  {org.logo && <img src={org.logo} alt={org.name} class="w-6 h-6 rounded" />}
+                  <span class="font-medium">{org.name}</span>
+                </div>
+              </TableCell>
+              <TableCell class="text-sm text-muted-foreground">{org.slug}</TableCell>
+              <TableCell class="text-sm">{org.members?.length ?? '—'}</TableCell>
+              <TableCell class="text-sm text-muted-foreground">
+                {formatShortDate(org.createdAt)}
+              </TableCell>
+              <TableCell class="text-right">
+                <Dialog>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{ta.organizations.actions.delete}</DialogTitle>
+                      <DialogDescription>{ta.organizations.confirmDelete}</DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button variant="error" class="admin-delete-org-btn" data-org-id={org.id}>
+                        {ta.organizations.actions.delete}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
+  </div>
+
+  <!-- ─── Cards view (mobile) ─── -->
+  <div slot="cards" class="grid gap-3">
+    {adminOrgs.length === 0 ? (
+      <p class="text-center text-muted-foreground py-8">{ta.organizations.noResults}</p>
+    ) : (
+      adminOrgs.map((org: any) => (
+        <Card>
+          <CardContent class="p-4">
+            <div class="flex items-center gap-3 mb-2">
+              {org.logo && <img src={org.logo} alt={org.name} class="w-8 h-8 rounded" />}
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm truncate">{org.name}</p>
+                <p class="text-xs text-muted-foreground">/{org.slug}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-xs text-muted-foreground mb-3">
+              <span>{ta.organizations.columns.members}: {org.members?.length ?? '—'}</span>
+              <span>{formatShortDate(org.createdAt)}</span>
+            </div>
+            <Button size="sm" variant="error" class="admin-delete-org-btn" data-org-id={org.id}>
+              {ta.organizations.actions.delete}
+            </Button>
+          </CardContent>
+        </Card>
+      ))
+    )}
+  </div>
+</DataView>
+
+<script>
+  import { authClient } from '@/lib/auth-client';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    document.querySelectorAll('.admin-delete-org-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const orgId = (btn as HTMLElement).dataset.orgId;
+        if (!orgId) return;
+        const { error } = await authClient.organization.delete({ organizationId: orgId });
+        if (!error) { toast.success('Organization deleted.'); location.reload(); }
+        else toast.error(error.message ?? 'Error');
+      });
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>

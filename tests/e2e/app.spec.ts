@@ -73,7 +73,7 @@ test.describe('Auth - Guest guards', () => {
   });
 
   test('admin redirects unauthenticated user to sign-in', async ({ page }) => {
-    const response = await page.goto('/fr/auth/administration');
+    const response = await page.goto('/fr/admin/stats');
     expect(response?.ok()).toBeTruthy();
     await page.waitForURL(/connexion/);
     await expect(page).toHaveURL(/connexion/);

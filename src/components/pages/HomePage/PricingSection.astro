@@ -77,15 +77,14 @@ const {
 
 <section id="pricing-04" class={pricing4Styles({ class: className })} {...rest}>
   <!-- Grid Background -->
-  <div class="text-muted-foreground/50 pointer-events-none absolute inset-0" aria-hidden="true">
-    <svg class="size-full" xmlns="http://www.w3.org/2000/svg">
+  <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+    <svg class="size-full" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <pattern id="pricing-04-grid" width="40" height="40" patternUnits="userSpaceOnUse">
           <path
             d="M40 0v40M0 40h40"
             fill="none"
-            stroke="currentColor"
-            opacity="0.8"
+            stroke="oklch(0.400 0.016 75 / 0.15)"
             stroke-width="0.5"></path>
         </pattern>
       </defs>

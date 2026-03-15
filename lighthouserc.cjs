@@ -56,7 +56,6 @@ const authRoutes = {
   'forgot-password': { fr: 'mot-de-passe-oublie', en: 'forgot-password', es: 'contrasena-olvidada', ar: 'نسيت-كلمة-المرور' },
   'dashboard':       { fr: 'tableau-de-bord', en: 'dashboard', es: 'panel', ar: 'لوحة-التحكم' },
   'profile':         { fr: 'profil', en: 'profile', es: 'perfil', ar: 'الملف-الشخصي' },
-  'admin':           { fr: 'administration', en: 'admin', es: 'administracion', ar: 'الادارة' },
 };
 
 // ── Build URL lists ──────────────────────────────────────────────────
@@ -85,7 +84,7 @@ for (const lang of locales) {
 
 const adminUrls = [];
 for (const lang of locales) {
-  adminUrls.push(`${BASE}/${lang}/auth/${authRoutes['admin'][lang]}`);
+  adminUrls.push(`${BASE}/${lang}/admin/stats`);
 }
 
 module.exports = {

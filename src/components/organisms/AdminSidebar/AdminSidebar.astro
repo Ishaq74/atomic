@@ -1,0 +1,100 @@
+---
+/**
+ * AdminSidebar — Sidebar for the admin section: Stats, Users, Organizations, Audit Log.
+ * Includes a "Back to Dashboard" link.
+ */
+import type { AuthTranslations, Locale } from '@i18n/config';
+import { getAuthUrl, getAdminUrl } from '@i18n/utils';
+import type { AdminSubpage } from '@i18n/utils';
+
+import ArrowLeftIcon from '@tabler/icons/outline/arrow-left.svg';
+import ChartBarIcon from '@tabler/icons/outline/chart-bar.svg';
+import UsersIcon from '@tabler/icons/outline/users.svg';
+import BuildingIcon from '@tabler/icons/outline/building.svg';
+import FileTextIcon from '@tabler/icons/outline/file-text.svg';
+import ShieldIcon from '@tabler/icons/outline/shield.svg';
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarSeparator,
+} from '@atoms/sidebar';
+
+interface Props {
+  t: AuthTranslations;
+  locale: Locale;
+  activeItem?: AdminSubpage;
+}
+
+const { t, locale, activeItem } = Astro.props;
+
+const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
+
+const navItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = [
+  { id: 'stats', title: t.admin.tabs.stats, url: getAdminUrl(locale, 'stats'), icon: ChartBarIcon },
+  { id: 'users', title: t.admin.tabs.users, url: getAdminUrl(locale, 'users'), icon: UsersIcon },
+  { id: 'organizations', title: t.admin.tabs.organizations, url: getAdminUrl(locale, 'organizations'), icon: BuildingIcon },
+  { id: 'audit', title: t.admin.tabs.auditLog, url: getAdminUrl(locale, 'audit'), icon: FileTextIcon },
+];
+---
+
+<Sidebar collapsible="icon">
+  <SidebarHeader>
+    <SidebarMenu>
+      <SidebarMenuItem>
+        <SidebarMenuButton size="lg" href={dashboardUrl}>
+          <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg">
+            <ShieldIcon class="size-5" />
+          </div>
+          <div class="grid flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-semibold">{t.admin.title}</span>
+            <span class="text-sidebar-foreground/70 truncate text-xs">{t.userMenu.dashboard}</span>
+          </div>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  </SidebarHeader>
+
+  <SidebarSeparator />
+
+  <SidebarContent>
+    <SidebarGroup>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton href={dashboardUrl} tooltip={t.userMenu.dashboard}>
+              <ArrowLeftIcon class="size-4" />
+              <span>{t.userMenu.dashboard}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+
+    <SidebarGroup>
+      <SidebarGroupLabel>{t.admin.title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {navItems.map((item) => (
+            <SidebarMenuItem>
+              <SidebarMenuButton href={item.url} isActive={activeItem === item.id} tooltip={item.title}>
+                <item.icon class="size-4" />
+                <span>{item.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  </SidebarContent>
+
+  <SidebarRail />
+</Sidebar>

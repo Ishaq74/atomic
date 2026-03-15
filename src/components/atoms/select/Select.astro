@@ -141,8 +141,13 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.trigger.id = `starwind-select${selectIdx}-trigger`;
       this.content.id = `starwind-select${selectIdx}-content`;
 
-      // Set up additional ARIA attributes
-      this.trigger.setAttribute("aria-controls", this.content.id);
+      // Set up combobox role and ARIA attributes (progressive enhancement)
+      // Note: aria-controls is set/removed dynamically in open/close handlers
+      // because the popup has display:none when closed, and axe flags aria-controls
+      // referencing a hidden element as an invalid attribute value.
+      this.trigger.setAttribute("role", "combobox");
+      this.trigger.setAttribute("aria-haspopup", "listbox");
+      this.trigger.setAttribute("aria-autocomplete", "none");
       this.trigger.setAttribute("aria-required", this.required ? "true" : "false");
       this.content.setAttribute("aria-labelledby", this.trigger.id);
 
@@ -546,6 +551,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       this.isOpen = true;
       this.content.setAttribute("data-state", "open");
       this.trigger.setAttribute("aria-expanded", "true");
+      this.trigger.setAttribute("aria-controls", this.content.id);
       this.content.style.removeProperty("display");
 
       // If search input exists, focus it and clear any previous search
@@ -610,6 +616,7 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
       }, this.animationDuration);
 
       this.trigger.setAttribute("aria-expanded", "false");
+      this.trigger.removeAttribute("aria-controls");
     }
 
     private handleSelection(item: HTMLElement) {

@@ -96,10 +96,10 @@ Le script :
 
 | Locale | Admin |
 | :-- | :-- |
-| `fr` | `/fr/auth/administration` |
-| `en` | `/en/auth/admin` |
-| `es` | `/es/auth/administracion` |
-| `ar` | `/ar/auth/الادارة` |
+| `fr` | `/fr/admin/stats` |
+| `en` | `/en/admin/stats` |
+| `es` | `/es/admin/stats` |
+| `ar` | `/ar/admin/stats` |
 
 ## Rapports
 
