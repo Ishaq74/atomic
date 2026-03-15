@@ -20,6 +20,20 @@
       "when": 1773473504761,
       "tag": "0002_loose_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773554497115,
+      "tag": "0003_aberrant_corsair",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773559334841,
+      "tag": "0004_sharp_cloak",
+      "breakpoints": true
     }
   ]
 }

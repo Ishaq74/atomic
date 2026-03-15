@@ -18,7 +18,11 @@
 | `tests/unit/send-email.test.ts` | `src/smtp/send.ts` → `sendEmail()` (mock providers) | 5 | ✅ |
 | `tests/unit/schema-validation.test.ts` | `src/database/schemas.ts` → 8 table exports + colonnes critiques | 12 | ✅ |
 | `tests/unit/cli-utils.test.ts` | `src/database/commands/_utils.ts` → `formatPgError()`, ANSI helpers | 12 | ✅ |
-| **Total** | | **108** | **✅** |
+| `tests/unit/cms-schemas.test.ts` | 7 tables CMS : exports + colonnes détaillées | 14 | ✅ |
+| `tests/unit/cms-seeds.test.ts` | 6 fichiers seed CMS : complétude des données | 49 | ✅ |
+| `tests/unit/cms-i18n.test.ts` | Clés i18n CMS ×4 locales (site, nav, theme, common) | 38 | ✅ |
+| `tests/unit/cms-audit.test.ts` | 12 `AuditAction` CMS compilent correctement | 8 | ✅ |
+| **Total** | | **217** | **✅** |
 
 ---
 
@@ -293,7 +297,85 @@ Round-trip et cas `null` pour slug inconnu.
 ```text
 Fonctions pures testées :     28 / ~30 fonctions pures du projet = 93 %
 Fonctions side-effect :       1 testée en unit (sendEmail mock) + reste couvert en intégration
-Total tests unitaires :       108
-Fichiers de test :            10
-Temps d'exécution :           ~400 ms (les 10 fichiers)
+Total tests unitaires :       217
+Fichiers de test :            14
+Temps d'exécution :           ~500 ms (les 14 fichiers)
 ```
+
+---
+
+## Tests CMS — Schémas (`cms-schemas.test.ts`)
+
+**Cible** : Tous les exports CMS dans `src/database/schemas.ts`
+
+| # | Describe | Ce qu'il vérifie |
+| :-- | :-- | :-- |
+| 1 | `CMS table exports` | Les 7 tables (siteSettings, socialLinks, contactInfo, openingHours, navigationMenus, navigationItems, themeSettings) sont exportées |
+| 2 | `siteSettings columns` | 13 colonnes incluant `logoLight`, `logoDark`, `favicon`, `ogImage` |
+| 3 | `openingHours columns` | 12 colonnes incluant `morningOpen`, `morningClose`, `afternoonOpen`, `afternoonClose` (pause méridienne) |
+| 4 | `themeSettings columns` | 16 colonnes incluant couleurs, fonts, `borderRadius`, `customCss`, `isDefault`, `isActive` |
+| 5 | `contactInfo columns` | 12 colonnes incluant `mapUrl`, `latitude`, `longitude` |
+| 6 | `navigationItems columns` | 12 colonnes incluant `icon`, `parentId`, `isActive`, `openInNewTab` |
+| 7 | `socialLinks columns` | 9 colonnes incluant `icon`, `isActive`, `sortOrder` |
+
+### Stratégie — cms-schemas
+
+- **Validation structurelle** : vérifie que chaque colonne existe dans la définition Drizzle sans toucher à la DB
+- **Pas de mocks** : import direct des schémas
+
+---
+
+## Tests CMS — Seeds (`cms-seeds.test.ts`)
+
+**Cible** : Complétude de chaque fichier seed CMS
+
+| # | Describe | Ce qu'il vérifie |
+| :-- | :-- | :-- |
+| 1 | `site-settings` | 10 champs requis × 4 locales (fr, en, es, ar) |
+| 2 | `social-links` | 6 champs par lien (platform, url, label, icon, isActive, sortOrder) |
+| 3 | `contact-info` | 9 champs incluant coordonnées GPS (mapUrl, latitude, longitude) |
+| 4 | `opening-hours` | 7 jours, champs pause méridienne présents, horaires split vérifiés |
+| 5 | `navigation` | 4 menus (header, footer, sidebar, mobile) |
+| 6 | `navigation-items` | 9 champs requis par item × 4 locales |
+| 7 | `theme` | 13 champs de design token + thème défaut actif |
+
+### Stratégie — cms-seeds
+
+- **Import réel** des fichiers de données (pas de mock)
+- **Pas de DB** : vérifie uniquement la structure des objets JavaScript
+
+---
+
+## Tests CMS — i18n (`cms-i18n.test.ts`)
+
+**Cible** : Clés de traduction CMS pour les 4 locales
+
+| # | Describe | Ce qu'il vérifie |
+| :-- | :-- | :-- |
+| 1 | `cms.site keys` | 17+ clés (titres, labels formulaire, upload, jours, pause méridienne) |
+| 2 | `cms.navigation keys` | 14 clés (CRUD items, icon picker, champs formulaire) |
+| 3 | `cms.theme keys` | 6 clés (créer, activer, supprimer, nom, protection suppression) |
+| 4 | `cms.common keys` | 5 clés (actions, tri, suppression, chargement, erreur) |
+
+Chaque describe est paramétré `it.each(locales)` — 4 locales × 4 namespaces = 16 combos.
+
+### Stratégie — cms-i18n
+
+- **Import dynamique** via `getAuthTranslations(locale)` — identique au runtime
+- **Exhaustif** : toute clé manquante fait échouer le test
+
+---
+
+## Tests CMS — Audit (`cms-audit.test.ts`)
+
+**Cible** : Les 12 types `AuditAction` liés au CMS compilent correctement
+
+| Actions testées |
+| :-- |
+| `SITE_UPDATE`, `SOCIAL_CREATE`, `SOCIAL_UPDATE`, `SOCIAL_DELETE`, `CONTACT_UPDATE`, `HOURS_UPDATE` |
+| `NAV_CREATE`, `NAV_UPDATE`, `NAV_DELETE`, `THEME_CREATE`, `THEME_UPDATE`, `THEME_DELETE` |
+
+### Stratégie — cms-audit
+
+- **Vérification de types** : chaque action est assignée à une variable `AuditAction` — si le type n'existe pas, TypeScript/Vitest échoue
+- **Pas de runtime** : test purement compilatoire

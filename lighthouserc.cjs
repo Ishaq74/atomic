@@ -75,8 +75,11 @@ for (const lang of locales) {
 }
 
 const adminUrls = [];
+const adminPages = ['stats', 'site', 'navigation', 'theme'];
 for (const lang of locales) {
-  adminUrls.push(`${BASE}/${lang}/admin/stats`);
+  for (const page of adminPages) {
+    adminUrls.push(`${BASE}/${lang}/admin/${page}`);
+  }
 }
 
 module.exports = {

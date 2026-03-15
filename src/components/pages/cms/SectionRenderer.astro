@@ -1,0 +1,165 @@
+---
+/**
+ * SectionRenderer — Renders a CMS page section based on its type.
+ * Content is stored as JSON string in the DB; each type maps to a layout.
+ */
+import type { pageSections } from '@database/schemas';
+
+type SectionRow = typeof pageSections.$inferSelect;
+
+interface Props {
+  section: SectionRow;
+}
+
+const { section } = Astro.props;
+
+let content: Record<string, unknown> = {};
+try {
+  content = JSON.parse(section.content);
+} catch {
+  content = { raw: section.content };
+}
+
+const { type } = section;
+---
+
+{type === 'hero' && (
+  <section class="cms-section cms-hero py-16 md:py-24 text-center">
+    {content.title && <h1 class="text-4xl font-bold mb-4">{content.title}</h1>}
+    {content.subtitle && <p class="text-xl text-muted-foreground mb-6">{content.subtitle}</p>}
+    {content.ctaText && content.ctaUrl && (
+      <a href={content.ctaUrl as string} class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 font-medium">
+        {content.ctaText}
+      </a>
+    )}
+    {content.image && <img src={content.image as string} alt="" class="mt-8 mx-auto rounded-lg max-w-3xl w-full" />}
+  </section>
+)}
+
+{type === 'text' && (
+  <section class="cms-section cms-text prose max-w-none py-8">
+    <Fragment set:html={content.html ?? content.raw ?? ''} />
+  </section>
+)}
+
+{type === 'image' && (
+  <section class="cms-section cms-image py-8 text-center">
+    <img
+      src={content.src as string ?? ''}
+      alt={content.alt as string ?? ''}
+      class="mx-auto rounded-lg max-w-4xl w-full"
+    />
+    {content.caption && <p class="text-sm text-muted-foreground mt-2">{content.caption}</p>}
+  </section>
+)}
+
+{type === 'gallery' && (
+  <section class="cms-section cms-gallery py-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      {Array.isArray(content.images) && (content.images as { src: string; alt?: string }[]).map((img) => (
+        <img src={img.src} alt={img.alt ?? ''} class="rounded-lg w-full object-cover aspect-square" />
+      ))}
+    </div>
+  </section>
+)}
+
+{type === 'cta' && (
+  <section class="cms-section cms-cta py-12 text-center bg-muted rounded-lg">
+    {content.title && <h2 class="text-3xl font-bold mb-4">{content.title}</h2>}
+    {content.text && <p class="text-muted-foreground mb-6">{content.text}</p>}
+    {content.buttonText && content.buttonUrl && (
+      <a href={content.buttonUrl as string} class="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-3 font-medium">
+        {content.buttonText}
+      </a>
+    )}
+  </section>
+)}
+
+{type === 'features' && (
+  <section class="cms-section cms-features py-12">
+    {content.title && <h2 class="text-3xl font-bold text-center mb-8">{content.title}</h2>}
+    <div class="grid md:grid-cols-3 gap-8">
+      {Array.isArray(content.items) && (content.items as { title: string; description: string; icon?: string }[]).map((item) => (
+        <div class="text-center">
+          {item.icon && <div class="text-4xl mb-3">{item.icon}</div>}
+          <h3 class="text-xl font-semibold mb-2">{item.title}</h3>
+          <p class="text-muted-foreground">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+{type === 'testimonials' && (
+  <section class="cms-section cms-testimonials py-12 bg-muted/50 rounded-lg">
+    {content.title && <h2 class="text-3xl font-bold text-center mb-8">{content.title}</h2>}
+    <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+      {Array.isArray(content.items) && (content.items as { quote: string; author: string; role?: string }[]).map((item) => (
+        <blockquote class="border-l-4 border-primary pl-4 py-2">
+          <p class="italic mb-2">"{item.quote}"</p>
+          <footer class="text-sm text-muted-foreground">— {item.author}{item.role ? `, ${item.role}` : ''}</footer>
+        </blockquote>
+      ))}
+    </div>
+  </section>
+)}
+
+{type === 'faq' && (
+  <section class="cms-section cms-faq py-12">
+    {content.title && <h2 class="text-3xl font-bold text-center mb-8">{content.title}</h2>}
+    <div class="max-w-2xl mx-auto divide-y">
+      {Array.isArray(content.items) && (content.items as { question: string; answer: string }[]).map((item) => (
+        <details class="py-4 group">
+          <summary class="cursor-pointer font-medium">{item.question}</summary>
+          <p class="mt-2 text-muted-foreground">{item.answer}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+)}
+
+{type === 'contact' && (
+  <section class="cms-section cms-contact py-12 text-center">
+    {content.title && <h2 class="text-3xl font-bold mb-4">{content.title}</h2>}
+    {content.text && <p class="text-muted-foreground mb-6">{content.text}</p>}
+    {content.email && <p><a href={`mailto:${content.email}`} class="underline">{content.email}</a></p>}
+    {content.phone && <p><a href={`tel:${content.phone}`} class="underline">{content.phone}</a></p>}
+  </section>
+)}
+
+{type === 'map' && (
+  <section class="cms-section cms-map py-8">
+    <iframe
+      src={content.embedUrl as string ?? ''}
+      width="100%"
+      height="400"
+      class="rounded-lg border-0"
+      loading="lazy"
+      title="Map"
+    />
+  </section>
+)}
+
+{type === 'video' && (
+  <section class="cms-section cms-video py-8 text-center">
+    {content.embedUrl && (
+      <iframe
+        src={content.embedUrl as string}
+        width="100%"
+        height="450"
+        class="rounded-lg border-0 max-w-3xl mx-auto aspect-video"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        title="Video"
+      />
+    )}
+    {content.caption && <p class="text-sm text-muted-foreground mt-2">{content.caption}</p>}
+  </section>
+)}
+
+{type === 'custom' && (
+  <section class="cms-section cms-custom py-8">
+    <Fragment set:html={content.html ?? ''} />
+  </section>
+)}

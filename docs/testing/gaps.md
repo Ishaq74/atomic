@@ -57,7 +57,8 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 | P4-2 | `getPgClient` | Ouverture/fermeture de la connexion PG brute | Déjà couvert indirectement par `db-health.test.ts` |
 | P4-3 | `shutdownDb` | Cleanup de la connexion au shutdown | Fonction triviale, couverte par le teardown global |
 | P4-4 | Components UI | Tests de rendu des composants Astro/Starwind | Nécessiterait Container API (expérimental dans Astro) |
-| P4-5 | Admin content | Vérification détaillée du contenu admin E2E | Les redirections auth sont testées, le contenu dépend des données |
+| P4-5 | Admin CMS CRUD | Tests E2E de soumission réelle des formulaires admin | Couvert structurellement (page loads + form visible) ; le CRUD complet nécessiterait des fixtures seed complexes |
+| P4-6 | Actions admin | Tests d'intégration des 19 Astro Actions admin | Nécessiterait un harness de test spécifique pour Astro Actions (pas de API standard) |
 
 ---
 
@@ -67,7 +68,9 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 
 ### Pa11y-ci — WCAG AAA ✅
 
-**Score** : 40/40 URLs passent (100 %)
+**Score** : 52/52 URLs configurées (100 %)
+
+> Dont 12 URLs CMS admin (site, navigation, theme × 4 locales) ajoutées récemment.
 
 Tous les problèmes d'accessibilité ont été corrigés :
 
@@ -79,11 +82,11 @@ Tous les problèmes d'accessibilité ont été corrigés :
 | `image-redundant-alt` | `alt=""` sur le logo (`Brand.astro`) |
 | `target-size` | Dots du carousel agrandis de 8px à 24px (`HeroSection.astro`) |
 | `heading-order` (profil) | `<h3>` → `<h2>` pour export data + delete account |
-| CLS (legal) | Logo `w-auto` → `w-[120px]` pour réserver l'espace |
+| CLS (legal) | Logo `w-auto` → `w-30` pour réserver l'espace |
 
 ### Lighthouse CI — Performance
 
-**Scores a11y/best-practices/SEO** : ✅ ≥ 0.9 partout
+**Scores a11y/best-practices/SEO** : ✅ ≥ 0.9 partout (32 pages auditées, 12 CMS admin à auditer)
 
 **Scores performance** : ≤7 URLs < 0.9
 
@@ -126,6 +129,12 @@ Tous les problèmes d'accessibilité ont été corrigés :
 | `src/media/delete.ts` | 1 | 1 | 100 % |
 | `src/media/types.ts` | 3 constants | 3 | 100 % |
 | `src/pages/api/export-data.ts` | 1 | 1 | 100 % |
-| **Estimation globale** | | | **~85 %** |
+| `src/database/schemas/` (CMS) | 7 tables | 7 | 100 % |
+| `src/database/data/` (CMS seeds) | 6 fichiers seed | 6 | 100 % |
+| `src/database/loaders/` (CMS) | ~6 fonctions | ~3 (E2E) | ~50 % |
+| `src/actions/admin/` | 19 actions | 0 (structurel E2E) | 0 % |
+| `src/i18n/` (CMS keys) | 4 locales × clés CMS | 4 | 100 % |
+| `src/lib/audit.ts` (CMS actions) | 12 AuditAction | 12 | 100 % |
+| **Estimation globale** | | | **~90 %** |
 
-> Note : l'estimation de 85 % exclut les composants UI (Astro/React) et le code client-side qui nécessiteraient un environnement navigateur.
+> Note : l'estimation de 90 % exclut les composants UI (Astro/React), le code client-side, et les Astro Actions admin (pas de harness de test standard).

@@ -15,7 +15,7 @@ Authorization: session cookie (auth obligatoire)
 | Champ  | Type   | Requis | Description          |
 | ------ | ------ | ------ | -------------------- |
 | `file` | File   | Oui    | image à uploader     |
-| `type` | string | Oui    | `avatar` ou `logo`   |
+| `type` | string | Oui    | `avatar`, `logo` ou `site` |
 
 ### Mapping type → dossier
 
@@ -23,6 +23,7 @@ Authorization: session cookie (auth obligatoire)
 | -------- | -------------------------------- |
 | `avatar` | `public/uploads/images/avatars/` |
 | `logo`   | `public/uploads/images/logos/`   |
+| `site`   | `public/uploads/images/site/`    |
 
 ### Réponse succès (201)
 
@@ -48,6 +49,10 @@ Authorization: session cookie (auth obligatoire)
 - `image/png`
 - `image/webp`
 - `image/avif`
+- `image/svg+xml`
+- `image/x-icon` / `image/vnd.microsoft.icon`
+
+> SVG et ICO sont validés par **magic bytes** (signatures binaires) en plus du Content-Type.
 
 ### Taille max
 
@@ -106,8 +111,22 @@ public/uploads/
 ├── .gitkeep
 └── images/
     ├── avatars/
-    └── logos/
+    ├── logos/
+    └── site/     # logos, favicons, OG images du site
 ```
+
+## Utilisation dans l'admin CMS
+
+La page **Admin Site** (`/[lang]/admin/site`) utilise l'upload pour 4 champs image :
+
+| Champ | Usage | Type upload |
+| :-- | :-- | :-- |
+| `logoLight` | Logo clair | `site` |
+| `logoDark` | Logo sombre | `site` |
+| `favicon` | Favicon | `site` |
+| `ogImage` | Image Open Graph | `site` |
+
+Chaque champ affiche un aperçu de l'image actuelle + un bouton "Changer l'image" qui déclenche un `<input type="file">` caché. L'upload est envoyé en `POST /api/upload` avec `type: 'site'`, et l'URL retournée est stockée dans un champ `<input type="hidden">` qui est soumis avec le formulaire principal.
 
 ## Fichiers impliqués
 

@@ -99,7 +99,7 @@ export function resolveAuthSlug(slug: string, authTranslations: AuthTranslations
 
 // ─── Admin & Org direct routes ──────────────────────────────────────
 
-export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit';
+export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit' | 'site' | 'navigation' | 'pages' | 'theme';
 export type OrgSubpage = 'members' | 'settings';
 
 export function getAdminUrl(locale: Locale, subpage?: AdminSubpage): string {

@@ -1,0 +1,244 @@
+---
+/**
+ * AdminThemePage — Full CRUD for themes: list, create, edit, delete, activate.
+ * Only one theme can be active at a time.
+ */
+import type { AuthTranslations, Locale } from '@i18n/config';
+import type { themeSettings } from '@database/schemas';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atoms/card';
+import { Input } from '@atoms/input';
+import { Label } from '@atoms/label';
+import { Textarea } from '@atoms/textarea';
+import Button from '@atoms/button/Button.astro';
+import Badge from '@atoms/badge/Badge.astro';
+
+type ThemeRow = typeof themeSettings.$inferSelect;
+
+interface Props {
+  t: AuthTranslations;
+  locale: Locale;
+  themes: ThemeRow[];
+}
+
+const { t, locale, themes } = Astro.props;
+const cms = t.admin.cms.theme;
+---
+
+<div
+  id="cms-theme-data"
+  data-t-saved={cms.saved}
+  data-t-deleted={cms.deleted}
+  data-t-error={t.admin.cms.common.error}
+  data-t-cannot-delete={cms.cannotDeleteActive}
+>
+  <!-- ─── Create new theme ─── -->
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h2 class="text-lg font-semibold">{cms.title}</h2>
+      <p class="text-sm text-muted-foreground">{cms.description}</p>
+    </div>
+    <form id="create-theme-form" class="flex items-end gap-2">
+      <Input id="new-theme-name" placeholder={cms.themeName} required class="w-48" />
+      <Button type="submit" size="sm">{cms.createTheme}</Button>
+    </form>
+  </div>
+
+  {themes.length === 0 && (
+    <Card>
+      <CardContent class="p-6">
+        <p class="text-muted-foreground text-sm">{cms.noThemes}</p>
+      </CardContent>
+    </Card>
+  )}
+
+  <!-- ─── Theme list ─── -->
+  <div id="theme-list" class="grid gap-6">
+    {themes.map((th) => (
+      <Card class="theme-card" data-theme-id={th.id}>
+        <CardHeader class="cursor-pointer theme-toggle-header">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <CardTitle class="text-base">{th.name}</CardTitle>
+              {th.isActive && <Badge variant="default">{cms.active}</Badge>}
+            </div>
+            <svg class="theme-chevron size-5 text-muted-foreground transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </CardHeader>
+        <CardContent class="theme-body hidden">
+          <form class="theme-form grid gap-6" data-id={th.id}>
+            <!-- Theme Identity -->
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid gap-2">
+                <Label>{cms.themeName}</Label>
+                <Input name="name" value={th.name} required />
+              </div>
+            </div>
+
+            <!-- Colors -->
+            <fieldset class="grid gap-4">
+              <legend class="text-sm font-medium mb-2">Colors</legend>
+              <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="grid gap-2">
+                  <Label>{cms.primaryColor}</Label>
+                  <Input name="primaryColor" value={th.primaryColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.secondaryColor}</Label>
+                  <Input name="secondaryColor" value={th.secondaryColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.accentColor}</Label>
+                  <Input name="accentColor" value={th.accentColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.backgroundColor}</Label>
+                  <Input name="backgroundColor" value={th.backgroundColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.foregroundColor}</Label>
+                  <Input name="foregroundColor" value={th.foregroundColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.mutedColor}</Label>
+                  <Input name="mutedColor" value={th.mutedColor ?? ''} class="font-mono text-xs" />
+                </div>
+                <div class="grid gap-2">
+                  <Label>{cms.mutedForegroundColor}</Label>
+                  <Input name="mutedForegroundColor" value={th.mutedForegroundColor ?? ''} class="font-mono text-xs" />
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Typography & Border -->
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div class="grid gap-2">
+                <Label>{cms.fontHeading}</Label>
+                <Input name="fontHeading" value={th.fontHeading ?? ''} placeholder="Inter, sans-serif" />
+              </div>
+              <div class="grid gap-2">
+                <Label>{cms.fontBody}</Label>
+                <Input name="fontBody" value={th.fontBody ?? ''} placeholder="Inter, sans-serif" />
+              </div>
+              <div class="grid gap-2">
+                <Label>{cms.borderRadius}</Label>
+                <Input name="borderRadius" value={th.borderRadius ?? ''} placeholder="0.5rem" />
+              </div>
+            </div>
+
+            <!-- Custom CSS -->
+            <div class="grid gap-2">
+              <Label>{cms.customCss}</Label>
+              <Textarea name="customCss" rows={4} class="font-mono text-xs" value={th.customCss ?? ''} />
+            </div>
+
+            <div class="flex justify-end gap-2">
+              {!th.isActive && (
+                <Button type="button" size="sm" variant="outline" class="theme-activate-btn">{cms.activate}</Button>
+              )}
+              {!th.isActive && (
+                <Button type="button" size="sm" variant="error" class="theme-delete-btn">{cms.deleteTheme}</Button>
+              )}
+              <Button type="submit" size="sm">{cms.save}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+</div>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    const root = document.getElementById('cms-theme-data');
+    if (!root) return;
+    const tSaved = root.dataset.tSaved ?? 'Saved.';
+    const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
+    const tError = root.dataset.tError ?? 'Error.';
+    const tCannotDelete = root.dataset.tCannotDelete ?? 'Cannot delete active theme.';
+
+    // ─── Toggle accordion ───
+    document.querySelectorAll<HTMLElement>('.theme-toggle-header').forEach((header) => {
+      header.addEventListener('click', () => {
+        const card = header.closest('.theme-card') as HTMLElement;
+        const body = card?.querySelector('.theme-body') as HTMLElement;
+        const chevron = card?.querySelector('.theme-chevron') as HTMLElement;
+        if (!body) return;
+        const isOpen = !body.classList.contains('hidden');
+        // Close all others
+        document.querySelectorAll<HTMLElement>('.theme-body').forEach((b) => b.classList.add('hidden'));
+        document.querySelectorAll<HTMLElement>('.theme-chevron').forEach((c) => c.style.transform = '');
+        if (!isOpen) {
+          body.classList.remove('hidden');
+          chevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+
+    // ─── Create Theme ───
+    document.getElementById('create-theme-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('new-theme-name') as HTMLInputElement;
+      const name = input.value.trim();
+      if (!name) return;
+      const { error } = await actions.createTheme({ name });
+      if (!error) location.reload();
+      else toast.error(error.message ?? tError);
+    });
+
+    // ─── Save Theme ───
+    document.querySelectorAll<HTMLFormElement>('.theme-form').forEach((form) => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = form.dataset.id!;
+        const fd = new FormData(form);
+        const { error } = await actions.updateTheme({
+          id,
+          name: fd.get('name') as string,
+          primaryColor: (fd.get('primaryColor') as string) || null,
+          secondaryColor: (fd.get('secondaryColor') as string) || null,
+          accentColor: (fd.get('accentColor') as string) || null,
+          backgroundColor: (fd.get('backgroundColor') as string) || null,
+          foregroundColor: (fd.get('foregroundColor') as string) || null,
+          mutedColor: (fd.get('mutedColor') as string) || null,
+          mutedForegroundColor: (fd.get('mutedForegroundColor') as string) || null,
+          fontHeading: (fd.get('fontHeading') as string) || null,
+          fontBody: (fd.get('fontBody') as string) || null,
+          borderRadius: (fd.get('borderRadius') as string) || null,
+          customCss: (fd.get('customCss') as string) || null,
+        });
+        if (!error) toast.success(tSaved);
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Activate Theme ───
+    document.querySelectorAll<HTMLElement>('.theme-activate-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.theme-card') as HTMLElement;
+        const id = card?.dataset.themeId;
+        if (!id) return;
+        const { error } = await actions.updateTheme({ id, isActive: true });
+        if (!error) location.reload();
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Delete Theme ───
+    document.querySelectorAll<HTMLElement>('.theme-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.theme-card') as HTMLElement;
+        const id = card?.dataset.themeId;
+        if (!id) return;
+        const { error } = await actions.deleteTheme({ id });
+        if (!error) { toast.success(tDeleted); card.remove(); }
+        else toast.error(error.message ?? tError);
+      });
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>

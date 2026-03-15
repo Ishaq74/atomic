@@ -36,9 +36,9 @@ export default async function globalSetup() {
     body: { email: SEED_EMAIL, password: SEED_PASSWORD, name: SEED_NAME },
   });
 
-  // Force emailVerified so sign-in works (requireEmailVerification: true)
+  // Force emailVerified + admin role so sign-in and admin pages work
   await db
     .update(schema.user)
-    .set({ emailVerified: true })
+    .set({ emailVerified: true, role: 'admin' })
     .where(eq(schema.user.email, SEED_EMAIL));
 }

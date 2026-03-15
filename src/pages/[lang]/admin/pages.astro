@@ -1,0 +1,30 @@
+---
+import { requireAdmin } from '@/lib/auth-guards';
+import { getDrizzle } from '@database/drizzle';
+import { pages } from '@database/schemas';
+import { asc, eq } from 'drizzle-orm';
+import BaseLayout from '@layouts/BaseLayout.astro';
+import AuthLayout from '@organisms/AuthLayout/AuthLayout.astro';
+import AdminSidebar from '@organisms/AdminSidebar/AdminSidebar.astro';
+import AdminPagesPage from '@pages/admin/AdminPagesPage.astro';
+
+export const prerender = false;
+
+const result = await requireAdmin(Astro as any);
+if ('redirect' in result) return result.redirect;
+const { locale, authT } = result;
+
+const db = getDrizzle();
+const allPages = await db
+  .select()
+  .from(pages)
+  .where(eq(pages.locale, locale))
+  .orderBy(asc(pages.sortOrder));
+---
+
+<BaseLayout title={authT.admin.cms.pages.title} description={authT.admin.cms.pages.description}>
+  <AuthLayout title={authT.admin.cms.pages.title}>
+    <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="pages" />
+    <AdminPagesPage t={authT} locale={locale} pages={allPages} />
+  </AuthLayout>
+</BaseLayout>

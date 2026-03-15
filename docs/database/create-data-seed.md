@@ -64,14 +64,35 @@ pnpm run db:seed -- --reset  # vide les tables puis insère
 ```md
 src/database/
 ├── data/
-│   ├── manifest.ts          ← source de vérité : ordre + mapping
-│   ├── 01-products.data.ts  ← données products
-│   └── 02-orders.data.ts    ← données orders
+│   ├── manifest.ts                  ← source de vérité : ordre + mapping
+│   ├── 01-users.data.ts             ← données users (admin seed)
+│   ├── 02-organizations.data.ts     ← données organizations
+│   ├── 03-site-settings.data.ts     ← paramètres site ×4 locales
+│   ├── 04-social-links.data.ts      ← liens sociaux
+│   ├── 05-contact-info.data.ts      ← coordonnées + géolocalisation
+│   ├── 06-opening-hours.data.ts     ← horaires ×7 jours + pause méridienne
+│   ├── 07-navigation.data.ts        ← menus (header, footer, sidebar, mobile)
+│   ├── 07b-navigation-items.data.ts ← items de navigation ×4 locales
+│   └── 08-theme.data.ts             ← thème design (couleurs, fonts, CSS)
 ├── schemas/
-│   ├── products.schema.ts
-│   └── orders.schema.ts
-└── schemas.ts               ← index de re-export
+│   ├── site.schema.ts
+│   ├── navigation.schema.ts
+│   ├── page.schema.ts
+│   └── audit-log.schema.ts
+└── schemas.ts                       ← index de re-export
 ```
+
+### Seed CMS — Détail des données
+
+| Fichier | Table | Champs clés |
+| :-- | :-- | :-- |
+| `03-site-settings` | `siteSettings` | `siteName`, `siteDescription`, `siteSlogan`, `metaTitle`, `metaDescription`, `logoLight`, `logoDark`, `favicon`, `ogImage` ×4 locales |
+| `04-social-links` | `socialLinks` | `platform`, `url`, `label`, `icon`, `isActive`, `sortOrder` |
+| `05-contact-info` | `contactInfo` | `email`, `phone`, `address`, `city`, `postalCode`, `country`, `mapUrl`, `latitude`, `longitude` |
+| `06-opening-hours` | `openingHours` | `dayOfWeek` (0-6), `isOpen`, `morningOpen/Close`, `afternoonOpen/Close` (pause méridienne) |
+| `07-navigation` | `navigationMenus` | `name`, `slug` (header, footer, sidebar, mobile) |
+| `07b-navigation-items` | `navigationItems` | `label`, `url`, `icon` (mdi:xxx), `sortOrder`, `parentId`, `isActive`, `openInNewTab` ×4 locales |
+| `08-theme` | `themeSettings` | couleurs (primary, secondary, accent, background, foreground, muted), `fontHeading`, `fontBody`, `borderRadius`, `customCss` |
 
 ## Normalisation automatique
 

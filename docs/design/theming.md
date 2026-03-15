@@ -268,3 +268,68 @@ Le token `--radius` contrôle toute l'échelle :
 | `0.625rem` | Fire Brand (défaut) |
 | `0.875rem` | Soft, moderne |
 | `1rem+` | Futuriste, organique |
+
+---
+
+## Gestion des thèmes via l'admin CMS
+
+En plus des fichiers CSS manuels, les thèmes peuvent être créés et gérés depuis l'interface d'administration CMS.
+
+### Page Admin Theme
+
+**Route** : `/[lang]/admin/theme`  
+**Composant** : `src/components/pages/admin/AdminThemePage.astro`
+
+L'interface permet :
+
+| Action | Description |
+| :-- | :-- |
+| **Créer un thème** | Formulaire avec nom du thème + tous les tokens de couleur |
+| **Modifier un thème** | Accordion par thème, champs pré-remplis |
+| **Activer un thème** | Un seul thème actif à la fois, appliqué globalement |
+| **Supprimer un thème** | Avec confirmation (impossible si c'est le thème actif) |
+
+### Tokens gérés en base
+
+Le schéma `themeSettings` stocke tous les design tokens en base de données :
+
+| Champ | Type | Exemple |
+| :-- | :-- | :-- |
+| `primaryColor` | text | `oklch(0.88 0.18 68)` |
+| `secondaryColor` | text | `oklch(0.90 0.01 80)` |
+| `accentColor` | text | `oklch(0.95 0.005 75)` |
+| `backgroundColor` | text | `oklch(0.985 0.005 75)` |
+| `foregroundColor` | text | `oklch(0.145 0.02 75)` |
+| `mutedColor` | text | `oklch(0.945 0.005 75)` |
+| `mutedForegroundColor` | text | `oklch(0.47 0.015 75)` |
+| `fontHeading` | text | `Inter` |
+| `fontBody` | text | `Inter` |
+| `borderRadius` | text | `0.625rem` |
+| `customCss` | text (nullable) | CSS personnalisé libre |
+| `isDefault` | boolean | Thème par défaut (non supprimable) |
+| `isActive` | boolean | Thème actuellement appliqué |
+
+### Actions Astro
+
+| Action | Fichier | Description |
+| :-- | :-- | :-- |
+| `createTheme` | `src/actions/admin/theme.ts` | Crée un thème en base |
+| `updateTheme` | `src/actions/admin/theme.ts` | Met à jour un thème (+ activation) |
+| `deleteTheme` | `src/actions/admin/theme.ts` | Supprime (interdit si actif) |
+
+### Loader
+
+```ts
+import { getActiveTheme, getAllThemes } from '@database/loaders/site.loader';
+
+const active = await getActiveTheme();     // thème actif actuel
+const themes = await getAllThemes();        // tous les thèmes
+```
+
+### Flux de données
+
+```text
+Admin UI → Astro Action → DB (themeSettings) → Loader → BaseLayout → CSS variables
+```
+
+Le `BaseLayout` charge le thème actif via `getActiveTheme()` et injecte les CSS variables dans `<style>` pour que tout le design system s'adapte automatiquement.

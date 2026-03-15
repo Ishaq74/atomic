@@ -18,9 +18,13 @@ tests/
 │   ├── i18n-translations.test.ts      #  16 tests — 4 loaders × 4 locales
 │   ├── send-email.test.ts             #   5 tests — routage providers (mock)
 │   ├── schema-validation.test.ts      #  12 tests — 8 table exports + 4 colonnes critiques
-│   └── cli-utils.test.ts             #  12 tests — formatPgError + ANSI colors
+│   ├── cli-utils.test.ts              #  12 tests — formatPgError + ANSI colors
+│   ├── cms-schemas.test.ts            #  14 tests — 7 tables CMS + colonnes détaillées
+│   ├── cms-seeds.test.ts              #  49 tests — 6 fichiers seed × complétude
+│   ├── cms-i18n.test.ts               #  38 tests — clés CMS ×4 locales (site, navigation, theme, common)
+│   └── cms-audit.test.ts              #   8 tests — 12 AuditAction CMS
 │                                      # ─────────
-│                                      # 108 tests unitaires
+│                                      # 217 tests unitaires
 ├── integration/                       # Tests d'intégration (Vitest + PostgreSQL)
 │   ├── auth.test.ts                   #  13 tests — session, admin, org, impersonation, RGPD
 │   ├── auth-flow.test.ts              #   5 tests — sign-up → sign-in → sign-out
@@ -33,12 +37,13 @@ tests/
 │                                      # ─────────
 │                                      #  49 tests d'intégration
 ├── e2e/                               # Tests E2E (Playwright)
-│   ├── global-setup.ts                #  Setup : seed user vérifié
+│   ├── global-setup.ts                #  Setup : seed user vérifié + role admin
 │   ├── global-teardown.ts             #  Teardown : cleanup user
 │   ├── app.spec.ts                    #  10 tests — homepage, i18n, guest guards
-│   └── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
+│   ├── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
+│   └── cms-admin.spec.ts              #   8 tests — pages admin CMS (site, navigation, theme)
 │                                      # ─────────
-│                                      #  22 tests E2E
+│                                      #  30 tests E2E
 ├── a11y/                              # Accessibilité & Performance
 │   ├── setup.ts                       #  Seed 2 users (normal + admin) + export cookies
 │   ├── run.cjs                        #  Orchestrateur : build → server → audits → teardown
@@ -72,9 +77,9 @@ Configs racine :
 ├── vitest.config.ts                   # Vitest (unit + integration)
 └── playwright.config.ts               # Playwright (E2E)
 
-TOTAL : 179 tests (157 Vitest + 22 Playwright)
+TOTAL : 266 tests (217 Vitest unit + 49 Vitest integration + 30 Playwright E2E)
         78 audits a11y/perf (40 Pa11y + 38 Lighthouse)
-        20 fichiers de test + 6 fichiers a11y
+        24 fichiers de test + 6 fichiers a11y
 ```
 
 ---
@@ -281,9 +286,10 @@ pnpm a11y:lighthouse:report:contrast  # Idem + détails échecs de contraste
 
 ### `tests/e2e/global-setup.ts`
 
-- Exporte `SEED_EMAIL`, `SEED_PASSWORD`, `SEED_NAME` (utilisés dans `auth.spec.ts`)
+- Exporte `SEED_EMAIL`, `SEED_PASSWORD`, `SEED_NAME` (utilisés dans `auth.spec.ts` et `cms-admin.spec.ts`)
 - Set `process.env.NODE_ENV = 'test'` avant import de auth
 - Crée et vérifie un user seed via `auth.api.signUpEmail()` + SQL update
+- Force `emailVerified: true` et `role: 'admin'` pour permettre l'accès aux pages admin CMS
 
 ### `tests/e2e/global-teardown.ts`
 

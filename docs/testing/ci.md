@@ -15,18 +15,18 @@ push/PR → main
     │       Security Audit + ESLint + astro check     │
     │                                                 │
     ├── [2] unit-tests ──────────────────────────────┐│
-    │       Vitest (157 tests)                       ││
+    │       Vitest (266 tests)                       ││
     │       PostgreSQL 16 service container          ││
     │       Migrations + tests + coverage            ││
     │                                                ├┤
     ├── [3] e2e-tests (needs: 1 + 2) ───────────────┘│
-    │       Playwright (22 tests)                     │
+    │       Playwright (30 tests)                     │
     │       PostgreSQL 16 service container           │
     │       Build + preview + chromium                │
     │                                                 │
     └── [4] a11y-perf (needs: 1) ────────────────────┘
-            Pa11y-ci (WCAG AAA, 40 URLs)
-            Lighthouse CI (38 URLs, ≥0.9 gates)
+            Pa11y-ci (WCAG AAA, 52 URLs)
+            Lighthouse CI (52 URLs, ≥0.9 gates)
             PostgreSQL 16 service container
             Build + preview + chromium
 ```
@@ -113,7 +113,7 @@ env:
 | pnpm + Node | Setup toolchain | pnpm 10, Node 22 |
 | Install | `pnpm install --frozen-lockfile` | Dépendances |
 | Migrations | `pnpm db:migrate` | Applique les migrations sur la DB de test |
-| Vitest | `pnpm test -- --coverage` | **157 tests** (108 unit + 49 integration) + coverage |
+| Vitest | `pnpm test -- --coverage` | **266 tests** (217 unit + 49 integration) + coverage |
 | Generate Report | `pnpm test:report` | Génère `tests/reports/vitest-report.txt` depuis le JSON |
 | Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/vitest-*` (7 jours) |
 
@@ -121,7 +121,7 @@ env:
 
 ### Ce qui est testé
 
-- 108 tests unitaires (fonctions pures, mocks, pas de DB)
+- 217 tests unitaires (fonctions pures, mocks, pas de DB)
 - 49 tests d'intégration (auth, audit, export, middleware, org, DB health)
 - `NODE_ENV=test` → aucun email SMTP envoyé
 
@@ -169,7 +169,7 @@ env:
 | Playwright | `npx playwright install --with-deps chromium` | Installe Chromium + dépendances système |
 | Migrations | `pnpm db:migrate` | Migrations sur `atomic_e2e` |
 | Build | `pnpm build` | Build Astro SSR complet |
-| E2E | `pnpm test:e2e` | **22 tests** Playwright (Chromium) |
+| E2E | `pnpm test:e2e` | **30 tests** Playwright (Chromium) |
 | Generate Report | `pnpm test:e2e:report` | Génère `tests/reports/playwright-report.txt` depuis le JSON |
 | Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/playwright/` (7 jours) |
 
@@ -230,10 +230,10 @@ env:
 | Start Server | `pnpm preview &` | Lance le serveur en arrière-plan |
 | Wait | `npx wait-on http://localhost:4321 --timeout 30000` | Attend que le serveur soit prêt |
 | Setup | `pnpm a11y:setup` | Seed 2 users (normal + admin) + export cookies |
-| Pa11y-ci | `pnpm a11y:pa11y` | **40 URLs** — WCAG AAA, axe runner |
-| LHCI Public | `pnpm a11y:lighthouse` | **26 URLs** publiques — ≥0.9 gates |
+| Pa11y-ci | `pnpm a11y:pa11y` | **52 URLs** — WCAG AAA, axe runner |
+| LHCI Public | `pnpm a11y:lighthouse` | **28 URLs** publiques — ≥0.9 gates |
 | LHCI Rename | `pnpm a11y:lighthouse:rename` | Renomme les rapports en noms lisibles |
-| LHCI Authed | `pnpm a11y:lighthouse:authed` | **8 user + 4 admin URLs** — ≥0.9 gates |
+| LHCI Authed | `pnpm a11y:lighthouse:authed` | **8 user + 16 admin URLs** — ≥0.9 gates |
 | LHCI Rename | `pnpm a11y:lighthouse:rename` | Renomme les rapports authentifiés |
 | Generate Report | `pnpm a11y:report` | Génère `tests/reports/lighthouse-report.txt` (scores, CWV, audits) |
 | Teardown | `pnpm a11y:teardown` | Supprime les users seed (`if: always()`) |
@@ -246,7 +246,7 @@ env:
 
 - **Standard** : WCAG 2.1 AAA
 - **Runner** : axe (plus fiable que default htmlcs)
-- **URLs** : 40 (4 locales × 10 pages : homepage + 3 pages + 3 auth + dashboard + profile + admin)
+- **URLs** : 52 (4 locales × 13 pages : homepage + 3 pages + 3 auth + dashboard + profile + 4 admin)
 - **Chrome** : détecte automatiquement le Chromium de Playwright
 
 ### Détails Lighthouse CI
@@ -255,9 +255,9 @@ env:
 - **Preset** : desktop
 - **Runs** : 1 par URL (CI, pas besoin de médiane)
 - **3 batches** :
-  1. Public (26 URLs) — pas de cookie
+  1. Public (28 URLs) — pas de cookie
   2. Authenticated (8 URLs) — cookie user via fichier config temporaire
-  3. Admin (4 URLs) — cookie admin via fichier config temporaire
+  3. Admin (16 URLs) — cookie admin via fichier config temporaire
 - **Upload** : `temporary-public-storage` (liens publics dans les logs)
 - **Rapports** : renommés en noms lisibles (`fr--home.html`, `ar--auth--تسجيل-الدخول.html`)
 

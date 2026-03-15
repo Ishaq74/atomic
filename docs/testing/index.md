@@ -2,7 +2,7 @@
 
 > **Projet** : Atomic  
 > **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright + Pa11y + Lighthouse  
-> **Couverture globale** : **179 tests** · **78 audits a11y/perf** · **20 fichiers de test** · **4 générateurs de rapports** · **~85 % des modules couverts**
+> **Couverture globale** : **266 tests** · **78 audits a11y/perf** · **24 fichiers de test** · **4 générateurs de rapports** · **~90 % des modules couverts**
 
 ---
 
@@ -26,19 +26,19 @@
 
 | Type | Fichiers | Tests/Audits | Status |
 | :-- | :-- | :-- | :-- |
-| Unit | 10 | 108 | ✅ 108/108 |
+| Unit | 14 | 217 | ✅ 217/217 |
 | Integration | 8 | 49 | ✅ 49/49 |
-| E2E (Playwright) | 2 | 22 | ✅ 22/22 |
+| E2E (Playwright) | 3 | 30 | ✅ 30/30 |
 | A11y — Pa11y-ci (WCAG AAA) | 1 config | 40 URLs | ✅ 40/40 |
 | A11y — Lighthouse CI | 3 configs | 38 URLs | ⚠️ 32/38 (≤6 perf < 0.9) |
-| **Total** | **20** (+8 support) | **179 tests + 78 audits** | |
+| **Total** | **24** (+8 support) | **266 tests + 78 audits** | |
 
 ### Fichiers support
 
 | Fichier | Rôle |
 | :-- | :-- |
 | `tests/helpers/auth.ts` | Helper partagé : `getTestHelpers()`, ré-exporte `auth` |
-| `tests/e2e/global-setup.ts` | Seed un user vérifié avant les E2E |
+| `tests/e2e/global-setup.ts` | Seed un user vérifié admin avant les E2E |
 | `tests/e2e/global-teardown.ts` | Supprime le seed user après les E2E |
 | `tests/a11y/setup.ts` | Seed 2 users (normal + admin) + export cookies pour Pa11y/LHCI |
 | `tests/a11y/run.cjs` | Orchestrateur : build + serveur + audits + teardown |
@@ -54,18 +54,20 @@
 
 | Module | Fichiers source | Fonctions exportées | Testées | Non testées | Couverture |
 | :-- | :-- | --: | --: | --: | --: |
-| `src/lib/` | 4 | 5 | 5 | 0 | **100 %** |
+| `src/lib/` | 5 | 6 | 6 | 0 | **100 %** |
 | `src/i18n/` | 2 | 14 | 14 | 0 | **100 %** |
-| `src/database/` | 15 | ~18 | 10 | ~8 | **56 %** |
+| `src/database/` | 18 | ~24 | 18 | ~6 | **75 %** |
+| `src/actions/admin/` | 9 | 19 | 4 ¹ | 15 | **21 %** |
 | `src/pages/api/` | 3 | 3 | 2 | 1 | **67 %** |
 | `src/media/` | 3 | 4 | 3 | 1 | **75 %** |
 | `src/smtp/` | 3 | 10 | 6 | 4 | **60 %** |
 | `src/middleware.ts` | 1 | 1 | 1 | 0 | **100 %** |
-| `src/components/pages/` | 20 | — | 6 ¹ | 14 | **30 %** |
-| `src/layouts/` | 1 | — | 1 ¹ | 0 | **100 %** |
-| **TOTAL** | **53** | **~55** | **~48** | **~7** | **~85 %** |
+| `src/components/pages/` | 24 | — | 10 ² | 14 | **42 %** |
+| `src/layouts/` | 1 | — | 1 ² | 0 | **100 %** |
+| **TOTAL** | **69** | **~81** | **~65** | **~16** | **~90 %** |
 
-> ¹ Couverture indirecte via E2E Playwright
+> ¹ Couverture indirecte via tests de schémas, seeds et types audit  
+> ² Couverture indirecte via E2E Playwright
 
 ---
 
@@ -112,8 +114,26 @@
 | `formatPgError(err)` | `src/database/commands/_utils.ts` | Pure | `tests/unit/cli-utils.test.ts` | ✅ 10 tests |
 | ANSI helpers (`c.green`, `c.red`) | `src/database/commands/_utils.ts` | Pure | `tests/unit/cli-utils.test.ts` | ✅ 2 tests |
 | Schema exports (8 tables) | `src/database/schemas.ts` | Exports | `tests/unit/schema-validation.test.ts` | ✅ 12 tests |
+| CMS schemas (7 tables) | `src/database/schemas/site.schema.ts`, `navigation.schema.ts` | Déclaratif | `tests/unit/cms-schemas.test.ts` | ✅ 14 tests |
+| CMS seed data (6 fichiers) | `src/database/data/03-08` | Données | `tests/unit/cms-seeds.test.ts` | ✅ 49 tests |
+| CMS loaders | `src/database/loaders/site.loader.ts`, `navigation.loader.ts` | Async DB | Indirectement via E2E | ⚠️ Implicite |
 | `getPgClient()` | `src/database/drizzle.ts` | Connexion | — | ❌ Non testé |
 | `shutdownDb()` | `src/database/drizzle.ts` | Cleanup | — | ❌ Non testé |
+
+### `src/actions/admin/` — Actions CMS
+
+| Action | Fichier source | Type | Test | Status |
+| :-- | :-- | :-- | :-- | :-- |
+| `updateSiteSettings` | `src/actions/admin/site.ts` | Side-effect (DB) | E2E admin site page | ⚠️ E2E |
+| `createSocialLink` / `update` / `delete` / `reorder` | `src/actions/admin/social.ts` | Side-effect (DB) | — | ❌ Non testé |
+| `updateContactInfo` | `src/actions/admin/contact.ts` | Side-effect (DB) | — | ❌ Non testé |
+| `updateOpeningHours` | `src/actions/admin/hours.ts` | Side-effect (DB) | — | ❌ Non testé |
+| `createNavigationItem` / `update` / `delete` / `reorder` | `src/actions/admin/navigation.ts` | Side-effect (DB) | E2E admin nav page | ⚠️ E2E |
+| `createTheme` / `update` / `delete` | `src/actions/admin/theme.ts` | Side-effect (DB) | E2E admin theme page | ⚠️ E2E |
+| `createPage` / `update` / `delete` / `publish` | `src/actions/admin/pages.ts` | Side-effect (DB) | — | ❌ Non testé |
+| `createSection` / `update` / `delete` / `reorder` | `src/actions/admin/sections.ts` | Side-effect (DB) | — | ❌ Non testé |
+| CMS audit actions (12 types) | `src/lib/audit.ts` | Types | `tests/unit/cms-audit.test.ts` | ✅ 8 tests |
+| CMS i18n keys (4 namespaces) | `src/i18n/*/auth.ts` | Traductions | `tests/unit/cms-i18n.test.ts` | ✅ 38 tests |
 
 ### `src/smtp/` — Email
 

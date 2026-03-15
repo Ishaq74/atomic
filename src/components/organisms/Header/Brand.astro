@@ -12,6 +12,8 @@ interface Props extends HTMLAttributes<"a"> {
   href?: string;
   logoSrc?: ImageMetadata;
   logoDarkSrc?: ImageMetadata;
+  logoLightUrl?: string | null;
+  logoDarkUrl?: string | null;
   logoAlt?: string;
   logoHeight?: string;
   hideLogo?: boolean;
@@ -23,10 +25,12 @@ interface Props extends HTMLAttributes<"a"> {
 }
 
 const {
-  siteName = "Starwind Pro",
+  siteName = "",
   href = "/",
   logoSrc = logo,
   logoDarkSrc = logoDark,
+  logoLightUrl,
+  logoDarkUrl,
   logoAlt,
   logoHeight = "h-8",
   hideLogo = false,
@@ -38,6 +42,8 @@ const {
   class: className,
   ...rest
 } = Astro.props;
+
+const useDbLogo = !!(logoLightUrl || logoDarkUrl);
 
 const alt = logoAlt ?? "";
 
@@ -70,24 +76,49 @@ const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
   {...rest}
 >
   <span class:list={["items-center", logoVis]}>
-    <Image
-      src={logoSrc}
-      alt={alt}
-      class:list={[logoHeight, "w-[120px] dark:hidden"]}
-      loading="eager"
-      fetchpriority="high"
-      width={120}
-      height={32}
-    />
-    <Image
-      src={logoDarkSrc}
-      alt={alt}
-      class:list={["hidden", logoHeight, "w-[120px] dark:block"]}
-      loading="eager"
-      fetchpriority="high"
-      width={120}
-      height={32}
-    />
+    {useDbLogo ? (
+      <>
+        <img
+          src={logoLightUrl ?? logoDarkUrl!}
+          alt={alt}
+          class:list={[logoHeight, "w-30 dark:hidden"]}
+          loading="eager"
+          fetchpriority="high"
+          width="120"
+          height="32"
+        />
+        <img
+          src={logoDarkUrl ?? logoLightUrl!}
+          alt={alt}
+          class:list={["hidden", logoHeight, "w-30 dark:block"]}
+          loading="eager"
+          fetchpriority="high"
+          width="120"
+          height="32"
+        />
+      </>
+    ) : (
+      <>
+        <Image
+          src={logoSrc}
+          alt={alt}
+          class:list={[logoHeight, "w-30 dark:hidden"]}
+          loading="eager"
+          fetchpriority="high"
+          width={120}
+          height={32}
+        />
+        <Image
+          src={logoDarkSrc}
+          alt={alt}
+          class:list={["hidden", logoHeight, "w-30 dark:block"]}
+          loading="eager"
+          fetchpriority="high"
+          width={120}
+          height={32}
+        />
+      </>
+    )}
   </span>
 
   {siteName && (

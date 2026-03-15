@@ -13,6 +13,10 @@ import UsersIcon from '@tabler/icons/outline/users.svg';
 import BuildingIcon from '@tabler/icons/outline/building.svg';
 import FileTextIcon from '@tabler/icons/outline/file-text.svg';
 import ShieldIcon from '@tabler/icons/outline/shield.svg';
+import SettingsIcon from '@tabler/icons/outline/settings.svg';
+import MenuIcon from '@tabler/icons/outline/menu-2.svg';
+import LayoutIcon from '@tabler/icons/outline/layout.svg';
+import PaletteIcon from '@tabler/icons/outline/palette.svg';
 
 import {
   Sidebar,
@@ -43,6 +47,13 @@ const navItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = 
   { id: 'users', title: t.admin.tabs.users, url: getAdminUrl(locale, 'users'), icon: UsersIcon },
   { id: 'organizations', title: t.admin.tabs.organizations, url: getAdminUrl(locale, 'organizations'), icon: BuildingIcon },
   { id: 'audit', title: t.admin.tabs.auditLog, url: getAdminUrl(locale, 'audit'), icon: FileTextIcon },
+];
+
+const cmsItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = [
+  { id: 'site', title: t.admin.tabs.site, url: getAdminUrl(locale, 'site'), icon: SettingsIcon },
+  { id: 'navigation', title: t.admin.tabs.navigation, url: getAdminUrl(locale, 'navigation'), icon: MenuIcon },
+  { id: 'pages', title: t.admin.tabs.pages, url: getAdminUrl(locale, 'pages'), icon: LayoutIcon },
+  { id: 'theme', title: t.admin.tabs.theme, url: getAdminUrl(locale, 'theme'), icon: PaletteIcon },
 ];
 ---
 
@@ -84,6 +95,22 @@ const navItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = 
       <SidebarGroupContent>
         <SidebarMenu>
           {navItems.map((item) => (
+            <SidebarMenuItem>
+              <SidebarMenuButton href={item.url} isActive={activeItem === item.id} tooltip={item.title}>
+                <item.icon class="size-4" />
+                <span>{item.title}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+
+    <SidebarGroup>
+      <SidebarGroupLabel>CMS</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {cmsItems.map((item) => (
             <SidebarMenuItem>
               <SidebarMenuButton href={item.url} isActive={activeItem === item.id} tooltip={item.title}>
                 <item.icon class="size-4" />

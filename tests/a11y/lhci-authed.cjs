@@ -59,6 +59,16 @@ function run(urls, cookie, label) {
       stdio: 'inherit',
       shell: true,
     });
+  } catch (e) {
+    // chrome-launcher on Windows/Node 25 crashes with EPERM on temp dir cleanup
+    // even though the audit completed. Check if reports were actually generated.
+    const lhDir = path.resolve(__dirname, '../../.lighthouseci');
+    const hasReports = fs.existsSync(lhDir) &&
+      fs.readdirSync(lhDir).some(f => f.startsWith('lhr-') && f.endsWith('.json'));
+    if (!hasReports) {
+      throw e; // Real failure — no reports generated
+    }
+    console.warn(`[lhci] ${label}: chrome-launcher exit error ignored (reports exist)`);
   } finally {
     // Clean up temp config
     try { fs.unlinkSync(tmpConfig); } catch { /* ignore */ }

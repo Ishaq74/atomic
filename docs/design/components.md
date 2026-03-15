@@ -15,7 +15,7 @@
 | Atoms | `src/components/atoms/` | 45 |
 | Molecules | `src/components/molecules/` | — |
 | Organisms | `src/components/organisms/` | Header, Footer, Testimonials |
-| Pages | `src/components/pages/` | Home, About, Contact, Legal |
+| Pages | `src/components/pages/` | Home, About, Contact, Legal, Auth (7), Admin (8), Org (2), CMS (1) |
 | Wow | `src/components/wow/` | 7 effets visuels |
 
 ---

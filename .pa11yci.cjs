@@ -78,13 +78,16 @@ for (const lang of locales) {
   }
 }
 
-// Admin pages (admin cookie) — new folder routes at /admin/stats
+// Admin pages (admin cookie) — all admin routes
 const adminUrls = [];
+const adminPages = ['stats', 'site', 'navigation', 'theme'];
 for (const lang of locales) {
-  adminUrls.push({
-    url: `${BASE}/${lang}/admin/stats`,
-    headers: { Cookie: adminCookie },
-  });
+  for (const page of adminPages) {
+    adminUrls.push({
+      url: `${BASE}/${lang}/admin/${page}`,
+      headers: { Cookie: adminCookie },
+    });
+  }
 }
 
 module.exports = {

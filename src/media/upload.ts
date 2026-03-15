@@ -10,7 +10,11 @@ const MAGIC_BYTES: Record<string, { offset: number; bytes: number[] }[]> = {
   'image/png': [{ offset: 0, bytes: [0x89, 0x50, 0x4E, 0x47] }],
   'image/webp': [{ offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] }],
   'image/avif': [{ offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }], // 'ftyp' at offset 4
+  'image/x-icon': [{ offset: 0, bytes: [0x00, 0x00, 0x01, 0x00] }],
 };
+
+/** Text-based MIME types that cannot be validated by magic bytes */
+const TEXT_BASED_TYPES = new Set(['image/svg+xml']);
 
 function detectMimeFromBytes(buffer: Buffer): string | null {
   for (const [mime, signatures] of Object.entries(MAGIC_BYTES)) {
@@ -62,12 +66,14 @@ export async function processUpload(
   const buffer = Buffer.from(await file.arrayBuffer());
 
   // ─── Validation magic bytes (contenu réel du fichier) ────────────
-  const detectedMime = detectMimeFromBytes(buffer);
-  if (!detectedMime || !allowedTypes.includes(detectedMime as AllowedMimeType)) {
-    throw new UploadError(
-      `Le contenu du fichier ne correspond pas à un type autorisé (détecté : ${detectedMime ?? 'inconnu'})`,
-      'INVALID_CONTENT',
-    );
+  if (!TEXT_BASED_TYPES.has(file.type)) {
+    const detectedMime = detectMimeFromBytes(buffer);
+    if (!detectedMime || !allowedTypes.includes(detectedMime as AllowedMimeType)) {
+      throw new UploadError(
+        `Le contenu du fichier ne correspond pas à un type autorisé (détecté : ${detectedMime ?? 'inconnu'})`,
+        'INVALID_CONTENT',
+      );
+    }
   }
 
   await writeFile(filePath, buffer);
@@ -86,6 +92,8 @@ function mimeToExt(mime: string): string {
     'image/png': '.png',
     'image/webp': '.webp',
     'image/avif': '.avif',
+    'image/x-icon': '.ico',
+    'image/svg+xml': '.svg',
   };
   return map[mime] ?? '.bin';
 }

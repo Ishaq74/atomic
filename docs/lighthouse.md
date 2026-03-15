@@ -219,3 +219,17 @@ Voir `docs/testing/ci.md` pour le détail complet.
 | `wait-on` | ^9 | Attente du serveur avant audits |
 | `pa11y-ci` | ^4.1 | Audits Pa11y (fichier séparé, même setup) |
 | `sharp` | ^0.34.5 | Optimisation des images (requis en production) |
+
+## Patch chrome-launcher (Windows)
+
+Sur Windows avec Node 25+, `chrome-launcher@1.2.1` crash lors du nettoyage du répertoire temporaire Chrome (`EPERM` sur `rmSync`). Le scan Lighthouse se termine normalement mais le processus exit avec code 1.
+
+**Correctif** : un script `postinstall` (`scripts/patch-chrome-launcher.cjs`) wrappe le `destroyTmp()` dans un try/catch :
+
+```bash
+pnpm run postinstall  # appliqué automatiquement après pnpm install
+```
+
+Le script modifie `node_modules/chrome-launcher/dist/chrome-launcher.js` pour ignorer les erreurs `EPERM` lors de la suppression du répertoire temporaire.
+
+> Ce patch n'affecte pas les résultats d'audit — seul le cleanup post-exécution est concerné.

@@ -6,6 +6,8 @@ import type { Locale } from '@i18n/config';
 import Header, { type NavLink } from "@organisms/Header/Header.astro";
 import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
 import { Toaster } from "@atoms/toast";
+import { getSiteSettings, getSocialLinks, getActiveTheme } from "@database/loaders/site.loader";
+import { getMenu, type NavTreeItem } from "@database/loaders/navigation.loader";
 
 interface Props {
   title?: string;
@@ -22,43 +24,78 @@ const user = Astro.locals.user;
 const session = Astro.locals.session;
 const isImpersonating = !!(session as any)?.impersonatedBy;
 
-const links: NavLink[] = [
-  { label: t.nav.about, href: getPageUrl(locale, 'about', t) },
-  { label: t.nav.contact, href: getPageUrl(locale, 'contact', t) },
-];
+// ─── Load CMS data from database ────────────────────────────────────────────
+const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, activeTheme] = await Promise.all([
+  getSiteSettings(locale),
+  getSocialLinks(),
+  getMenu("header", locale),
+  getMenu("footer_primary", locale),
+  getMenu("footer_secondary", locale),
+  getMenu("footer_legal", locale),
+  getActiveTheme(),
+]);
 
-const footerNavLinks: FooterLink[] = [
-  { label: t.footer.home, href: getRelativeLocaleUrl(locale, '/') },
-  { label: t.footer.aboutLink, href: getPageUrl(locale, 'about', t) },
-  { label: t.footer.contact, href: getPageUrl(locale, 'contact', t) },
-];
+const siteName = siteData?.siteName ?? "";
+const metaTitle = titleOverride ?? siteData?.metaTitle ?? t.meta.title;
+const metaDesc = descriptionOverride ?? siteData?.metaDescription ?? t.meta.description;
 
-const footerNavLinksSecondary: FooterLink[] = [
-  { label: t.nav.pricing, href: "#pricing" },
-  { label: t.nav.blog, href: "#blog" },
-];
+// Map DB nav tree → Header NavLink[]
+function toNavLinks(tree: NavTreeItem[]): NavLink[] {
+  return tree.map((item) => ({
+    label: item.label,
+    href: item.url ?? undefined,
+    children: item.children.length > 0 ? toNavLinks(item.children) : undefined,
+  }));
+}
 
-const footerLegalLinks: FooterLink[] = [
-  { label: t.footer.legalNotice, href: getPageUrl(locale, 'legal', t) + '#section-0' },
-  { label: t.footer.privacyPolicy, href: getPageUrl(locale, 'legal', t) + '#section-1' },
-  { label: t.footer.termsOfSale, href: getPageUrl(locale, 'legal', t) + '#section-2' },
-];
+const links: NavLink[] = toNavLinks(headerNav);
 
-const footerSocialLinks: SocialLink[] = [
-  { name: "Facebook", href: "#", icon: "mdi:facebook" },
-  { name: "Instagram", href: "#", icon: "mdi:instagram" },
-  { name: "Twitter / X", href: "#", icon: "mdi:twitter" },
-];
+// Map DB nav items → FooterLink[]
+function toFooterLinks(tree: NavTreeItem[]): FooterLink[] {
+  return tree.map((item) => ({
+    label: item.label,
+    href: item.url ?? "#",
+  }));
+}
+
+const footerNavLinks: FooterLink[] = toFooterLinks(footerPrimary);
+const footerNavLinksSecondary: FooterLink[] = toFooterLinks(footerSecondary);
+const footerLegalLinks: FooterLink[] = toFooterLinks(footerLegal);
+
+const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
+  name: s.label ?? s.platform,
+  href: s.url,
+  icon: s.icon ?? `mdi:${s.platform}`,
+}));
+
+// Build theme CSS custom properties from active DB theme
+const themeVars = activeTheme
+  ? [
+      activeTheme.primaryColor && `--cms-primary: ${activeTheme.primaryColor}`,
+      activeTheme.secondaryColor && `--cms-secondary: ${activeTheme.secondaryColor}`,
+      activeTheme.accentColor && `--cms-accent: ${activeTheme.accentColor}`,
+      activeTheme.backgroundColor && `--cms-background: ${activeTheme.backgroundColor}`,
+      activeTheme.foregroundColor && `--cms-foreground: ${activeTheme.foregroundColor}`,
+      activeTheme.mutedColor && `--cms-muted: ${activeTheme.mutedColor}`,
+      activeTheme.mutedForegroundColor && `--cms-muted-foreground: ${activeTheme.mutedForegroundColor}`,
+      activeTheme.borderRadius && `--cms-radius: ${activeTheme.borderRadius}`,
+      activeTheme.fontHeading && `--cms-font-heading: ${activeTheme.fontHeading}`,
+      activeTheme.fontBody && `--cms-font-body: ${activeTheme.fontBody}`,
+    ]
+      .filter(Boolean)
+      .join("; ")
+  : "";
 ---
 
-<html lang={locale} dir={direction}>
+<html lang={locale} dir={direction} style={themeVars}>
 <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href={siteData?.favicon ?? "/favicon.svg"} />
     <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width" />
-    <title>{titleOverride ?? t.meta.title}</title>
-    <meta name="description" content={descriptionOverride ?? t.meta.description} />
+    <title>{metaTitle}</title>
+    <meta name="description" content={metaDesc} />
+    {siteData?.ogImage && <meta property="og:image" content={siteData.ogImage} />}
 </head>
 
 <body class="flex min-h-screen flex-col">
@@ -75,7 +112,9 @@ const footerSocialLinks: SocialLink[] = [
       </div>
     )}
     <Header
-        siteName="Starwind Pro"
+        siteName={siteName}
+        logoLightUrl={siteData?.logoLight}
+        logoDarkUrl={siteData?.logoDark}
         links={links}
         ctaText={t.cta.getStarted}
         ctaHref="#get-started"

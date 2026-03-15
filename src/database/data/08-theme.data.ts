@@ -1,0 +1,18 @@
+// Theme settings seed — default theme matching current CSS tokens.
+export default [
+  {
+    name: "default",
+    isActive: true,
+    primaryColor: "oklch(0.880 0.200 68)",
+    secondaryColor: "oklch(0.922 0.012 75)",
+    accentColor: "oklch(0.962 0.008 78)",
+    backgroundColor: "oklch(1 0 0)",
+    foregroundColor: "oklch(0.148 0.018 75)",
+    mutedColor: "oklch(0.962 0.008 78)",
+    mutedForegroundColor: "oklch(0.400 0.016 75)",
+    fontHeading: "system-ui, sans-serif",
+    fontBody: "system-ui, sans-serif",
+    borderRadius: "0.625rem",
+    customCss: null,
+  },
+];

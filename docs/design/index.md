@@ -20,6 +20,7 @@
 | [accessibility.md](accessibility.md) | Règles WCAG AAA, contrastes, ARIA, focus, RTL |
 | [animations.md](animations.md) | Composants wow — ScrollReveal, particles, marquee, blur cards |
 | [style.md](style.md) | Conventions CSS, nommage, architecture des fichiers |
+| [../cms/admin.md](../cms/admin.md) | CMS Admin — architecture, schémas, actions, loaders, i18n, tests |
 
 ---
 

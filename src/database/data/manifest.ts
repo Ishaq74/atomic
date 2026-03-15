@@ -19,8 +19,12 @@ export interface SeedEntry {
 }
 
 export const seedManifest: SeedEntry[] = [
-  // Ajoutez vos entrées ici dans l'ordre des dépendances FK.
-  // Exemple :
-  // { dataFile: '01-users.data.ts', schemaExport: 'users', label: 'users' },
-  // { dataFile: '02-posts.data.ts', schemaExport: 'posts', label: 'posts' },
+  // ── Site customization (respect FK order) ──
+  { dataFile: '03-site-settings.data.ts', schemaExport: 'siteSettings', label: 'site settings' },
+  { dataFile: '04-social-links.data.ts', schemaExport: 'socialLinks', label: 'social links' },
+  { dataFile: '05-contact-info.data.ts', schemaExport: 'contactInfo', label: 'contact info' },
+  { dataFile: '06-opening-hours.data.ts', schemaExport: 'openingHours', label: 'opening hours' },
+  { dataFile: '07-navigation.data.ts', schemaExport: 'navigationMenus', label: 'navigation menus' },
+  { dataFile: '07b-navigation-items.data.ts', schemaExport: 'navigationItems', label: 'navigation items' },
+  { dataFile: '08-theme.data.ts', schemaExport: 'themeSettings', label: 'theme settings' },
 ];

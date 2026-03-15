@@ -49,11 +49,18 @@ pnpm run db:migrate
 src/database/
 ├── schemas.ts              ← index de re-export (ne pas mettre de schémas ici)
 ├── schemas/
-│   ├── products.schema.ts  ← définition de table
-│   ├── orders.schema.ts
-│   └── categories.schema.ts
+│   ├── site.schema.ts      ← siteSettings, socialLinks, contactInfo, openingHours, themeSettings
+│   ├── navigation.schema.ts← navigationMenus, navigationItems + relations
+│   ├── page.schema.ts      ← pages, pageSections + relations
+│   ├── audit-log.schema.ts ← auditLog + relation user
+│   └── ...                 ← vos tables métier
+├── loaders/
+│   ├── site.loader.ts      ← getSiteSettings, getSocialLinks, getContactInfo,
+│   │                          getOpeningHours, getActiveTheme, getAllThemes
+│   ├── navigation.loader.ts← getMenu → NavTreeItem[]
+│   └── page.loader.ts      ← getPage, getPagesList
 ├── migrations/
-│   ├── 0000_*.sql
+│   ├── 0000_*.sql … 0004_*.sql
 │   └── meta/_journal.json
 └── drizzle.ts              ← pool + getDrizzle()
 ```

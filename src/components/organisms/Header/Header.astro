@@ -43,6 +43,8 @@ export interface NavLink {
 
 interface Props extends HTMLAttributes<"nav"> {
   siteName?: string;
+  logoLightUrl?: string | null;
+  logoDarkUrl?: string | null;
   links?: NavLink[];
   ctaText?: string;
   ctaHref?: string;
@@ -58,7 +60,9 @@ const navStyles = tv({
 });
 
 const {
-  siteName = "Starwind Pro",
+  siteName = "",
+  logoLightUrl,
+  logoDarkUrl,
   links = [],
   ctaText = "Get Started",
   ctaHref = "#",
@@ -76,7 +80,7 @@ const {
   <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
     <div class="flex shrink-0 items-center">
       <slot name="logo">
-        <Brand siteName={siteName} />
+        <Brand siteName={siteName} logoLightUrl={logoLightUrl} logoDarkUrl={logoDarkUrl} />
       </slot>
 
       <div class="ml-6 hidden items-center gap-1 @2xl:flex">
@@ -152,7 +156,7 @@ const {
           <SheetHeader>
             <SheetTitle class="pr-12">
               <slot name="logo">
-                <Brand siteName={siteName} />
+                <Brand siteName={siteName} logoLightUrl={logoLightUrl} logoDarkUrl={logoDarkUrl} />
               </slot>
             </SheetTitle>
             <Separator class="mt-2" />

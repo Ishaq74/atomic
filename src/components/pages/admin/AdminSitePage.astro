@@ -1,0 +1,473 @@
+---
+/**
+ * AdminSitePage — Tabbed admin for site settings, social links, contact info & opening hours.
+ * Uses Astro Actions for mutations, server-rendered forms with client JS.
+ */
+import type { AuthTranslations, Locale } from '@i18n/config';
+import type {
+  siteSettings,
+  socialLinks,
+  contactInfo,
+  openingHours,
+} from '@database/schemas';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atoms/card';
+import { Input } from '@atoms/input';
+import { Label } from '@atoms/label';
+import { Textarea } from '@atoms/textarea';
+import Button from '@atoms/button/Button.astro';
+
+type SiteRow = typeof siteSettings.$inferSelect;
+type SocialRow = typeof socialLinks.$inferSelect;
+type ContactRow = typeof contactInfo.$inferSelect;
+type HoursRow = typeof openingHours.$inferSelect;
+
+interface Props {
+  t: AuthTranslations;
+  locale: Locale;
+  settings: SiteRow | null;
+  socialLinks: SocialRow[];
+  contactInfo: ContactRow | null;
+  openingHours: HoursRow[];
+}
+
+const { t, locale, settings, socialLinks: socials, contactInfo: contact, openingHours: hours } = Astro.props;
+const cms = t.admin.cms.site;
+---
+
+<div
+  id="cms-site-data"
+  data-locale={locale}
+  data-settings-id={settings?.id ?? ''}
+  data-contact-id={contact?.id ?? ''}
+  data-t-saved={cms.saved}
+  data-t-error={t.admin.cms.common.error}
+>
+  <Tabs defaultValue="settings" class="w-full">
+    <TabsList>
+      <TabsTrigger value="settings">{cms.tabSettings}</TabsTrigger>
+      <TabsTrigger value="social">{cms.tabSocial}</TabsTrigger>
+      <TabsTrigger value="contact">{cms.tabContact}</TabsTrigger>
+      <TabsTrigger value="hours">{cms.tabHours}</TabsTrigger>
+    </TabsList>
+
+    <!-- ─── General Settings ─── -->
+    <TabsContent value="settings">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabSettings}</CardTitle>
+          <CardDescription>{cms.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form id="site-settings-form" class="grid gap-4">
+            <div class="grid gap-2">
+              <Label for="site-name">{cms.siteName}</Label>
+              <Input id="site-name" name="siteName" value={settings?.siteName ?? ''} required />
+            </div>
+            <div class="grid gap-2">
+              <Label for="site-description">{cms.siteDescription}</Label>
+              <Textarea id="site-description" name="siteDescription" value={settings?.siteDescription ?? ''} />
+            </div>
+            <div class="grid gap-2">
+              <Label for="site-slogan">{cms.siteSlogan}</Label>
+              <Input id="site-slogan" name="siteSlogan" value={settings?.siteSlogan ?? ''} />
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid gap-2">
+                <Label for="meta-title">{cms.metaTitle}</Label>
+                <Input id="meta-title" name="metaTitle" value={settings?.metaTitle ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="meta-description">{cms.metaDescription}</Label>
+                <Input id="meta-description" name="metaDescription" value={settings?.metaDescription ?? ''} />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid gap-2">
+                <Label>{cms.logoLight}</Label>
+                <div class="site-upload-field flex items-center gap-3" data-field="logoLight">
+                  {settings?.logoLight && <img src={settings.logoLight} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  <Input type="hidden" name="logoLight" value={settings?.logoLight ?? ''} class="site-upload-value" />
+                  <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
+                  <input type="file" accept="image/*" class="site-upload-input hidden" />
+                  <span class="text-muted-foreground text-xs truncate max-w-48">{settings?.logoLight ?? ''}</span>
+                </div>
+              </div>
+              <div class="grid gap-2">
+                <Label>{cms.logoDark}</Label>
+                <div class="site-upload-field flex items-center gap-3" data-field="logoDark">
+                  {settings?.logoDark && <img src={settings.logoDark} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  <Input type="hidden" name="logoDark" value={settings?.logoDark ?? ''} class="site-upload-value" />
+                  <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
+                  <input type="file" accept="image/*" class="site-upload-input hidden" />
+                  <span class="text-muted-foreground text-xs truncate max-w-48">{settings?.logoDark ?? ''}</span>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid gap-2">
+                <Label>{cms.favicon}</Label>
+                <div class="site-upload-field flex items-center gap-3" data-field="favicon">
+                  {settings?.favicon && <img src={settings.favicon} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  <Input type="hidden" name="favicon" value={settings?.favicon ?? ''} class="site-upload-value" />
+                  <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
+                  <input type="file" accept="image/*,.ico" class="site-upload-input hidden" />
+                  <span class="text-muted-foreground text-xs truncate max-w-48">{settings?.favicon ?? ''}</span>
+                </div>
+              </div>
+              <div class="grid gap-2">
+                <Label>{cms.ogImage}</Label>
+                <div class="site-upload-field flex items-center gap-3" data-field="ogImage">
+                  {settings?.ogImage && <img src={settings.ogImage} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  <Input type="hidden" name="ogImage" value={settings?.ogImage ?? ''} class="site-upload-value" />
+                  <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
+                  <input type="file" accept="image/*" class="site-upload-input hidden" />
+                  <span class="text-muted-foreground text-xs truncate max-w-48">{settings?.ogImage ?? ''}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <Button type="submit" id="site-settings-submit">{cms.save}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </TabsContent>
+
+    <!-- ─── Social Links ─── -->
+    <TabsContent value="social">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabSocial}</CardTitle>
+          <div class="flex justify-end">
+            <Button id="add-social-btn" size="sm">{cms.addLink}</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div id="social-links-list" class="grid gap-4">
+            {socials.length === 0 && (
+              <p class="text-muted-foreground text-sm">{cms.noLinks}</p>
+            )}
+            {socials.map((link) => (
+              <div class="social-link-row border rounded-lg p-4 grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end" data-id={link.id}>
+                <div class="grid gap-1">
+                  <Label>{cms.platform}</Label>
+                  <Input name="platform" value={link.platform} class="social-platform" />
+                </div>
+                <div class="grid gap-1">
+                  <Label>{cms.url}</Label>
+                  <Input name="url" type="url" value={link.url} class="social-url" />
+                </div>
+                <div class="grid gap-1">
+                  <Label>{cms.label}</Label>
+                  <Input name="label" value={link.label ?? ''} class="social-label" />
+                </div>
+                <div class="flex gap-2 items-end">
+                  <Button size="sm" class="social-save-btn">{cms.save}</Button>
+                  <Button size="sm" variant="error" class="social-delete-btn">{t.admin.cms.common.delete}</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </TabsContent>
+
+    <!-- ─── Contact ─── -->
+    <TabsContent value="contact">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabContact}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form id="contact-form" class="grid gap-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid gap-2">
+                <Label for="contact-email">{cms.email}</Label>
+                <Input id="contact-email" name="email" type="email" value={contact?.email ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="contact-phone">{cms.phone}</Label>
+                <Input id="contact-phone" name="phone" value={contact?.phone ?? ''} />
+              </div>
+            </div>
+            <div class="grid gap-2">
+              <Label for="contact-address">{cms.address}</Label>
+              <Input id="contact-address" name="address" value={contact?.address ?? ''} />
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div class="grid gap-2">
+                <Label for="contact-city">{cms.city}</Label>
+                <Input id="contact-city" name="city" value={contact?.city ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="contact-postal">{cms.postalCode}</Label>
+                <Input id="contact-postal" name="postalCode" value={contact?.postalCode ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="contact-country">{cms.country}</Label>
+                <Input id="contact-country" name="country" value={contact?.country ?? ''} />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div class="grid gap-2">
+                <Label for="contact-map">{cms.mapUrl}</Label>
+                <Input id="contact-map" name="mapUrl" type="url" value={contact?.mapUrl ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="contact-lat">{cms.latitude}</Label>
+                <Input id="contact-lat" name="latitude" value={contact?.latitude ?? ''} />
+              </div>
+              <div class="grid gap-2">
+                <Label for="contact-lng">{cms.longitude}</Label>
+                <Input id="contact-lng" name="longitude" value={contact?.longitude ?? ''} />
+              </div>
+            </div>
+            <div class="flex justify-end">
+              <Button type="submit" id="contact-submit">{cms.save}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </TabsContent>
+
+    <!-- ─── Opening Hours ─── -->
+    <TabsContent value="hours">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabHours}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form id="hours-form" class="grid gap-3">
+            {Array.from({ length: 7 }, (_, i) => {
+              const row = hours.find((h) => h.dayOfWeek === i);
+              const midday = row?.hasMiddayBreak ?? false;
+              return (
+                <div class="hours-row rounded-lg border p-3 grid gap-2" data-day={i} data-id={row?.id ?? ''}>
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span class="font-medium min-w-24">{cms.dayNames[i]}</span>
+                    <label class="flex items-center gap-1.5 text-sm">
+                      <input type="checkbox" name="isClosed" class="hours-closed" checked={row?.isClosed ?? false} />
+                      {cms.closed}
+                    </label>
+                    <label class="flex items-center gap-1.5 text-sm">
+                      <input type="checkbox" name="hasMiddayBreak" class="hours-midday-toggle" checked={midday} />
+                      {cms.middayBreak}
+                    </label>
+                  </div>
+                  {/* Standard hours (no midday break) */}
+                  <div class="hours-standard flex flex-wrap gap-3" style={midday ? 'display:none' : ''}>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.openTime}</Label>
+                      <Input type="time" value={row?.openTime ?? '09:00'} class="hours-open w-28" />
+                    </div>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.closeTime}</Label>
+                      <Input type="time" value={row?.closeTime ?? '17:00'} class="hours-close w-28" />
+                    </div>
+                  </div>
+                  {/* Midday break hours */}
+                  <div class="hours-split flex flex-wrap gap-3" style={midday ? '' : 'display:none'}>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.morningOpen}</Label>
+                      <Input type="time" value={row?.morningOpen ?? '09:00'} class="hours-morning-open w-28" />
+                    </div>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.morningClose}</Label>
+                      <Input type="time" value={row?.morningClose ?? '12:00'} class="hours-morning-close w-28" />
+                    </div>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.afternoonOpen}</Label>
+                      <Input type="time" value={row?.afternoonOpen ?? '14:00'} class="hours-afternoon-open w-28" />
+                    </div>
+                    <div class="grid gap-1">
+                      <Label class="text-xs">{cms.afternoonClose}</Label>
+                      <Input type="time" value={row?.afternoonClose ?? '18:00'} class="hours-afternoon-close w-28" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div class="flex justify-end pt-2">
+              <Button type="submit" id="hours-submit">{cms.save}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </TabsContent>
+  </Tabs>
+</div>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    const root = document.getElementById('cms-site-data');
+    if (!root) return;
+    const tSaved = root.dataset.tSaved ?? 'Saved.';
+    const tError = root.dataset.tError ?? 'Error.';
+
+    // ─── Site Upload Fields ───
+    document.querySelectorAll<HTMLElement>('.site-upload-field').forEach((field) => {
+      const btn = field.querySelector('.site-upload-btn') as HTMLElement;
+      const fileInput = field.querySelector('.site-upload-input') as HTMLInputElement;
+      const hiddenInput = field.querySelector('.site-upload-value') as HTMLInputElement;
+      const preview = field.querySelector('.site-upload-preview') as HTMLImageElement | null;
+      const label = field.querySelector('span') as HTMLElement | null;
+
+      btn?.addEventListener('click', () => fileInput?.click());
+
+      fileInput?.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'site');
+        const oldUrl = hiddenInput.value;
+        if (oldUrl) formData.append('oldUrl', oldUrl);
+        try {
+          const res = await fetch('/api/upload', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+          hiddenInput.value = data.url;
+          if (label) label.textContent = data.url;
+          if (preview) {
+            preview.src = data.url;
+          } else {
+            const img = document.createElement('img');
+            img.src = data.url;
+            img.alt = '';
+            img.className = 'site-upload-preview h-10 w-10 rounded border object-contain';
+            field.insertBefore(img, field.firstChild);
+          }
+        } catch (err: any) {
+          toast.error(err.message || tError);
+        }
+      });
+    });
+
+    // ─── Site Settings ───
+    document.getElementById('site-settings-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const fd = new FormData(form);
+      const { error } = await actions.updateSiteSettings({
+        id: root.dataset.settingsId!,
+        siteName: fd.get('siteName') as string,
+        siteDescription: (fd.get('siteDescription') as string) || null,
+        siteSlogan: (fd.get('siteSlogan') as string) || null,
+        metaTitle: (fd.get('metaTitle') as string) || null,
+        metaDescription: (fd.get('metaDescription') as string) || null,
+        logoLight: (fd.get('logoLight') as string) || null,
+        logoDark: (fd.get('logoDark') as string) || null,
+        favicon: (fd.get('favicon') as string) || null,
+        ogImage: (fd.get('ogImage') as string) || null,
+      });
+      if (!error) toast.success(tSaved);
+      else toast.error(error.message ?? tError);
+    });
+
+    // ─── Social Links - Save ───
+    document.querySelectorAll<HTMLElement>('.social-save-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.social-link-row') as HTMLElement;
+        const id = row?.dataset.id;
+        if (!id) return;
+        const platform = (row.querySelector('.social-platform') as HTMLInputElement).value;
+        const url = (row.querySelector('.social-url') as HTMLInputElement).value;
+        const label = (row.querySelector('.social-label') as HTMLInputElement).value || null;
+        const { error } = await actions.updateSocialLink({ id, platform, url, label });
+        if (!error) toast.success(tSaved);
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Social Links - Delete ───
+    document.querySelectorAll<HTMLElement>('.social-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.social-link-row') as HTMLElement;
+        const id = row?.dataset.id;
+        if (!id) return;
+        const { error } = await actions.deleteSocialLink({ id });
+        if (!error) { toast.success(tSaved); row.remove(); }
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Social Links - Add ───
+    document.getElementById('add-social-btn')?.addEventListener('click', async () => {
+      const { error } = await actions.createSocialLink({
+        platform: 'new',
+        url: 'https://',
+        label: null,
+        icon: null,
+        sortOrder: 99,
+      });
+      if (!error) location.reload();
+      else toast.error(error.message ?? tError);
+    });
+
+    // ─── Contact Info ───
+    document.getElementById('contact-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target as HTMLFormElement);
+      const { error } = await actions.updateContactInfo({
+        id: root.dataset.contactId!,
+        email: (fd.get('email') as string) || null,
+        phone: (fd.get('phone') as string) || null,
+        address: (fd.get('address') as string) || null,
+        city: (fd.get('city') as string) || null,
+        postalCode: (fd.get('postalCode') as string) || null,
+        country: (fd.get('country') as string) || null,
+        mapUrl: (fd.get('mapUrl') as string) || null,
+        latitude: (fd.get('latitude') as string) || null,
+        longitude: (fd.get('longitude') as string) || null,
+      });
+      if (!error) toast.success(tSaved);
+      else toast.error(error.message ?? tError);
+    });
+
+    // ─── Opening Hours ───
+    // Toggle midday break visibility
+    document.querySelectorAll<HTMLInputElement>('.hours-midday-toggle').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const row = cb.closest('.hours-row') as HTMLElement;
+        const standard = row.querySelector('.hours-standard') as HTMLElement;
+        const split = row.querySelector('.hours-split') as HTMLElement;
+        if (cb.checked) {
+          standard.style.display = 'none';
+          split.style.display = '';
+        } else {
+          standard.style.display = '';
+          split.style.display = 'none';
+        }
+      });
+    });
+
+    document.getElementById('hours-form')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const rows = document.querySelectorAll<HTMLElement>('.hours-row');
+      const items = [...rows].filter((row) => row.dataset.id).map((row) => {
+        const hasMiddayBreak = (row.querySelector('.hours-midday-toggle') as HTMLInputElement).checked;
+        return {
+          id: row.dataset.id!,
+          isClosed: (row.querySelector('.hours-closed') as HTMLInputElement).checked,
+          hasMiddayBreak,
+          openTime: hasMiddayBreak ? null : (row.querySelector('.hours-open') as HTMLInputElement).value || null,
+          closeTime: hasMiddayBreak ? null : (row.querySelector('.hours-close') as HTMLInputElement).value || null,
+          morningOpen: hasMiddayBreak ? (row.querySelector('.hours-morning-open') as HTMLInputElement).value || null : null,
+          morningClose: hasMiddayBreak ? (row.querySelector('.hours-morning-close') as HTMLInputElement).value || null : null,
+          afternoonOpen: hasMiddayBreak ? (row.querySelector('.hours-afternoon-open') as HTMLInputElement).value || null : null,
+          afternoonClose: hasMiddayBreak ? (row.querySelector('.hours-afternoon-close') as HTMLInputElement).value || null : null,
+        };
+      });
+      const { error } = await actions.updateOpeningHours({ items });
+      if (!error) toast.success(tSaved);
+      else toast.error(error.message ?? tError);
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>

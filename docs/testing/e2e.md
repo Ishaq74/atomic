@@ -10,7 +10,8 @@
 | :-- | :-- | --: | :-- |
 | `tests/e2e/app.spec.ts` | Homepage, i18n, guest guards | 10 | ✅ |
 | `tests/e2e/auth.spec.ts` | Sign-up/in, dashboard, profile, pages publiques | 12 | ✅ |
-| **Total** | | **22** | **✅** |
+| `tests/e2e/cms-admin.spec.ts` | Pages admin CMS (site, navigation, theme) | 8 | ✅ |
+| **Total** | | **30** | **✅** |
 
 ### Infrastructure
 
@@ -38,7 +39,9 @@ Le `global-setup` :
 
 1. Supprime le user précédent (cleanup)
 2. Inscrit le user via `auth.api.signUpEmail()`
-3. Force `emailVerified: true` en DB (SQL direct)
+3. Force `emailVerified: true` et `role: 'admin'` en DB (SQL direct)
+
+> Le seed user est **admin** pour permettre l'accès aux pages CMS dans `cms-admin.spec.ts`.
 
 Le `global-teardown` :
 
@@ -155,13 +158,52 @@ pnpm test:e2e:report
 ## Résumé couverture E2E
 
 ```md
-Pages testées :              12 URLs distinctes
+Pages testées :              15 URLs distinctes
 Locales testées :            4 (fr, en, ar, es)
-Auth guards :                5 redirections vérifiées
+Auth guards :                6 redirections vérifiées
 Formulaires :                2 (sign-up, sign-in)
 Flow authentifié :           2 (dashboard, profil)
 Pages publiques :            5
-Total tests E2E :            22
-Fichiers :                   2 (+2 setup/teardown)
-Temps d'exécution :          ~15–25 s
+Pages admin CMS :            3 (site, navigation, theme)
+Total tests E2E :            30
+Fichiers :                   3 (+2 setup/teardown)
+Temps d'exécution :          ~45–90 s
 ```
+
+---
+
+## `cms-admin.spec.ts` — Pages Admin CMS
+
+### CMS Admin access (1 test)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 1 | `unauthenticated user is redirected from admin pages` | `/fr/admin/site` sans auth → redirigé vers connexion |
+
+### CMS Site settings page (3 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 2 | `site page loads successfully` | Login admin → `/fr/admin/site` → status 200 |
+| 3 | `site page contains settings form` | Formulaire visible (inputs site name, description, etc.) |
+| 4 | `site page has tabs` | Corps de la page contient du contenu |
+
+### CMS Navigation page (2 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 5 | `navigation page loads successfully` | Login admin → `/fr/admin/navigation` → status 200 |
+| 6 | `navigation page contains form` | Formulaire de gestion de menu visible |
+
+### CMS Theme page (2 tests)
+
+| # | Test | Ce qu'il fait |
+| :-- | :-- | :-- |
+| 7 | `theme page loads successfully` | Login admin → `/fr/admin/theme` → status 200 |
+| 8 | `theme page contains form` | Formulaire de personnalisation du thème visible |
+
+### Stratégie — cms-admin.spec.ts
+
+- **Sign-in avec retry** : le helper `signInAsAdmin()` tente 2 fois la connexion pour gérer les race conditions avec les workers parallèles
+- **Admin seed** : le `global-setup` crée un user avec `role: 'admin'` — les tests n'ont pas besoin de promouvoir le user
+- **Pages CMS non-traduites** : les routes admin utilisent des slugs anglais (`/fr/admin/site`, pas `/fr/admin/paramètres`)

@@ -1,0 +1,210 @@
+---
+/**
+ * AdminNavigationPage — Manage navigation menus and items (hierarchical, per locale).
+ */
+import type { AuthTranslations, Locale } from '@i18n/config';
+import { LOCALES, LOCALE_LABELS } from '@i18n/config';
+import type { navigationMenus, navigationItems } from '@database/schemas';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atoms/card';
+import { Input } from '@atoms/input';
+import { Label } from '@atoms/label';
+import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
+import Button from '@atoms/button/Button.astro';
+import { IconPicker } from '@atoms/icon-picker';
+
+type MenuRow = typeof navigationMenus.$inferSelect;
+type ItemRow = typeof navigationItems.$inferSelect;
+
+interface Props {
+  t: AuthTranslations;
+  locale: Locale;
+  menus: MenuRow[];
+  items: ItemRow[];
+  selectedMenu: string;
+  selectedLocale: string;
+}
+
+const { t, locale, menus, items, selectedMenu, selectedLocale } = Astro.props;
+const cms = t.admin.cms.navigation;
+
+const rootItems = items.filter((i) => !i.parentId);
+---
+
+<div
+  id="cms-nav-data"
+  data-locale={locale}
+  data-selected-menu={selectedMenu}
+  data-selected-locale={selectedLocale}
+  data-t-saved={cms.saved}
+  data-t-deleted={cms.deleted}
+  data-t-error={t.admin.cms.common.error}
+  data-t-confirm-delete={t.admin.cms.common.confirmDelete}
+>
+  <Card>
+    <CardHeader>
+      <CardTitle>{cms.title}</CardTitle>
+      <CardDescription>{cms.description}</CardDescription>
+    </CardHeader>
+    <CardContent>
+      <!-- ─── Menu & Locale Selectors ─── -->
+      <form method="get" class="mb-6 flex flex-wrap gap-4">
+        <div class="grid gap-1">
+          <Label>{cms.selectMenu}</Label>
+          <NativeSelect name="menu" id="nav-menu-select">
+            {menus.map((m) => (
+              <NativeSelectOption value={m.id} selected={m.id === selectedMenu}>
+                {m.name} {m.description ? `— ${m.description}` : ''}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        <div class="grid gap-1">
+          <Label>{cms.selectLocale}</Label>
+          <NativeSelect name="locale" id="nav-locale-select">
+            {LOCALES.map((l) => (
+              <NativeSelectOption value={l} selected={l === selectedLocale}>
+                {LOCALE_LABELS[l]}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        <div class="flex items-end">
+          <Button type="submit" size="sm" variant="outline">OK</Button>
+        </div>
+      </form>
+
+      <!-- ─── Items List ─── -->
+      <div class="mb-4 flex justify-end">
+        <Button id="add-nav-item-btn" size="sm">{cms.addItem}</Button>
+      </div>
+
+      {items.length === 0 && (
+        <p class="text-muted-foreground text-sm">{cms.noItems}</p>
+      )}
+
+      <div id="nav-items-list" class="grid gap-3">
+        {items.map((item) => {
+          const isChild = !!item.parentId;
+          return (
+            <div
+              class:list={['nav-item-row border rounded-lg p-4 grid gap-3', { 'ml-8': isChild }]}
+              data-id={item.id}
+            >
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
+                <div class="grid gap-1">
+                  <Label>{cms.labelField}</Label>
+                  <Input name="label" value={item.label} class="nav-label" />
+                </div>
+                <div class="grid gap-1">
+                  <Label>{cms.urlField}</Label>
+                  <Input name="url" value={item.url ?? ''} class="nav-url" />
+                </div>
+                <div class="grid gap-1">
+                  <Label>{cms.parentField}</Label>
+                  <NativeSelect class="nav-parent">
+                    <NativeSelectOption value="">{cms.rootItem}</NativeSelectOption>
+                    {rootItems.filter((r) => r.id !== item.id).map((r) => (
+                      <NativeSelectOption value={r.id} selected={r.id === item.parentId}>
+                        {r.label}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </div>
+                <div class="flex gap-2 items-end">
+                  <Button size="sm" class="nav-save-btn">{cms.save}</Button>
+                  <Button size="sm" variant="error" class="nav-delete-btn">{t.admin.cms.common.delete}</Button>
+                </div>
+              </div>
+              <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2 text-sm">
+                  <input type="checkbox" class="nav-newtab" checked={item.openInNewTab} />
+                  {cms.openInNewTab}
+                </label>
+                <div class="grid gap-1 w-48">
+                  <Label>{cms.iconField}</Label>
+                  <IconPicker
+                    id={`nav-icon-${item.id}`}
+                    value={item.icon}
+                    placeholder={cms.selectIcon}
+                    searchPlaceholder={cms.searchIcon}
+                    clearLabel={cms.clearIcon}
+                  />
+                </div>
+                <div class="grid gap-1 w-20">
+                  <Label>{cms.sortOrderField}</Label>
+                  <Input type="number" value={String(item.sortOrder ?? 0)} class="nav-sort text-xs" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </CardContent>
+  </Card>
+</div>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    const root = document.getElementById('cms-nav-data');
+    if (!root) return;
+    const menuId = root.dataset.selectedMenu!;
+    const navLocale = root.dataset.selectedLocale!;
+    const tSaved = root.dataset.tSaved ?? 'Saved.';
+    const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
+    const tError = root.dataset.tError ?? 'Error.';
+
+    // ─── Save Item ───
+    document.querySelectorAll<HTMLElement>('.nav-save-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.nav-item-row') as HTMLElement;
+        const id = row?.dataset.id;
+        if (!id) return;
+        const label = (row.querySelector('.nav-label') as HTMLInputElement).value;
+        const url = (row.querySelector('.nav-url') as HTMLInputElement).value || null;
+        const parentId = (row.querySelector('.nav-parent select') as HTMLSelectElement | null)?.value || null;
+        const iconInput = row.querySelector(`[id$="-value"]`) as HTMLInputElement | null;
+        const icon = iconInput?.value || null;
+        const openInNewTab = (row.querySelector('.nav-newtab') as HTMLInputElement).checked;
+        const sortOrder = parseInt((row.querySelector('.nav-sort') as HTMLInputElement)?.value ?? '0', 10) || 0;
+        const { error } = await actions.updateNavigationItem({ id, label, url, parentId, icon, openInNewTab, sortOrder });
+        if (!error) toast.success(tSaved);
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Delete Item ───
+    document.querySelectorAll<HTMLElement>('.nav-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.nav-item-row') as HTMLElement;
+        const id = row?.dataset.id;
+        if (!id) return;
+        if (!confirm(root.dataset.tConfirmDelete ?? 'Delete this item?')) return;
+        const { error } = await actions.deleteNavigationItem({ id });
+        if (!error) { toast.success(tDeleted); row.remove(); }
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Add Item ───
+    document.getElementById('add-nav-item-btn')?.addEventListener('click', async () => {
+      const { error } = await actions.createNavigationItem({
+        menuId,
+        locale: navLocale as 'fr' | 'en' | 'es' | 'ar',
+        label: 'New',
+        url: '/',
+        parentId: null,
+        icon: null,
+        openInNewTab: false,
+        sortOrder: 99,
+      });
+      if (!error) location.reload();
+      else toast.error(error.message ?? tError);
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>
