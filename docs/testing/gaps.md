@@ -63,40 +63,46 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 
 ## Gaps accessibilité & performance (Pa11y + Lighthouse)
 
-> Identifiés lors de la mise en place des audits a11y/perf. À corriger dans un sprint séparé.
+> Identifiés lors de la mise en place des audits a11y/perf. **Tous les gaps a11y ont été résolus** — Pa11y passe maintenant 40/40 URLs en WCAG AAA.
 
-### Pa11y-ci — WCAG AAA
+### Pa11y-ci — WCAG AAA ✅
 
-**Score** : 8/40 URLs passent (32 échouent)
+**Score** : 40/40 URLs passent (100 %)
 
-| Type d'erreur | Nombre | Critère WCAG | Localisation |
-| :-- | :-- | :-- | :-- |
-| Contraste insuffisant (AAA) | ~78 | 1.4.6 Enhanced Contrast | Toutes les pages — texte gris clair, liens, boutons |
-| Labels de formulaire manquants | 4 | 1.3.1 Info and Relationships | Pages sign-in, sign-up (champs sans `<label>`) |
+Tous les problèmes d'accessibilité ont été corrigés :
 
-> **Note** : WCAG AAA est le standard le plus strict. La majorité des erreurs sont des contrastes AAA (ratio 7:1) sur des éléments qui passent AA (ratio 4.5:1).
+| Type d'erreur | Résolution |
+| :-- | :-- |
+| Contraste insuffisant (AAA) | Nouveau token `text-primary-deep` (dark gold ≥5:1 sur blanc), suppression opacité `/70` sur `text-muted-foreground` |
+| Labels de formulaire manquants | Ajout `for="..."` + `id="..."` sur les inputs auth + profile |
+| `aria-prohibited-attr` | Ajout `role="img"` sur le conteneur des étoiles (`SideCarouselCards.astro`) |
+| `image-redundant-alt` | `alt=""` sur le logo (`Brand.astro`) |
+| `target-size` | Dots du carousel agrandis de 8px à 24px (`HeroSection.astro`) |
+| `heading-order` (profil) | `<h3>` → `<h2>` pour export data + delete account |
+| CLS (legal) | Logo `w-auto` → `w-[120px]` pour réserver l'espace |
 
 ### Lighthouse CI — Performance
 
 **Scores a11y/best-practices/SEO** : ✅ ≥ 0.9 partout
 
-**Scores performance** : 6 URLs < 0.9
+**Scores performance** : ≤7 URLs < 0.9
 
 | URL | Score | Cause probable |
 | :-- | :-- | :-- |
-| `/fr/` (homepage) | 0.89 | Bundle JS initial, images non optimisées |
-| `/en/` (homepage) | 0.87 | Idem |
-| `/es/` (homepage) | 0.86 | Idem |
-| `/ar/` (homepage) | 0.74 | Idem + fonts RTL |
-| `/fr/mentions-legales` | 0.82 | Contenu long, CLS |
-| `/ar/الشروط-القانونية` | 0.82 | Contenu long + RTL |
+| `ar--من-نحن` | 79 | LCP 2.4s, SI 2.6s |
+| `es--home` | 83 | LCP 1.9s, SI 2.8s |
+| `en--about` | 86 | LCP 1.4s, SI 4.0s |
+| `fr--home` | 87 | LCP 1.2s, SI 4.0s |
+| `en--home` | 88 | LCP 1.3s, SI 3.6s |
+| `ar--الشروط-القانونية` | 89 | CLS 0.223 |
+| `es--acerca-de` | 89 | SI 3.2s |
 
-### Plan de correction
+> Toutes les autres pages (auth, contact, dashboard, profile, admin) sont à **98-100** en performance.
+
+### Améliorations restantes (performance)
 
 | Priorité | Action | Impact |
 | :-- | :-- | :-- |
-| P1 | Ajouter des `<label>` aux champs de formulaire auth | Fixe les 4 erreurs Pa11y labels |
-| P2 | Augmenter le contraste des couleurs (design tokens) | Fixe ~78 erreurs Pa11y AAA |
 | P3 | Optimiser les images homepage (WebP, lazy loading) | Améliore les scores perf |
 | P3 | Réduire le bundle JS initial | Améliore les scores perf |
 | P4 | Optimiser les fonts RTL pour l'arabe | Améliore le score perf arabe |

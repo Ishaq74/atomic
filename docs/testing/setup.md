@@ -48,7 +48,23 @@ tests/
 │                                      # ─────────
 │                                      #  40 URLs Pa11y + 38 URLs Lighthouse
 └── helpers/
-    └── auth.ts                        #  getTestHelpers(), ré-exporte auth
+    ├── auth.ts                        #  getTestHelpers(), ré-exporte auth
+    ├── vitest-report.cjs              #  Génère vitest-report.txt depuis JSON
+    ├── playwright-report.cjs          #  Génère playwright-report.txt depuis JSON
+    └── lighthouse-report.cjs          #  Génère lighthouse-report.txt (scores, CWV, audits)
+
+Rapports (gitignored) :
+├── tests/reports/
+│   ├── vitest-results.json            # Sortie JSON Vitest
+│   ├── vitest-report.txt              # Rapport texte Vitest
+│   ├── playwright-results.json         # Sortie JSON Playwright
+│   ├── playwright-report.txt          # Rapport texte Playwright
+│   ├── playwright/                    # Rapport HTML Playwright
+│   ├── pa11y-results.json             # Sortie JSON Pa11y
+│   ├── pa11y-report.txt               # Rapport texte Pa11y
+│   ├── lighthouse-report.txt          # Rapport texte Lighthouse (scores + CWV)
+│   └── lighthouse/                    # Rapports JSON/HTML Lighthouse
+
 
 Configs racine :
 ├── .pa11yci.cjs                       # Pa11y-ci (WCAG AAA, axe, 40 URLs)
@@ -87,6 +103,10 @@ export default defineConfig({
     environment: 'node',
     env: { NODE_ENV: 'test' },
     testTimeout: 15_000,
+    reporters: ['default', 'json'],
+    outputFile: {
+      json: 'tests/reports/vitest-results.json',
+    },
   },
 });
 ```
@@ -98,8 +118,8 @@ export default defineConfig({
 | `include` | `tests/unit/**/*.test.ts`, `tests/integration/**/*.test.ts` | Sépare unit & integration dans le même runner |
 | `environment` | `node` | Pas de JSDOM — tests backend purs |
 | `env.NODE_ENV` | `'test'` | Désactive l'envoi d'emails SMTP (dynamic import skip) |
-| `testTimeout` | `15_000` | 15s max par test (tests DB peuvent être lents) |
-| `alias` | 6 alias | Mêmes alias que `tsconfig.json` — nécessaire pour Vitest |
+| `testTimeout` | `15_000` | 15s max par test (tests DB peuvent être lents) || `reporters` | `['default', 'json']` | Sortie console + JSON pour génération de rapports |
+| `outputFile.json` | `tests/reports/vitest-results.json` | Fichier JSON utilisé par `vitest-report.cjs` || `alias` | 6 alias | Mêmes alias que `tsconfig.json` — nécessaire pour Vitest |
 
 ### Alias résolution
 
@@ -129,7 +149,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [
+    ['html', { outputFolder: 'tests/reports/playwright' }],
+    ['json', { outputFile: 'tests/reports/playwright-results.json' }],
+  ],
   use: {
     baseURL: 'http://localhost:4321',
     trace: 'on-first-retry',
@@ -142,7 +165,7 @@ export default defineConfig({
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
-    env: { NODE_ENV: 'test' },       // ← Désactive SMTP dans le serveur preview
+    env: { NODE_ENV: 'test' },
   },
 });
 ```
@@ -159,7 +182,7 @@ export default defineConfig({
 | `webServer.command` | `pnpm preview` | Lance le serveur SSR Astro |
 | `webServer.env` | `{ NODE_ENV: 'test' }` | **Critique** — désactive SMTP dans le serveur |
 | `reuseExistingServer` | `true` en local | Réutilise un serveur déjà lancé |
-| `reporter` | `html` | Rapport HTML dans `playwright-report/` |
+| `reporter` | `[['html', ...], ['json', ...]]` | Rapport HTML dans `tests/reports/playwright/` + JSON pour génération de rapports |
 
 ---
 
@@ -243,6 +266,13 @@ pnpm a11y:lighthouse         # LHCI (26 URLs publiques)
 pnpm a11y:lighthouse:authed  # LHCI (8 user + 4 admin URLs)
 pnpm a11y:lighthouse:rename  # Renommer rapports LHCI
 pnpm a11y:teardown           # Supprime users seed + cookies
+
+# Génération de rapports texte
+pnpm test:report             # Génère vitest-report.txt depuis vitest-results.json
+pnpm test:e2e:report         # Génère playwright-report.txt depuis playwright-results.json
+pnpm a11y:report             # Génère lighthouse-report.txt (scores, CWV, audits échoués)
+pnpm a11y:lighthouse:report  # Rapport LHCI console (scores + CWV par page)
+pnpm a11y:lighthouse:report:contrast  # Idem + détails échecs de contraste
 ```
 
 ---

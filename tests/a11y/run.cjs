@@ -201,103 +201,12 @@ function copyLighthouseReports() {
     return;
   }
 
-  const destDir = path.join(REPORTS_DIR, 'lighthouse');
-  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-
-  // Copy all JSON and HTML files
-  const allFiles = fs.readdirSync(lhDir).filter(f => f.endsWith('.json') || f.endsWith('.html'));
-  for (const f of allFiles) {
-    fs.copyFileSync(path.join(lhDir, f), path.join(destDir, f));
+  // Delegate to the shared report generator (copies files + generates text report)
+  try {
+    require('../helpers/lighthouse-report.cjs');
+  } catch (e) {
+    logError(`Lighthouse report generator failed: ${e.message}`);
   }
-  log(`Copied ${allFiles.length} Lighthouse file(s) to ${destDir}`);
-
-  // Generate text summary report
-  const jsonFiles = allFiles.filter(f => f.endsWith('.json')).sort();
-  if (!jsonFiles.length) return;
-
-  const lines = [];
-  const hr = '═'.repeat(80);
-  const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
-
-  lines.push(hr);
-  lines.push('  LIGHTHOUSE CI REPORT');
-  lines.push(`  Generated: ${now}`);
-  lines.push(hr);
-  lines.push('');
-  lines.push(
-    'Page'.padEnd(42) +
-    'Perf  A11y  BP    SEO   ' +
-    'LCP     SI      TBT     CLS'
-  );
-  lines.push('─'.repeat(110));
-
-  let total = 0;
-  let perfPass = 0;
-  const perfFails = [];
-  const a11yFails = [];
-
-  for (const f of jsonFiles) {
-    let r;
-    try { r = JSON.parse(fs.readFileSync(path.join(lhDir, f), 'utf8')); } catch { continue; }
-    if (!r.categories) continue;
-    total++;
-
-    const p = Math.round(r.categories.performance.score * 100);
-    const a = Math.round(r.categories.accessibility.score * 100);
-    const bp = Math.round(r.categories['best-practices'].score * 100);
-    const s = Math.round(r.categories.seo.score * 100);
-
-    if (p >= 90) perfPass++;
-    else perfFails.push({ page: f.replace('.json', ''), score: p });
-    if (a < 90) a11yFails.push({ page: f.replace('.json', ''), score: a });
-
-    const lcp = r.audits['largest-contentful-paint']?.numericValue;
-    const si = r.audits['speed-index']?.numericValue;
-    const tbt = r.audits['total-blocking-time']?.numericValue;
-    const cls = r.audits['cumulative-layout-shift']?.numericValue;
-
-    const name = f.replace('.json', '');
-    lines.push(
-      name.padEnd(42) +
-      String(p).padEnd(6) +
-      String(a).padEnd(6) +
-      String(bp).padEnd(6) +
-      String(s).padEnd(6) +
-      (lcp ? (lcp / 1000).toFixed(1) + 's' : 'N/A').padEnd(8) +
-      (si ? (si / 1000).toFixed(1) + 's' : 'N/A').padEnd(8) +
-      (tbt !== undefined ? Math.round(tbt) + 'ms' : 'N/A').padEnd(8) +
-      (cls !== undefined ? cls.toFixed(3) : 'N/A')
-    );
-  }
-
-  const a11yPass = total - a11yFails.length;
-
-  lines.push('');
-  lines.push(hr);
-  lines.push('  SUMMARY');
-  lines.push(hr);
-  lines.push('');
-  lines.push(`  Total pages audited:  ${total}`);
-  lines.push(`  Performance >=90:     ${perfPass}/${total}  ${perfPass === total ? '✅' : '⚠️'}`);
-  lines.push(`  Accessibility >=90:   ${a11yPass}/${total}  ${a11yPass === 0 ? '✅' : '⚠️'}`);
-
-  if (perfFails.length) {
-    lines.push('');
-    lines.push('  Performance failures (<90):');
-    perfFails.forEach(x => lines.push(`    ❌ ${x.page} — ${x.score}`));
-  }
-  if (a11yFails.length) {
-    lines.push('');
-    lines.push('  Accessibility failures (<90):');
-    a11yFails.forEach(x => lines.push(`    ❌ ${x.page} — ${x.score}`));
-  }
-
-  lines.push('');
-  lines.push(hr);
-
-  const reportPath = path.join(REPORTS_DIR, 'lighthouse-report.txt');
-  fs.writeFileSync(reportPath, lines.join('\n'), 'utf-8');
-  log(`Lighthouse text report saved: ${reportPath}`);
 }
 
 /** Check if something is listening on PORT */

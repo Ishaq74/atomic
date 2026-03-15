@@ -135,8 +135,20 @@ npx playwright test --headed
 npx playwright test --ui
 
 # Voir le rapport HTML
-npx playwright show-report
+npx playwright show-report tests/reports/playwright
+
+# Générer le rapport texte (après exécution)
+pnpm test:e2e:report
+# → tests/reports/playwright-report.txt
 ```
+
+### Rapports
+
+| Fichier | Contenu |
+| :-- | :-- |
+| `tests/reports/playwright/` | Rapport HTML Playwright (généré automatiquement) |
+| `tests/reports/playwright-results.json` | Résultats JSON bruts |
+| `tests/reports/playwright-report.txt` | Rapport texte lisible (généré via `pnpm test:e2e:report`) |
 
 ---
 

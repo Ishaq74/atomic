@@ -2,7 +2,7 @@
 
 > **Projet** : Atomic  
 > **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright + Pa11y + Lighthouse  
-> **Couverture globale** : **179 tests** · **78 audits a11y/perf** · **20 fichiers de test** · **~85 % des modules couverts**
+> **Couverture globale** : **179 tests** · **78 audits a11y/perf** · **20 fichiers de test** · **4 générateurs de rapports** · **~85 % des modules couverts**
 
 ---
 
@@ -29,8 +29,8 @@
 | Unit | 10 | 108 | ✅ 108/108 |
 | Integration | 8 | 49 | ✅ 49/49 |
 | E2E (Playwright) | 2 | 22 | ✅ 22/22 |
-| A11y — Pa11y-ci (WCAG AAA) | 1 config | 40 URLs | ⚠️ 8/40 (contrastes AAA + labels) |
-| A11y — Lighthouse CI | 3 configs | 38 URLs | ✅ 32/38 (6 perf < 0.9) |
+| A11y — Pa11y-ci (WCAG AAA) | 1 config | 40 URLs | ✅ 40/40 |
+| A11y — Lighthouse CI | 3 configs | 38 URLs | ⚠️ 32/38 (≤6 perf < 0.9) |
 | **Total** | **20** (+8 support) | **179 tests + 78 audits** | |
 
 ### Fichiers support
@@ -44,6 +44,9 @@
 | `tests/a11y/run.cjs` | Orchestrateur : build + serveur + audits + teardown |
 | `tests/a11y/lhci-authed.cjs` | Exécute LHCI pour les pages authentifiées/admin |
 | `tests/a11y/lhci-rename.cjs` | Renomme les rapports LHCI en noms lisibles |
+| `tests/helpers/vitest-report.cjs` | Génère `tests/reports/vitest-report.txt` depuis le JSON Vitest |
+| `tests/helpers/playwright-report.cjs` | Génère `tests/reports/playwright-report.txt` depuis le JSON Playwright |
+| `tests/helpers/lighthouse-report.cjs` | Génère `tests/reports/lighthouse-report.txt` (scores, CWV, audits échoués) |
 | `.pa11yci.cjs` | Configuration Pa11y-ci (40 URLs, WCAG AAA, axe) |
 | `lighthouserc.cjs` | Configuration Lighthouse CI (26 URLs publiques, ≥0.9 gates) |
 

@@ -240,6 +240,10 @@ jobs:
         if: ${{ !cancelled() }}
         run: pnpm a11y:lighthouse:rename
 
+      - name: Generate Lighthouse Report
+        if: ${{ !cancelled() }}
+        run: pnpm a11y:report
+
       - name: Teardown A11y Seed Users
         if: always()
         run: pnpm a11y:teardown

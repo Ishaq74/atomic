@@ -114,6 +114,8 @@ env:
 | Install | `pnpm install --frozen-lockfile` | Dépendances |
 | Migrations | `pnpm db:migrate` | Applique les migrations sur la DB de test |
 | Vitest | `pnpm test -- --coverage` | **157 tests** (108 unit + 49 integration) + coverage |
+| Generate Report | `pnpm test:report` | Génère `tests/reports/vitest-report.txt` depuis le JSON |
+| Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/vitest-*` (7 jours) |
 
 **Runtime estimé** : ~2 min
 
@@ -168,7 +170,8 @@ env:
 | Migrations | `pnpm db:migrate` | Migrations sur `atomic_e2e` |
 | Build | `pnpm build` | Build Astro SSR complet |
 | E2E | `pnpm test:e2e` | **22 tests** Playwright (Chromium) |
-| Artifact | `actions/upload-artifact@v5` | Upload `playwright-report/` (7 jours) |
+| Generate Report | `pnpm test:e2e:report` | Génère `tests/reports/playwright-report.txt` depuis le JSON |
+| Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/playwright/` (7 jours) |
 
 **Runtime estimé** : ~3-4 min
 
@@ -232,8 +235,10 @@ env:
 | LHCI Rename | `pnpm a11y:lighthouse:rename` | Renomme les rapports en noms lisibles |
 | LHCI Authed | `pnpm a11y:lighthouse:authed` | **8 user + 4 admin URLs** — ≥0.9 gates |
 | LHCI Rename | `pnpm a11y:lighthouse:rename` | Renomme les rapports authentifiés |
+| Generate Report | `pnpm a11y:report` | Génère `tests/reports/lighthouse-report.txt` (scores, CWV, audits) |
 | Teardown | `pnpm a11y:teardown` | Supprime les users seed (`if: always()`) |
-| Artifact | `actions/upload-artifact@v5` | Upload `.lighthouseci/` (7 jours) |
+| Artifact LHCI | `actions/upload-artifact@v5` | Upload `.lighthouseci/` (7 jours) |
+| Artifact Reports | `actions/upload-artifact@v5` | Upload `tests/reports/` (7 jours) |
 
 **Runtime estimé** : ~5-8 min
 
@@ -272,7 +277,7 @@ env:
 | Node | v22 |
 | pnpm | v10 |
 | Navigateur | Chromium (Playwright managed) |
-| Rapports | Playwright HTML (7j) + Lighthouse HTML (7j) |
+| Rapports | Vitest (txt+JSON, 7j) + Playwright HTML+JSON (7j) + Lighthouse HTML (7j) + A11y Reports (7j) |
 
 ---
 

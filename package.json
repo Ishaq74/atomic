@@ -34,6 +34,7 @@
     "a11y:lighthouse:rename": "node tests/a11y/lhci-rename.cjs",
     "a11y:lighthouse:report": "node tests/a11y/lhci-report.cjs",
     "a11y:lighthouse:report:contrast": "node tests/a11y/lhci-report.cjs --contrast",
+    "a11y:report": "node tests/helpers/lighthouse-report.cjs",
     "a11y": "node tests/a11y/run.cjs",
     "a11y:pa11y-only": "node tests/a11y/run.cjs --pa11y",
     "a11y:lighthouse-only": "node tests/a11y/run.cjs --lighthouse"
