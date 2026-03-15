@@ -7,7 +7,6 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { execSync } = require('node:child_process');
 
 const BASE = 'http://localhost:4321';
 const COOKIES_PATH = path.resolve(__dirname, '.a11y-cookies.json');
@@ -16,17 +15,10 @@ const COOKIES_PATH = path.resolve(__dirname, '.a11y-cookies.json');
 function findChrome() {
   if (process.env.CHROMIUM_PATH) return process.env.CHROMIUM_PATH;
   try {
-    const out = execSync('npx playwright install --dry-run 2>&1', { encoding: 'utf-8' });
-    const match = out.match(/Install location:\s+(.+chromium-\d+)/m);
-    if (match) {
-      const base = match[1].trim();
-      const isWin = process.platform === 'win32';
-      const exe = isWin
-        ? path.join(base, 'chrome-win64', 'chrome.exe')
-        : path.join(base, 'chrome-linux', 'chrome');
-      if (fs.existsSync(exe)) return exe;
-    }
-  } catch { /* ignore */ }
+    const { chromium } = require('@playwright/test');
+    const exe = chromium.executablePath();
+    if (exe && fs.existsSync(exe)) return exe;
+  } catch { /* Playwright not installed or no browser */ }
   return undefined; // let Puppeteer find its own
 }
 

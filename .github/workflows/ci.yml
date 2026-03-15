@@ -85,6 +85,18 @@ jobs:
       - name: Vitest
         run: pnpm test -- --coverage
 
+      - name: Generate Vitest Report
+        if: ${{ !cancelled() }}
+        run: pnpm test:report
+
+      - name: Upload Vitest Report
+        uses: actions/upload-artifact@v5
+        if: ${{ !cancelled() }}
+        with:
+          name: vitest-report
+          path: tests/reports/vitest-*
+          retention-days: 7
+
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-latest
@@ -139,12 +151,16 @@ jobs:
       - name: Run E2E Tests
         run: pnpm test:e2e
 
+      - name: Generate Playwright Report
+        if: ${{ !cancelled() }}
+        run: pnpm test:e2e:report
+
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v5
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: playwright-report/
+          path: tests/reports/playwright/
           retention-days: 7
 
   a11y-perf:
@@ -234,4 +250,12 @@ jobs:
         with:
           name: lighthouse-reports
           path: .lighthouseci/
+          retention-days: 7
+
+      - name: Upload A11y Reports
+        uses: actions/upload-artifact@v5
+        if: ${{ !cancelled() }}
+        with:
+          name: a11y-reports
+          path: tests/reports/
           retention-days: 7
