@@ -159,7 +159,13 @@ const {
 
   import { initCarousel } from "@atoms/carousel";
 
+  let controller: AbortController | null = null;
+
   function setupTestimonialCarousel() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const carouselElement = document.getElementById("testimonial-01-carousel");
     if (!carouselElement) return;
 
@@ -181,12 +187,12 @@ const {
     if (prevButton) {
       prevButton.addEventListener("click", () => {
         carouselManager?.scrollPrev();
-      });
+      }, { signal });
     }
     if (nextButton) {
       nextButton.addEventListener("click", () => {
         carouselManager?.scrollNext();
-      });
+      }, { signal });
     }
   }
 
@@ -195,4 +201,5 @@ const {
 
   // Reinitialize on Astro page transitions
   document.addEventListener("astro:after-swap", setupTestimonialCarousel);
+  document.addEventListener("astro:before-swap", () => { controller?.abort(); controller = null; });
 </script>

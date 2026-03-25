@@ -135,8 +135,9 @@ const particles = Array.from({ length: particleCount }, (_, i) => {
     cachedY: number;
   }
 
-  function initRepelParticles() {
+  function initRepelParticles(): () => void {
     const containers = document.querySelectorAll<HTMLElement>(".repel-particles");
+    const cleanups: (() => void)[] = [];
 
     containers.forEach((container) => {
       if (container.dataset.initialized === "true") return;
@@ -276,11 +277,33 @@ const particles = Array.from({ length: particleCount }, (_, i) => {
         },
         { once: true },
       );
+
+      cleanups.push(() => {
+        resizeObserver.disconnect();
+        container.removeEventListener("mouseenter", updateCachedPositions);
+        window.removeEventListener("scroll", handleScroll);
+        container.removeEventListener("mousemove", handleMouseMove);
+        container.removeEventListener("mouseenter", handleMouseEnter);
+        container.removeEventListener("mouseleave", handleMouseLeave);
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        delete container.dataset.initialized;
+      });
     });
+
+    return () => cleanups.forEach((fn) => fn());
   }
 
-  initRepelParticles();
-  document.addEventListener("astro:after-swap", initRepelParticles);
+  let cleanup: (() => void) | null = null;
+
+  function start() {
+    cleanup?.();
+    cleanup = initRepelParticles();
+  }
+
+  start();
+  document.addEventListener("astro:after-swap", start);
+  document.addEventListener("astro:before-swap", () => { cleanup?.(); cleanup = null; });
 </script>
 
 <style>
@@ -314,5 +337,14 @@ const particles = Array.from({ length: particleCount }, (_, i) => {
     transition:
       --push-x 50ms ease-out,
       --push-y 50ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .repel-particle {
+      transition: none;
+    }
+    .repel-particle[data-repelling="true"] {
+      transition: none;
+    }
   }
 </style>

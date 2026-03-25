@@ -9,6 +9,10 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint-and-check:
     name: Lint & Type Check
@@ -30,7 +34,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Security Audit
-        run: pnpm audit --prod --audit-level=high
+        run: pnpm audit --prod --audit-level=moderate
 
       - name: ESLint
         run: pnpm lint
@@ -81,6 +85,9 @@ jobs:
 
       - name: Run Migrations
         run: pnpm db:migrate
+
+      - name: Apply SQL Infra (indexes, triggers)
+        run: pnpm db:infra
 
       - name: Vitest
         run: pnpm test -- --coverage
@@ -145,6 +152,9 @@ jobs:
       - name: Run Migrations
         run: pnpm db:migrate
 
+      - name: Apply SQL Infra (indexes, triggers)
+        run: pnpm db:infra
+
       - name: Build
         run: pnpm build
 
@@ -186,7 +196,7 @@ jobs:
       DB_ENV: LOCAL
       NODE_ENV: test
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      BETTER_AUTH_URL: http://localhost:4321
+      BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
       SITE_URL: ${{ vars.SITE_URL }}
       SMTP_PROVIDER: NODEMAILER
       SMTP_FROM_EMAIL: ci@test.local
@@ -210,6 +220,9 @@ jobs:
 
       - name: Run Migrations
         run: pnpm db:migrate
+
+      - name: Apply SQL Infra (indexes, triggers)
+        run: pnpm db:infra
 
       - name: Build
         run: pnpm build
@@ -263,3 +276,67 @@ jobs:
           name: a11y-reports
           path: tests/reports/
           retention-days: 7
+
+  # ─── Build & Deploy ───────────────────────────────────────────────
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: [unit-tests, e2e-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      SITE_URL: ${{ vars.SITE_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+      BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Production Build
+        run: pnpm build
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: production-build
+          path: dist/
+          retention-days: 14
+
+      # ── Placeholder: deploy to your hosting provider ──
+      # Uncomment and configure for your infrastructure:
+      #
+      # - name: Deploy to production
+      #   run: |
+      #     echo "Deploy dist/ to production server"
+      #     # Example: rsync, scp, Docker push, fly deploy, etc.
+
+  # ─── CI Summary ───────────────────────────────────────────────────
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint-and-check, unit-tests, e2e-tests, a11y-perf]
+    if: always()
+    steps:
+      - name: CI Status Report
+        run: |
+          echo "## CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint & Type Check | ${{ needs.lint-and-check.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit & Integration Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | ${{ needs.e2e-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Accessibility & Performance | ${{ needs.a11y-perf.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if any job failed
+        if: contains(needs.*.result, 'failure')
+        run: exit 1

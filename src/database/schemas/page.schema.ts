@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -7,6 +7,7 @@ import {
   integer,
   uniqueIndex,
   index,
+  check,
 } from "drizzle-orm/pg-core";
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
@@ -36,6 +37,8 @@ export const pages = pgTable(
   (table) => [
     uniqueIndex("pages_locale_slug_uidx").on(table.locale, table.slug),
     index("pages_locale_idx").on(table.locale),
+    index("pages_locale_published_idx").on(table.locale, table.isPublished, table.sortOrder),
+    check("pages_publish_consistency", sql`NOT ${table.isPublished} OR ${table.publishedAt} IS NOT NULL`),
   ],
 );
 
@@ -62,7 +65,7 @@ export const pageSections = pgTable(
   },
   (table) => [
     index("page_sections_pageId_idx").on(table.pageId),
-    index("page_sections_pageId_sort_idx").on(table.pageId, table.sortOrder),
+    index("page_sections_pageId_visible_sort_idx").on(table.pageId, table.isVisible, table.sortOrder),
   ],
 );
 

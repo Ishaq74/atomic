@@ -6,7 +6,9 @@ import {
   integer,
   uniqueIndex,
   index,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ─── Site Settings ───────────────────────────────────────────────────────────
 // One row per locale. Stores site identity, SEO defaults, and branding assets.
@@ -55,7 +57,10 @@ export const socialLinks = pgTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("social_links_sortOrder_idx").on(table.sortOrder)],
+  (table) => [
+    uniqueIndex("social_links_platform_uidx").on(table.platform),
+    index("social_links_sortOrder_idx").on(table.sortOrder),
+  ],
 );
 
 // ─── Contact Info ────────────────────────────────────────────────────────────
@@ -106,6 +111,9 @@ export const openingHours = pgTable(
   },
   (table) => [
     uniqueIndex("opening_hours_day_uidx").on(table.dayOfWeek),
+    check("opening_hours_day_range", sql`${table.dayOfWeek} >= 0 AND ${table.dayOfWeek} <= 6`),
+    check("opening_hours_midday_consistency",
+      sql`NOT ${table.hasMiddayBreak} OR (${table.afternoonOpen} IS NOT NULL AND ${table.afternoonClose} IS NOT NULL)`),
   ],
 );
 
@@ -129,12 +137,15 @@ export const themeSettings = pgTable(
     fontHeading: text("font_heading"),
     fontBody: text("font_body"),
     borderRadius: text("border_radius"),
-    customCss: text("custom_css"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [uniqueIndex("theme_settings_name_uidx").on(table.name)],
+  (table) => [
+    uniqueIndex("theme_settings_name_uidx").on(table.name),
+    index("theme_settings_isActive_idx").on(table.isActive),
+    uniqueIndex("theme_one_active_uidx").on(table.isActive).where(sql`${table.isActive} = true`),
+  ],
 );

@@ -25,17 +25,17 @@ const firstTab = `section-0`;
     </h1>
   </div>
 
-  <Tabs defaultValue={firstTab}>
+  <Tabs defaultValue={firstTab} class="min-h-96">
     <TabsList class="mb-8 flex w-full flex-wrap gap-2">
       {t.sections.map((section, i) => (
-        <TabsTrigger value={`section-${i}`}>
+        <TabsTrigger value={`section-${i}`} defaultActive={i === 0}>
           {section.title}
         </TabsTrigger>
       ))}
     </TabsList>
 
     {t.sections.map((section, i) => (
-      <TabsContent value={`section-${i}`}>
+      <TabsContent value={`section-${i}`} defaultActive={i === 0}>
         {section.intro && (
           <p class="text-muted-foreground mb-6 text-pretty leading-relaxed">
             {section.intro}
@@ -59,6 +59,8 @@ const firstTab = `section-0`;
 </section>
 
 <script>
+  let legalController: AbortController | null = null;
+
   function activateTabFromHash() {
     const hash = window.location.hash.replace('#', '');
     if (!hash) return;
@@ -72,7 +74,14 @@ const firstTab = `section-0`;
     if (target) target.scrollIntoView({ behavior: 'smooth' });
   }
 
-  activateTabFromHash();
-  window.addEventListener('hashchange', activateTabFromHash);
-  document.addEventListener('astro:after-swap', activateTabFromHash);
+  function initLegal() {
+    legalController?.abort();
+    legalController = new AbortController();
+    window.addEventListener('hashchange', activateTabFromHash, { signal: legalController.signal });
+    activateTabFromHash();
+  }
+
+  initLegal();
+  document.addEventListener('astro:after-swap', initLegal);
+  document.addEventListener('astro:before-swap', () => { legalController?.abort(); legalController = null; });
 </script>

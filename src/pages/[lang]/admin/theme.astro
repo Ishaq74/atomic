@@ -10,7 +10,7 @@ import AdminThemePage from '@pages/admin/AdminThemePage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro as any);
+const result = await requireAdmin(Astro);
 if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 

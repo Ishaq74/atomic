@@ -8,15 +8,15 @@
 
 ## Vue d'ensemble
 
-**45 composants** répartis selon l'Atomic Design :
+**47 composants** répartis selon l'Atomic Design :
 
 | Niveau | Emplacement | Composants |
 | :-- | :-- | --: |
-| Atoms | `src/components/atoms/` | 45 |
+| Atoms | `src/components/atoms/` | 47 |
 | Molecules | `src/components/molecules/` | — |
-| Organisms | `src/components/organisms/` | Header, Footer, Testimonials |
+| Organisms | `src/components/organisms/` | AdminSidebar, AuthLayout, AuthSidebar, Footer, Header, OrgSidebar, Testimonials |
 | Pages | `src/components/pages/` | Home, About, Contact, Legal, Auth (7), Admin (8), Org (2), CMS (1) |
-| Wow | `src/components/wow/` | 7 effets visuels |
+| Wow | `src/components/wow/` | 8 effets visuels |
 
 ---
 

@@ -54,9 +54,10 @@ test.describe('CMS Site settings page', () => {
 
   test('site page has tabs for settings and hours', async ({ page }) => {
     await page.goto('/fr/admin/site');
-    // Look for tab-like navigation (settings / hours / contact / social)
-    const body = await page.textContent('body');
-    expect(body).toBeTruthy();
+    // Look for tab-like elements with role or data-attributes
+    const tabs = page.locator('[role="tab"], [data-tab], button:has-text("Heures"), button:has-text("Contact"), button:has-text("Social"), a[role="tab"]');
+    const count = await tabs.count();
+    expect(count).toBeGreaterThanOrEqual(1);
   });
 });
 

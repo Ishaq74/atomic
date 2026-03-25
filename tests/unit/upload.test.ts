@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 import { processUpload, UploadError } from '@/media/upload';
 import { deleteUpload } from '@/media/delete';
 import { ALLOWED_MIME_TYPES, DEFAULT_MAX_SIZE, UPLOAD_DIRS } from '@/media/types';
-import { unlink } from 'node:fs/promises';
+import { unlink, readFile } from 'node:fs/promises';
 
 /** Magic byte headers for valid image files */
 const IMAGE_HEADERS: Record<string, Uint8Array> = {
@@ -96,6 +96,66 @@ describe('processUpload', () => {
       .rejects.toThrow(UploadError);
   });
 
+  it('rejects empty file (size === 0)', async () => {
+    const file = new File([], 'empty.png', { type: 'image/png' });
+    await expect(processUpload(file, { subDir: 'images/test' }))
+      .rejects.toThrow(UploadError);
+
+    try {
+      await processUpload(file, { subDir: 'images/test' });
+    } catch (err) {
+      expect((err as UploadError).code).toBe('EMPTY_FILE');
+    }
+  });
+
+  it('sanitizes SVG with embedded <script> tag (saves cleaned version)', async () => {
+    const maliciousSvg = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert("xss")</script></svg>';
+    const file = new File([maliciousSvg], 'evil.svg', { type: 'image/svg+xml' });
+    const result = await processUpload(file, { subDir: 'images/test', allowedTypes: ['image/svg+xml'] as any });
+    createdFiles.push(result.path);
+
+    const saved = await readFile(result.path, 'utf-8');
+    expect(saved).not.toContain('<script');
+    expect(saved).not.toContain('alert');
+    expect(saved).toContain('<svg');
+  });
+
+  it('sanitizes SVG with onload event handler (saves cleaned version)', async () => {
+    const maliciousSvg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect/></svg>';
+    const file = new File([maliciousSvg], 'evil.svg', { type: 'image/svg+xml' });
+    const result = await processUpload(file, { subDir: 'images/test', allowedTypes: ['image/svg+xml'] as any });
+    createdFiles.push(result.path);
+
+    const saved = await readFile(result.path, 'utf-8');
+    expect(saved).not.toContain('onload');
+    expect(saved).not.toContain('alert');
+    expect(saved).toContain('<svg');
+  });
+
+  it('sanitizes SVG with foreignObject (saves cleaned version)', async () => {
+    const maliciousSvg = '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(1)</script></body></foreignObject></svg>';
+    const file = new File([maliciousSvg], 'evil.svg', { type: 'image/svg+xml' });
+    const result = await processUpload(file, { subDir: 'images/test', allowedTypes: ['image/svg+xml'] as any });
+    createdFiles.push(result.path);
+
+    const saved = await readFile(result.path, 'utf-8');
+    expect(saved).not.toContain('<script');
+    expect(saved).not.toContain('foreignObject');
+    expect(saved).toContain('<svg');
+  });
+
+  it('rejects subDir with path traversal', async () => {
+    const file = createMockFile('photo.jpg', 'fake-jpeg-data', 'image/jpeg');
+    await expect(processUpload(file, { subDir: '../../../etc' }))
+      .rejects.toThrow(UploadError);
+
+    try {
+      await processUpload(file, { subDir: '../../../etc' });
+    } catch (err) {
+      expect((err as UploadError).code).toBe('INVALID_SUBDIR');
+    }
+  });
+
   it('generates UUID filename (not original name)', async () => {
     const file = createMockFile('../../etc/passwd.png', 'data', 'image/png');
     const result = await processUpload(file, { subDir: 'images/test' });
@@ -139,11 +199,46 @@ describe('deleteUpload', () => {
       .rejects.toThrow('URL invalide');
   });
 
-  it('strips path traversal from URL', async () => {
-    // Even with ../.. in the URL, it should still look inside public/uploads/
-    // The function strips ".." so it won't escape the uploads dir
-    // This will throw ENOENT (file not found) rather than traversing
+  it('rejects path traversal attempts', async () => {
     await expect(deleteUpload('/uploads/../../etc/passwd'))
-      .rejects.toThrow(); // ENOENT, not a path traversal success
+      .rejects.toThrow('path traversal');
+  });
+
+  it('rejects URL-encoded path traversal (..%2f)', async () => {
+    // The url is /uploads/..%2f..%2fetc/passwd — after decoding by join/resolve this escapes
+    await expect(deleteUpload('/uploads/..%2f..%2fetc/passwd'))
+      .rejects.toThrow(); // Either 'path traversal' or ENOENT — must not silently succeed
+  });
+
+  it('rejects double-encoded path traversal (..%252f)', async () => {
+    await expect(deleteUpload('/uploads/..%252f..%252fetc/passwd'))
+      .rejects.toThrow();
+  });
+
+  it('rejects backslash traversal on Windows-style paths', async () => {
+    await expect(deleteUpload('/uploads/..\\..\\etc\\passwd'))
+      .rejects.toThrow('path traversal');
+  });
+
+  it('deletes companion WebP variant when deleting an image', async () => {
+    // Upload a JPEG (which generates a WebP variant)
+    const file = createMockFile('photo.jpg', 'jpeg-data', 'image/jpeg');
+    const result = await processUpload(file, { subDir: 'images/test' });
+
+    const webpPath = result.path.replace(/\.[^.]+$/, '.webp');
+    const { existsSync } = await import('node:fs');
+
+    // WebP may or may not have been generated (sharp may not be available in test)
+    // If it exists, ensure it's cleaned up
+    const webpExisted = existsSync(webpPath);
+
+    await deleteUpload(result.url);
+
+    // Main file should be gone
+    expect(existsSync(result.path)).toBe(false);
+    // If WebP existed, it should also be gone
+    if (webpExisted) {
+      expect(existsSync(webpPath)).toBe(false);
+    }
   });
 });

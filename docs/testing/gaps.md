@@ -58,7 +58,8 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 | P4-3 | `shutdownDb` | Cleanup de la connexion au shutdown | Fonction triviale, couverte par le teardown global |
 | P4-4 | Components UI | Tests de rendu des composants Astro/Starwind | Nécessiterait Container API (expérimental dans Astro) |
 | P4-5 | Admin CMS CRUD | Tests E2E de soumission réelle des formulaires admin | Couvert structurellement (page loads + form visible) ; le CRUD complet nécessiterait des fixtures seed complexes |
-| P4-6 | Actions admin | Tests d'intégration des 19 Astro Actions admin | Nécessiterait un harness de test spécifique pour Astro Actions (pas de API standard) |
+| P4-6 | Actions admin | Tests d'intégration des 19 Astro Actions admin | Partiellement couvert par `cms-admin.test.ts` (14 tests) + `admin-helpers.test.ts` (5 tests). Restant : test des handlers individuels via harness Astro Actions |
+| P4-7 | `/api/contact` | Test d'intégration de l'endpoint de formulaire de contact | Nécessite mock SMTP complet ; logique Zod couverte par `contact-form-template.test.ts` |
 
 ---
 
@@ -124,7 +125,7 @@ Tous les problèmes d'accessibilité ont été corrigés :
 | `src/database/schemas.ts` | 8 tables | 8 | 100 % |
 | `src/database/commands/_utils.ts` | 3 | 3 | 100 % |
 | `src/smtp/send.ts` | 1 | 1 | 100 % |
-| `src/smtp/env.ts` | 2 | 2 | 100 % |
+| `src/smtp/env.ts` | 3 | 3 | 100 % |
 | `src/media/upload.ts` | 1 | 1 | 100 % |
 | `src/media/delete.ts` | 1 | 1 | 100 % |
 | `src/media/types.ts` | 3 constants | 3 | 100 % |

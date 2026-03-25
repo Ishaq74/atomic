@@ -15,10 +15,8 @@ export default {
     analytics: 'التحليلات',
     integrations: 'التكاملات',
     team: 'الفريق',
-    pricing: 'الأسعار',
     about: 'حول',
     contact: 'اتصل بنا',
-    blog: 'المدونة',
   },
   cta: {
     getStarted: 'ابدأ الآن',
@@ -40,5 +38,6 @@ export default {
   a11y: {
     openMenu: 'فتح القائمة',
     switchLanguage: 'تغيير اللغة',
+    skipToContent: 'انتقل إلى المحتوى الرئيسي',
   },
 } satisfies CommonTranslations;

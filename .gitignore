@@ -37,3 +37,8 @@ tests/reports/*/
 # a11y audit artifacts
 .a11y-cookies.json
 .lighthouseci/
+
+# operational logs / dead letters
+email-dead-letter-*.jsonl
+audit-fallback-*.jsonl
+logs/

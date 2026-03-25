@@ -48,7 +48,11 @@ async function getSchema(client: Client) {
   return { tables: tables.rows, columns: columns.rows };
 }
 
+// Safe identifier regex — only allow normal PostgreSQL identifiers
+const SAFE_IDENT = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
 async function getData(client: Client, table: string) {
+  if (!SAFE_IDENT.test(table)) throw new Error(`Invalid table name: ${table}`);
   try {
     const res = await client.query(`SELECT * FROM "${table}" ORDER BY 1`);
     return res.rows;
@@ -61,8 +65,10 @@ async function getData(client: Client, table: string) {
 interface SqlRow { [key: string]: unknown }
 
 function diffRows(rowsA: SqlRow[], rowsB: SqlRow[]) {
-  const aNotInB = rowsA.filter(a => !rowsB.some(b => JSON.stringify(a) === JSON.stringify(b)));
-  const bNotInA = rowsB.filter(b => !rowsA.some(a => JSON.stringify(a) === JSON.stringify(b)));
+  const setB = new Set(rowsB.map(b => JSON.stringify(b)));
+  const setA = new Set(rowsA.map(a => JSON.stringify(a)));
+  const aNotInB = rowsA.filter(a => !setB.has(JSON.stringify(a)));
+  const bNotInA = rowsB.filter(b => !setA.has(JSON.stringify(b)));
   return { aNotInB, bNotInA };
 }
 

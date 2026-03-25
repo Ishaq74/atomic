@@ -18,6 +18,7 @@ pnpm run db:migrate -- --reset # supprime TOUTES les tables puis applique toutes
 5. Compare les fichiers `.sql` dans `src/database/migrations/` avec le journal
 6. Applique chaque migration SQL en attente (statement par statement, transaction par statement)
 7. Enregistre chaque migration appliquée dans `__drizzle_migrations`
+8. Si le projet utilise `src/database/infra/`, appliquer ensuite `pnpm run db:infra` pour la couche SQL avancée hors Drizzle
 
 ## Flag `--reset`
 
@@ -28,7 +29,7 @@ Supprime toutes les tables + l'historique des migrations, puis applique tout dep
 ## Variables d'environnement
 
 | Variable | Requis | Description |
-|---|---|---|
+| --- | --- | --- |
 | `DB_ENV` | Non | `LOCAL` (défaut), `PROD`, ou `TEST` |
 | `DATABASE_URL_*` | Oui | URL correspondant à `DB_ENV` |
 | `CONFIRM_PROD` | Non | `oui` pour skip le prompt interactif en CI/CD |
@@ -44,3 +45,7 @@ Supprime toutes les tables + l'historique des migrations, puis applique tout dep
 - `src/database/env.ts` — résolution d'URLs
 - `src/database/drizzle.ts` — pool et `getPgClient()`
 - `src/database/commands/_utils.ts` — `confirmProd()`, `confirmDestructive()`, `resetAllTables()`
+
+## Voir aussi
+
+- [infra.md](infra.md) — Appliquer la couche SQL d'infrastructure

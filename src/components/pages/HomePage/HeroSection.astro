@@ -29,7 +29,7 @@ interface Props extends HTMLAttributes<"section"> {
   /** Badge href */
   badgeHref?: string;
   /** Badge icon component */
-  badgeIcon?: any;
+  badgeIcon?: typeof IconSparkles;
   /** Main heading text */
   heading?: string;
   /** Description text */
@@ -250,12 +250,31 @@ const {
       transform: translateX(0);
     }
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-stagger {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    .hero-carousel-entrance {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
 </style>
 
 <script>
   import { initCarousel } from "@atoms/carousel";
 
+  let controller: AbortController | null = null;
+
   function setupHero7Carousel() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const carouselElement = document.getElementById("hero7-carousel");
     if (!carouselElement) return;
 
@@ -290,7 +309,7 @@ const {
         dots.forEach((dot, index) => {
           dot.addEventListener("click", () => {
             api.scrollTo(index);
-          });
+          }, { signal });
         });
       },
     });
@@ -301,4 +320,5 @@ const {
 
   // Reinitialize on Astro page transitions
   document.addEventListener("astro:after-swap", setupHero7Carousel);
+  document.addEventListener("astro:before-swap", () => { controller?.abort(); controller = null; });
 </script>

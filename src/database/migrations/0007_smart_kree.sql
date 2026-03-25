@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "theme_one_active_uidx" ON "theme_settings" USING btree ("is_active") WHERE "theme_settings"."is_active" = true;--> statement-breakpoint
+ALTER TABLE "opening_hours" ADD CONSTRAINT "opening_hours_midday_consistency" CHECK (NOT "opening_hours"."has_midday_break" OR ("opening_hours"."afternoon_open" IS NOT NULL AND "opening_hours"."afternoon_close" IS NOT NULL));

@@ -1,5 +1,6 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@atoms/card';
 import Label from '@atoms/label/Label.astro';
@@ -10,7 +11,7 @@ import AsyncButton from '@wow/AsyncButton.astro';
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser | null;
 }
 
 const { t, locale } = Astro.props;
@@ -32,12 +33,12 @@ const forgotPasswordUrl = getAuthUrl(locale, 'forgot-password', t);
       >
         <div class="grid gap-2">
           <Label for="email">{t.signIn.email}</Label>
-          <Input id="email" name="email" type="email" placeholder={t.signIn.emailPlaceholder} required />
+          <Input id="email" name="email" type="email" placeholder={t.signIn.emailPlaceholder} required autocomplete="email" />
         </div>
 
         <div class="grid gap-2">
           <Label for="password">{t.signIn.password}</Label>
-          <Input id="password" name="password" type="password" placeholder={t.signIn.passwordPlaceholder} required />
+          <Input id="password" name="password" type="password" placeholder={t.signIn.passwordPlaceholder} required autocomplete="current-password" />
         </div>
 
         <div class="flex justify-end">

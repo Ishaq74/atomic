@@ -1,5 +1,6 @@
 import { eq, asc } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
+import { cached } from "@database/cache";
 import {
   siteSettings,
   socialLinks,
@@ -7,51 +8,73 @@ import {
   openingHours,
   themeSettings,
 } from "@database/schemas";
+import { isValidLocale } from "@i18n/utils";
 
-export async function getSiteSettings(locale: string) {
-  const db = getDrizzle();
-  const [row] = await db
-    .select()
-    .from(siteSettings)
-    .where(eq(siteSettings.locale, locale))
-    .limit(1);
-  return row ?? null;
-}
+export const getSiteSettings = cached(
+  (locale: string) => `site:settings:${locale}`,
+  async (locale: string) => {
+    if (!isValidLocale(locale)) return null;
+    const db = getDrizzle();
+    const [row] = await db
+      .select()
+      .from(siteSettings)
+      .where(eq(siteSettings.locale, locale))
+      .limit(1);
+    return row ?? null;
+  },
+);
 
-export async function getSocialLinks() {
-  const db = getDrizzle();
-  return db
-    .select()
-    .from(socialLinks)
-    .where(eq(socialLinks.isActive, true))
-    .orderBy(asc(socialLinks.sortOrder));
-}
+export const getSocialLinks = cached(
+  () => "site:social",
+  async () => {
+    const db = getDrizzle();
+    return db
+      .select()
+      .from(socialLinks)
+      .where(eq(socialLinks.isActive, true))
+      .orderBy(asc(socialLinks.sortOrder))
+      .limit(100);
+  },
+);
 
-export async function getContactInfo() {
-  const db = getDrizzle();
-  const [row] = await db.select().from(contactInfo).limit(1);
-  return row ?? null;
-}
+export const getContactInfo = cached(
+  () => "site:contact",
+  async () => {
+    const db = getDrizzle();
+    const [row] = await db.select().from(contactInfo).limit(1);
+    return row ?? null;
+  },
+);
 
-export async function getOpeningHours() {
-  const db = getDrizzle();
-  return db
-    .select()
-    .from(openingHours)
-    .orderBy(asc(openingHours.dayOfWeek));
-}
+export const getOpeningHours = cached(
+  () => "site:hours",
+  async () => {
+    const db = getDrizzle();
+    return db
+      .select()
+      .from(openingHours)
+      .orderBy(asc(openingHours.dayOfWeek))
+      .limit(50);
+  },
+);
 
-export async function getActiveTheme() {
-  const db = getDrizzle();
-  const [row] = await db
-    .select()
-    .from(themeSettings)
-    .where(eq(themeSettings.isActive, true))
-    .limit(1);
-  return row ?? null;
-}
+export const getActiveTheme = cached(
+  () => "site:theme",
+  async () => {
+    const db = getDrizzle();
+    const [row] = await db
+      .select()
+      .from(themeSettings)
+      .where(eq(themeSettings.isActive, true))
+      .limit(1);
+    return row ?? null;
+  },
+);
 
-export async function getAllThemes() {
-  const db = getDrizzle();
-  return db.select().from(themeSettings).orderBy(asc(themeSettings.name));
-}
+export const getAllThemes = cached(
+  () => "site:themes",
+  async () => {
+    const db = getDrizzle();
+    return db.select().from(themeSettings).orderBy(asc(themeSettings.name)).limit(100);
+  },
+);

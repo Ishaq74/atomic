@@ -1,15 +1,26 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { themeSettings } from "@database/schemas";
-import { requireAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { invalidateCache } from "@database/cache";
+import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
 
 const oklchRegex = /^oklch\(\s*[\d.]+%?\s+[\d.]+\s+[\d.]+\s*\)$/;
 const colorField = (label: string) =>
   z
     .string()
     .regex(oklchRegex, `La couleur « ${label} » doit être au format OKLCH (ex: oklch(0.65 0.15 250)).`)
+    .refine((v) => {
+      const m = v.match(/^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)\s*\)$/);
+      if (!m) return false;
+      const l = parseFloat(m[1]);
+      const isPct = m[2] === '%';
+      const c = parseFloat(m[3]);
+      const h = parseFloat(m[4]);
+      const lValid = isPct ? (l >= 0 && l <= 100) : (l >= 0 && l <= 1);
+      return lValid && c >= 0 && c <= 0.5 && h >= 0 && h <= 360;
+    }, `La couleur « ${label} » a des valeurs hors limites (L: 0-1 ou 0-100%, C: 0-0.5, H: 0-360).`)
     .nullable()
     .optional();
 
@@ -18,7 +29,7 @@ export const createTheme = defineAction({
     name: z.string().min(1, "Le nom du thème est requis.").max(50),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "theme");
     const db = getDrizzle();
 
@@ -33,6 +44,7 @@ export const createTheme = defineAction({
       metadata: { name: created.name },
     });
 
+    invalidateCache("site:theme");
     return created;
   },
 });
@@ -68,31 +80,50 @@ export const updateTheme = defineAction({
       .max(20, "Le border-radius ne peut pas dépasser 20 caractères.")
       .nullable()
       .optional(),
-    customCss: z
-      .string()
-      .max(10000, "Le CSS personnalisé ne peut pas dépasser 10 000 caractères.")
-      .nullable()
-      .optional(),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "theme");
 
     const { id, ...data } = input;
     const db = getDrizzle();
 
-    // Si on active ce thème, désactiver les autres
-    if (data.isActive === true) {
-      await db
-        .update(themeSettings)
-        .set({ isActive: false });
-    }
+    const [updated] = await db.transaction(async (tx) => {
+      // Lock all theme rows to prevent concurrent activation races
+      await tx.execute(sql`SELECT id FROM theme_settings FOR UPDATE`);
 
-    const [updated] = await db
-      .update(themeSettings)
-      .set(data)
-      .where(eq(themeSettings.id, id))
-      .returning();
+      // Si on active ce thème, désactiver les autres
+      if (data.isActive === true) {
+        await tx
+          .update(themeSettings)
+          .set({ isActive: false })
+          .where(eq(themeSettings.isActive, true));
+      }
+
+      // Prevent deactivating the only active theme (rows already locked above)
+      if (data.isActive === false) {
+        const activeThemes = await tx
+          .select({ id: themeSettings.id })
+          .from(themeSettings)
+          .where(eq(themeSettings.isActive, true));
+        const current = activeThemes.find((r) => r.id === id);
+        if (current) {
+          const otherActive = activeThemes.some((r) => r.id !== id);
+          if (!otherActive) {
+            throw new ActionError({
+              code: "BAD_REQUEST",
+              message: "Impossible de désactiver le seul thème actif. Activez un autre thème d'abord.",
+            });
+          }
+        }
+      }
+
+      return tx
+        .update(themeSettings)
+        .set(data)
+        .where(eq(themeSettings.id, id))
+        .returning();
+    });
 
     if (!updated) {
       throw new ActionError({
@@ -107,6 +138,7 @@ export const updateTheme = defineAction({
       metadata: { name: updated.name, isActive: updated.isActive },
     });
 
+    invalidateCache("site:theme");
     return updated;
   },
 });
@@ -116,28 +148,31 @@ export const deleteTheme = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "theme");
     const db = getDrizzle();
 
-    const [existing] = await db
-      .select()
-      .from(themeSettings)
-      .where(eq(themeSettings.id, input.id))
-      .limit(1);
+    const existing = await db.transaction(async (tx) => {
+      const [row] = await tx
+        .select()
+        .from(themeSettings)
+        .where(eq(themeSettings.id, input.id))
+        .limit(1);
 
-    if (!existing) {
-      throw new ActionError({ code: "NOT_FOUND", message: "Thème introuvable." });
-    }
+      if (!row) {
+        throw new ActionError({ code: "NOT_FOUND", message: "Thème introuvable." });
+      }
 
-    if (existing.isActive) {
-      throw new ActionError({
-        code: "BAD_REQUEST",
-        message: "Impossible de supprimer le thème actif. Activez un autre thème d'abord.",
-      });
-    }
+      if (row.isActive) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "Impossible de supprimer le thème actif. Activez un autre thème d'abord.",
+        });
+      }
 
-    await db.delete(themeSettings).where(eq(themeSettings.id, input.id));
+      await tx.delete(themeSettings).where(eq(themeSettings.id, input.id));
+      return row;
+    });
 
     auditAdmin(context, user.id, "THEME_DELETE", {
       resource: "theme_settings",
@@ -145,6 +180,7 @@ export const deleteTheme = defineAction({
       metadata: { name: existing.name },
     });
 
-    return { deleted: true };
+    invalidateCache("site:theme");
+    return { success: true as const };
   },
 });

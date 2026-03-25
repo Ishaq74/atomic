@@ -131,7 +131,13 @@ const {
 </section>
 
 <script>
+  let controller: AbortController | null = null;
+
   function initFeature25Marquee() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const marquee = document.getElementById("feature-25-marquee");
     if (!marquee) return;
 
@@ -141,17 +147,18 @@ const {
         row.querySelectorAll(".feature-25-animate").forEach((el) => {
           (el as HTMLElement).style.animationPlayState = "paused";
         });
-      });
+      }, { signal });
       row.addEventListener("mouseleave", () => {
         row.querySelectorAll(".feature-25-animate").forEach((el) => {
           (el as HTMLElement).style.animationPlayState = "running";
         });
-      });
+      }, { signal });
     });
   }
 
   initFeature25Marquee();
   document.addEventListener("astro:after-swap", initFeature25Marquee);
+  document.addEventListener("astro:before-swap", () => { controller?.abort(); controller = null; });
 </script>
 
 <style>
@@ -167,5 +174,11 @@ const {
   .feature-25-animate {
     animation: feature-25-scroll var(--marquee-duration) linear infinite;
     animation-direction: var(--direction, normal);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .feature-25-animate {
+      animation-play-state: paused;
+    }
   }
 </style>

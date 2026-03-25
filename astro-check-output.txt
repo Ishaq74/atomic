@@ -1,0 +1,6 @@
+[ASTRO] SITE_URL is not set ÔÇö using http://localhost:4321 fallback. Set SITE_URL for production builds.
+[2m22:06:17[22m [34m[@astrojs/node][39m Enabling sessions with filesystem storage
+[2m22:06:18[22m [34m[content][39m Syncing content
+[2m22:06:18[22m [34m[content][39m Synced content
+[2m22:06:18[22m [34m[types][39m Generated [2m321ms[22m
+[2m22:06:18[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\Utilisateur\Documents\atomic...

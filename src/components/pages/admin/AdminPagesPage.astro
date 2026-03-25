@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atom
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
 import Badge from '@atoms/badge/Badge.astro';
 import Button from '@atoms/button/Button.astro';
+import AdminPagination from '@molecules/AdminPagination/AdminPagination.astro';
 
 type PageRow = typeof pages.$inferSelect;
 
@@ -15,18 +16,16 @@ interface Props {
   t: AuthTranslations;
   locale: Locale;
   pages: PageRow[];
+  currentPage: number;
+  totalPages: number;
+  baseUrl: URL;
 }
 
-const { t, locale, pages: allPages } = Astro.props;
+const { t, locale, pages: allPages, currentPage, totalPages, baseUrl } = Astro.props;
 const cms = t.admin.cms.pages;
-
-function formatDate(d: Date | string | null) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
-}
 ---
 
-<div
+<pages-manager
   id="cms-pages-data"
   data-locale={locale}
   data-t-saved={cms.saved}
@@ -105,65 +104,65 @@ function formatDate(d: Date | string | null) {
       )}
     </CardContent>
   </Card>
-</div>
+
+  <AdminPagination currentPage={currentPage} totalPages={totalPages} baseUrl={baseUrl} />
+</pages-manager>
 
 <script>
   import { actions } from 'astro:actions';
   import { toast } from '@atoms/toast';
 
-  function init() {
-    const root = document.getElementById('cms-pages-data');
-    if (!root) return;
-    const locale = root.dataset.locale!;
-    const tSaved = root.dataset.tSaved ?? 'Saved.';
-    const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
-    const tError = root.dataset.tError ?? 'Error.';
-    const tConfirm = root.dataset.tConfirm ?? 'Delete?';
+  class PagesManager extends HTMLElement {
+    connectedCallback() {
+      const locale = this.dataset.locale!;
+      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
+      const tError = this.dataset.tError ?? 'Error.';
+      const tConfirm = this.dataset.tConfirm ?? 'Delete?';
 
-    // ─── Create Page ───
-    document.getElementById('create-page-btn')?.addEventListener('click', async () => {
-      const { error } = await actions.createPage({
-        locale: locale as 'fr' | 'en' | 'es' | 'ar',
-        slug: 'new-page-' + Date.now(),
-        title: 'New Page',
-      });
-      if (!error) location.reload();
-      else toast.error(error.message ?? tError);
-    });
-
-    // ─── Toggle Publish ───
-    document.querySelectorAll<HTMLElement>('.page-toggle-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.id!;
-        const isPublished = btn.dataset.published === 'true';
-        const { error } = await actions.publishPage({ id, isPublished: !isPublished });
+      // ─── Create Page ───
+      this.querySelector('#create-page-btn')?.addEventListener('click', async () => {
+        const { error } = await actions.createPage({
+          locale: locale as 'fr' | 'en' | 'es' | 'ar',
+          slug: 'new-page-' + Date.now(),
+          title: 'New Page',
+        });
         if (!error) location.reload();
         else toast.error(error.message ?? tError);
       });
-    });
 
-    // ─── Delete Page ───
-    document.querySelectorAll<HTMLElement>('.page-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        if (!confirm(tConfirm)) return;
-        const id = btn.dataset.id!;
-        const { error } = await actions.deletePage({ id });
-        if (!error) { toast.success(tDeleted); btn.closest('.cms-page-row')?.remove(); }
-        else toast.error(error.message ?? tError);
+      // ─── Toggle Publish ───
+      this.querySelectorAll<HTMLElement>('.page-toggle-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id!;
+          const isPublished = btn.dataset.published === 'true';
+          const { error } = await actions.publishPage({ id, isPublished: !isPublished });
+          if (!error) location.reload();
+          else toast.error(error.message ?? tError);
+        });
       });
-    });
 
-    // ─── Edit Page (redirect to edit page with sections) ───
-    document.querySelectorAll<HTMLElement>('.page-edit-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.id!;
-        const url = new URL(window.location.href);
-        url.searchParams.set('edit', id);
-        window.location.href = url.toString();
+      // ─── Delete Page ───
+      this.querySelectorAll<HTMLElement>('.page-delete-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!confirm(tConfirm)) return;
+          const id = btn.dataset.id!;
+          const { error } = await actions.deletePage({ id });
+          if (!error) { toast.success(tDeleted); btn.closest('.cms-page-row')?.remove(); }
+          else toast.error(error.message ?? tError);
+        });
       });
-    });
+
+      // ─── Edit Page (redirect to edit page with sections) ───
+      this.querySelectorAll<HTMLElement>('.page-edit-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id!;
+          const url = new URL(window.location.href);
+          url.searchParams.set('edit', id);
+          window.location.href = url.toString();
+        });
+      });
+    }
   }
 
-  init();
-  document.addEventListener('astro:after-swap', init);
+  customElements.define('pages-manager', PagesManager);
 </script>

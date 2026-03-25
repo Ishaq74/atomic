@@ -10,7 +10,7 @@ Overview of the transactional email system wired into better-auth for Atomic.
 src/
 ├─ lib/auth.ts                       # better-auth instance — callbacks here
 ├─ smtp/
-│  ├─ env.ts                         # SMTP_PROVIDER, SMTP_FROM, credentials
+│  ├─ env.ts                         # SMTP_PROVIDER, SMTP_FROM_EMAIL, SMTP_FROM_NAME, credentials
 │  ├─ types.ts                       # EmailPayload interface
 │  ├─ send.ts                        # sendEmail() — unified entry point
 │  ├─ providers/
@@ -197,7 +197,7 @@ The provider is selected by the `SMTP_PROVIDER` environment variable:
 | `resend`     | Resend SDK                 | `RESEND_API_KEY`                         |
 | `nodemailer` | Generic SMTP (Nodemailer)  | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` |
 
-All providers share the `SMTP_FROM` env var for the sender address.
+All providers share the `SMTP_FROM_EMAIL` and `SMTP_FROM_NAME` env vars for the sender address (defaults to `Atomic` if `SMTP_FROM_NAME` is not set).
 
 ---
 

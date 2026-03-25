@@ -9,18 +9,23 @@ describe('AuditAction type — CMS actions', () => {
     'SOCIAL_LINK_CREATE',
     'SOCIAL_LINK_UPDATE',
     'SOCIAL_LINK_DELETE',
+    'SOCIAL_LINK_REORDER',
     'CONTACT_INFO_UPDATE',
     'OPENING_HOURS_UPDATE',
+    'NAVIGATION_MENU_CREATE',
+    'NAVIGATION_MENU_UPDATE',
+    'NAVIGATION_MENU_DELETE',
     'NAVIGATION_ITEM_CREATE',
     'NAVIGATION_ITEM_UPDATE',
     'NAVIGATION_ITEM_DELETE',
     'THEME_UPDATE',
     'THEME_CREATE',
     'THEME_DELETE',
+    'EMAIL_SEND_FAILED',
   ];
 
   it('has all CMS audit actions defined', () => {
-    expect(cmsActions.length).toBe(12);
+    expect(cmsActions.length).toBe(17);
     cmsActions.forEach((action) => {
       expect(action).toBeTypeOf('string');
     });

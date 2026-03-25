@@ -1,19 +1,23 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AuditLogRow } from '@/lib/auth-data';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
 import { Card, CardContent } from '@atoms/card';
 import Badge from '@atoms/badge/Badge.astro';
 import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 import { DataView } from '@molecules/DataView';
+import AdminPagination from '@molecules/AdminPagination/AdminPagination.astro';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  adminAuditLogs: any[];
+  adminAuditLogs: AuditLogRow[];
+  currentPage: number;
+  totalPages: number;
+  baseUrl: URL;
 }
 
-const { t, locale, adminAuditLogs } = Astro.props;
+const { t, locale, adminAuditLogs, currentPage, totalPages, baseUrl } = Astro.props;
 const ta = t.admin;
 
 function formatDate(d: Date | string | null) {
@@ -99,6 +103,8 @@ const uniqueActions = [...new Set(adminAuditLogs.map((l: any) => l.action))].sor
     )}
   </div>
 </DataView>
+
+<AdminPagination currentPage={currentPage} totalPages={totalPages} baseUrl={baseUrl} />
 
 <script>
   function init() {

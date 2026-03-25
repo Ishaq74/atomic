@@ -54,9 +54,14 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     // Nettoyage de l'ancien fichier si oldUrl fourni
+    // Restrict to the same upload-type directory to prevent cross-type deletion
     const oldUrl = formData.get('oldUrl') as string | null;
-    if (oldUrl?.startsWith('/uploads/')) {
-      try { await deleteUpload(oldUrl); } catch { /* ancien fichier déjà absent */ }
+    const expectedDir = `/uploads/${UPLOAD_DIRS[type as UploadType]}/`;
+    if (oldUrl?.startsWith(expectedDir)) {
+      // Validate URL contains only safe path characters (no path traversal)
+      if (/^\/uploads\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/.test(oldUrl)) {
+        try { await deleteUpload(oldUrl); } catch { /* ancien fichier déjà absent */ }
+      }
     }
 
     // Audit log

@@ -50,8 +50,8 @@ describe('Audit — logAuditEvent()', () => {
     expect(row.userAgent).toBe('vitest');
     expect(new Date(row.createdAt).getTime()).toBeGreaterThanOrEqual(before - 1000);
 
-    // metadata stored as JSON string
-    const meta = JSON.parse(row.metadata!);
+    // metadata stored as jsonb — returned as object
+    const meta = row.metadata as Record<string, unknown>;
     expect(meta.originalName).toBe('test.jpg');
     expect(meta.size).toBe(12345);
   });
@@ -185,10 +185,45 @@ describe('Audit — Hooks integration', () => {
     expect(entry).not.toBeNull();
 
     if (entry!.metadata) {
-      const meta = JSON.parse(entry!.metadata);
+      const meta = entry!.metadata as Record<string, unknown>;
       expect(meta.password).toBeUndefined();
       expect(meta.currentPassword).toBeUndefined();
       expect(meta.newPassword).toBeUndefined();
+    }
+
+    if (result?.user?.id) await test.deleteUser(result.user.id).catch(() => {});
+  });
+
+  it('logs SIGN_IN_FAILED for bad credentials', async () => {
+    try {
+      await auth.api.signInEmail({
+        body: { email: 'nonexistent-audit@test.com', password: 'WrongPass1!' },
+      });
+    } catch {
+      // expected
+    }
+
+    const entry = await getLatestAudit('SIGN_IN_FAILED');
+    expect(entry).not.toBeNull();
+    expect(entry!.resource).toBe('session');
+    expect(entry!.userId).toBeNull();
+  });
+
+  it('filters metadata to SAFE_FIELDS only (no password in metadata)', async () => {
+    const email = `audit-safe-${Date.now()}@test.com`;
+    const result = await auth.api.signUpEmail({
+      body: { email, password: 'SafeCheck1!', name: 'Safe User' },
+    });
+
+    const entry = await getLatestAudit('SIGN_UP');
+    expect(entry).not.toBeNull();
+
+    if (entry!.metadata) {
+      const meta = entry!.metadata as Record<string, unknown>;
+      // password must NEVER appear in metadata
+      expect(meta).not.toHaveProperty('password');
+      expect(meta).not.toHaveProperty('currentPassword');
+      expect(meta).not.toHaveProperty('newPassword');
     }
 
     if (result?.user?.id) await test.deleteUser(result.user.id).catch(() => {});

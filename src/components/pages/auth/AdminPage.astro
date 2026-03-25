@@ -1,5 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { AdminUser, Organization, AuditLogRow } from '@/lib/auth-data';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
@@ -17,14 +19,15 @@ import {
   DialogClose,
   DialogFooter,
 } from '@atoms/dialog';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  adminUsers?: any[];
-  adminOrgs?: any[];
-  adminAuditLogs?: any[];
+  user: AppUser;
+  adminUsers?: AdminUser[];
+  adminOrgs?: Organization[];
+  adminAuditLogs?: AuditLogRow[];
   adminStats?: { totalUsers: number; totalOrganizations: number; recentSignups: number };
 }
 
@@ -231,7 +234,7 @@ const uniqueActions = [...new Set(adminAuditLogs.map((l: any) => l.action))].sor
                 <TableRow>
                   <TableCell>
                     <div class="flex items-center gap-2">
-                      {org.logo && <img src={org.logo} alt={org.name} class="w-6 h-6 rounded" />}
+                      {org.logo && safeUrl(org.logo) && <img src={safeUrl(org.logo)!} alt={org.name} class="w-6 h-6 rounded" />}
                       <span class="font-medium">{org.name}</span>
                     </div>
                   </TableCell>

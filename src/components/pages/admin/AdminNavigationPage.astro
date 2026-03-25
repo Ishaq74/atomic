@@ -27,6 +27,8 @@ interface Props {
 const { t, locale, menus, items, selectedMenu, selectedLocale } = Astro.props;
 const cms = t.admin.cms.navigation;
 
+Astro.csp?.insertDirective("connect-src 'self' https://api.iconify.design");
+
 const rootItems = items.filter((i) => !i.parentId);
 ---
 
@@ -49,7 +51,7 @@ const rootItems = items.filter((i) => !i.parentId);
       <!-- ─── Menu & Locale Selectors ─── -->
       <form method="get" class="mb-6 flex flex-wrap gap-4">
         <div class="grid gap-1">
-          <Label>{cms.selectMenu}</Label>
+          <Label for="nav-menu-select">{cms.selectMenu}</Label>
           <NativeSelect name="menu" id="nav-menu-select">
             {menus.map((m) => (
               <NativeSelectOption value={m.id} selected={m.id === selectedMenu}>
@@ -59,7 +61,7 @@ const rootItems = items.filter((i) => !i.parentId);
           </NativeSelect>
         </div>
         <div class="grid gap-1">
-          <Label>{cms.selectLocale}</Label>
+          <Label for="nav-locale-select">{cms.selectLocale}</Label>
           <NativeSelect name="locale" id="nav-locale-select">
             {LOCALES.map((l) => (
               <NativeSelectOption value={l} selected={l === selectedLocale}>
@@ -92,16 +94,16 @@ const rootItems = items.filter((i) => !i.parentId);
             >
               <div class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:items-end">
                 <div class="grid gap-1">
-                  <Label>{cms.labelField}</Label>
-                  <Input name="label" value={item.label} class="nav-label" />
+                  <Label for={`nav-label-${item.id}`}>{cms.labelField}</Label>
+                  <Input id={`nav-label-${item.id}`} name="label" value={item.label} class="nav-label" />
                 </div>
                 <div class="grid gap-1">
-                  <Label>{cms.urlField}</Label>
-                  <Input name="url" value={item.url ?? ''} class="nav-url" />
+                  <Label for={`nav-url-${item.id}`}>{cms.urlField}</Label>
+                  <Input id={`nav-url-${item.id}`} name="url" value={item.url ?? ''} class="nav-url" />
                 </div>
                 <div class="grid gap-1">
-                  <Label>{cms.parentField}</Label>
-                  <NativeSelect class="nav-parent">
+                  <Label for={`nav-parent-${item.id}`}>{cms.parentField}</Label>
+                  <NativeSelect id={`nav-parent-${item.id}`} class="nav-parent">
                     <NativeSelectOption value="">{cms.rootItem}</NativeSelectOption>
                     {rootItems.filter((r) => r.id !== item.id).map((r) => (
                       <NativeSelectOption value={r.id} selected={r.id === item.parentId}>
@@ -121,7 +123,7 @@ const rootItems = items.filter((i) => !i.parentId);
                   {cms.openInNewTab}
                 </label>
                 <div class="grid gap-1 w-48">
-                  <Label>{cms.iconField}</Label>
+                  <Label for={`nav-icon-${item.id}`}>{cms.iconField}</Label>
                   <IconPicker
                     id={`nav-icon-${item.id}`}
                     value={item.icon}
@@ -131,8 +133,8 @@ const rootItems = items.filter((i) => !i.parentId);
                   />
                 </div>
                 <div class="grid gap-1 w-20">
-                  <Label>{cms.sortOrderField}</Label>
-                  <Input type="number" value={String(item.sortOrder ?? 0)} class="nav-sort text-xs" />
+                  <Label for={`nav-sort-${item.id}`}>{cms.sortOrderField}</Label>
+                  <Input id={`nav-sort-${item.id}`} type="number" value={String(item.sortOrder ?? 0)} class="nav-sort text-xs" />
                 </div>
               </div>
             </div>

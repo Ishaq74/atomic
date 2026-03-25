@@ -9,41 +9,50 @@
 ```text
 tests/
 ├── unit/                              # Tests unitaires (Vitest)
-│   ├── rate-limit.test.ts             #   7 tests — checkRateLimit()
+│   ├── rate-limit.test.ts             #   8 tests — checkRateLimit() + LRU eviction
 │   ├── i18n-utils.test.ts             #   6 tests — toLocale, isRTL, getDirection
-│   ├── extract-ip.test.ts             #   8 tests — extractIp()
-│   ├── upload.test.ts                 #  10 tests — processUpload, deleteUpload, constantes
+│   ├── extract-ip.test.ts             #  12 tests — extractIp()
+│   ├── upload.test.ts                 #  18 tests — processUpload, deleteUpload, constantes
 │   ├── mask-utils.test.ts             #  10 tests — maskUrl, dbNameFromUrl, maskApiKey
-│   ├── i18n-urls.test.ts              #  22 tests — getAuthUrl, resolveAuthSlug, getPageUrl
+│   ├── i18n-urls.test.ts              #  32 tests — getAuthUrl, resolveAuthSlug, getPageUrl
 │   ├── i18n-translations.test.ts      #  16 tests — 4 loaders × 4 locales
-│   ├── send-email.test.ts             #   5 tests — routage providers (mock)
+│   ├── send-email.test.ts             #  14 tests — routage providers + retry/backoff
+│   ├── smtp-env.test.ts               #  20 tests — getSmtpFrom, getNodemailerConfig, providers
+│   ├── audit-fallback.test.ts         #   1 test  — JSONL fallback quand DB down
 │   ├── schema-validation.test.ts      #  12 tests — 8 table exports + 4 colonnes critiques
 │   ├── cli-utils.test.ts              #  12 tests — formatPgError + ANSI colors
-│   ├── cms-schemas.test.ts            #  14 tests — 7 tables CMS + colonnes détaillées
-│   ├── cms-seeds.test.ts              #  49 tests — 6 fichiers seed × complétude
-│   ├── cms-i18n.test.ts               #  38 tests — clés CMS ×4 locales (site, navigation, theme, common)
-│   └── cms-audit.test.ts              #   8 tests — 12 AuditAction CMS
+│   ├── cms-schemas.test.ts            #  80 tests — 7 tables CMS + colonnes détaillées
+│   ├── cms-seeds.test.ts              #  11 tests — 7 fichiers seed × complétude
+│   ├── cms-i18n.test.ts               #  16 tests — clés CMS ×4 locales (site, navigation, theme, common)
+│   ├── cms-audit.test.ts              #   1 test  — AuditAction CMS
+│   ├── navigation-tree.test.ts        #  10 tests — buildNavTree, cycle detection
+│   ├── cache.test.ts                  #  10 tests — invalidateCache, TTL, LRU
+│   ├── sanitize.test.ts               #  21 tests — sanitizeHtml, limits
+│   ├── db-env.test.ts                 #  16 tests — getDbUrl, getConnectionLabel, pool config
+│   ├── admin-helpers.test.ts          #   5 tests — assertAdmin, adminRateLimit
+│   └── auth-guards.test.ts            #   5 tests — requireAuth, requireAdmin
 │                                      # ─────────
-│                                      # 217 tests unitaires
+│                                      # 336 tests unitaires
 ├── integration/                       # Tests d'intégration (Vitest + PostgreSQL)
 │   ├── auth.test.ts                   #  13 tests — session, admin, org, impersonation, RGPD
 │   ├── auth-flow.test.ts              #   5 tests — sign-up → sign-in → sign-out
-│   ├── audit.test.ts                  #   6 tests — logAuditEvent + hooks
+│   ├── audit.test.ts                  #   8 tests — logAuditEvent + hooks
 │   ├── export.test.ts                 #   3 tests — /api/export-data
 │   ├── auth-advanced.test.ts          #  10 tests — password, email, profile
 │   ├── auth-org.test.ts               #   5 tests — org CRUD, invitations, membres
 │   ├── middleware.test.ts             #   4 tests — getSession headers
+│   ├── cms-admin.test.ts              #  14 tests — CRUD admin CMS (loaders, actions, schemas)
 │   └── db-health.test.ts             #   3 tests — checkConnection, singleton, raw query
 │                                      # ─────────
-│                                      #  49 tests d'intégration
+│                                      #  65 tests d'intégration
 ├── e2e/                               # Tests E2E (Playwright)
 │   ├── global-setup.ts                #  Setup : seed user vérifié + role admin
 │   ├── global-teardown.ts             #  Teardown : cleanup user
-│   ├── app.spec.ts                    #  10 tests — homepage, i18n, guest guards
+│   ├── app.spec.ts                    #  14 tests — homepage, i18n, guest guards, security headers
 │   ├── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
 │   └── cms-admin.spec.ts              #   8 tests — pages admin CMS (site, navigation, theme)
 │                                      # ─────────
-│                                      #  30 tests E2E
+│                                      #  34 tests E2E (×2 browsers = 68)
 ├── a11y/                              # Accessibilité & Performance
 │   ├── setup.ts                       #  Seed 2 users (normal + admin) + export cookies
 │   ├── run.cjs                        #  Orchestrateur : build → server → audits → teardown
@@ -51,7 +60,7 @@ tests/
 │   ├── lhci-rename.cjs               #  Renomme rapports LHCI en noms lisibles
 │   └── lhci-report.cjs               #  Analyse des rapports (scores + CWV + contrast)
 │                                      # ─────────
-│                                      #  40 URLs Pa11y + 38 URLs Lighthouse
+│                                      #  52 URLs Pa11y + 52 URLs Lighthouse
 └── helpers/
     ├── auth.ts                        #  getTestHelpers(), ré-exporte auth
     ├── vitest-report.cjs              #  Génère vitest-report.txt depuis JSON
@@ -72,14 +81,14 @@ Rapports (gitignored) :
 
 
 Configs racine :
-├── .pa11yci.cjs                       # Pa11y-ci (WCAG AAA, axe, 40 URLs)
-├── lighthouserc.cjs                   # Lighthouse CI (26 URLs publiques, ≥0.9 gates)
+├── .pa11yci.cjs                       # Pa11y-ci (WCAG AAA, axe, 52 URLs)
+├── lighthouserc.cjs                   # Lighthouse CI (28 URLs publiques, ≥0.9 gates)
 ├── vitest.config.ts                   # Vitest (unit + integration)
-└── playwright.config.ts               # Playwright (E2E)
+└── playwright.config.ts               # Playwright (E2E, chromium + webkit)
 
-TOTAL : 266 tests (217 Vitest unit + 49 Vitest integration + 30 Playwright E2E)
-        78 audits a11y/perf (40 Pa11y + 38 Lighthouse)
-        24 fichiers de test + 6 fichiers a11y
+TOTAL : 435 tests (336 Vitest unit + 65 Vitest integration + 34 Playwright E2E)
+        104 audits a11y/perf (52 Pa11y + 52 Lighthouse)
+        34 fichiers de test + 6 fichiers a11y
 ```
 
 ---
@@ -164,6 +173,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
     command: 'pnpm preview',

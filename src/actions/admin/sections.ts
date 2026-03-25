@@ -1,11 +1,36 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, asc } from "drizzle-orm";
+import { eq, sql, inArray } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { pageSections, pages } from "@database/schemas";
-import { requireAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { invalidateCache } from "@database/cache";
+import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { sanitizeHtml } from "@/lib/sanitize";
 
-const sectionTypes = [
+/** Recursively sanitize string values in parsed section JSON (defense-in-depth). */
+export function sanitizeSectionContent(raw: string): string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new ActionError({ code: "BAD_REQUEST", message: "Le contenu de section n'est pas du JSON valide." });
+  }
+  function walk(obj: unknown): unknown {
+    if (typeof obj === 'string') return sanitizeHtml(obj);
+    if (Array.isArray(obj)) return obj.map(walk);
+    if (obj && typeof obj === 'object') {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(obj)) {
+        out[k] = walk(v);
+      }
+      return out;
+    }
+    return obj;
+  }
+  return JSON.stringify(walk(parsed));
+}
+
+export const sectionTypes = [
   "hero",
   "text",
   "image",
@@ -26,7 +51,7 @@ export const createSection = defineAction({
     type: z.enum(sectionTypes, {
       message: `Le type de section doit être l'un des suivants : ${sectionTypes.join(", ")}.`,
     }),
-    content: z.string().min(1, "Le contenu JSON est requis.").refine(
+    content: z.string().min(1, "Le contenu JSON est requis.").max(100_000, "Le contenu JSON ne peut pas dépasser 100 000 caractères.").refine(
       (val) => {
         try {
           JSON.parse(val);
@@ -45,9 +70,10 @@ export const createSection = defineAction({
     isVisible: z.boolean().optional(),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "sections");
 
+    const sanitizedInput = { ...input, content: sanitizeSectionContent(input.content) };
     const db = getDrizzle();
 
     // Vérifier que la page existe
@@ -66,7 +92,7 @@ export const createSection = defineAction({
 
     const [created] = await db
       .insert(pageSections)
-      .values(input)
+      .values(sanitizedInput)
       .returning();
 
     auditAdmin(context, user.id, "PAGE_SECTION_CREATE", {
@@ -75,6 +101,7 @@ export const createSection = defineAction({
       metadata: { pageId: input.pageId, type: created.type },
     });
 
+    invalidateCache("page:");
     return created;
   },
 });
@@ -90,6 +117,7 @@ export const updateSection = defineAction({
     content: z
       .string()
       .min(1, "Le contenu JSON est requis.")
+      .max(100_000, "Le contenu JSON ne peut pas dépasser 100 000 caractères.")
       .refine(
         (val) => {
           try {
@@ -110,10 +138,13 @@ export const updateSection = defineAction({
     isVisible: z.boolean().optional(),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "sections");
 
     const { id, ...data } = input;
+    if (data.content) {
+      data.content = sanitizeSectionContent(data.content);
+    }
     const db = getDrizzle();
     const [updated] = await db
       .update(pageSections)
@@ -134,6 +165,7 @@ export const updateSection = defineAction({
       metadata: { type: updated.type },
     });
 
+    invalidateCache("page:");
     return updated;
   },
 });
@@ -143,7 +175,7 @@ export const deleteSection = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "sections");
 
     const db = getDrizzle();
@@ -165,6 +197,7 @@ export const deleteSection = defineAction({
       metadata: { type: deleted.type },
     });
 
+    invalidateCache("page:");
     return { success: true as const };
   },
 });
@@ -175,28 +208,54 @@ export const reorderSections = defineAction({
       .array(
         z.object({
           id: z.string().min(1),
-          sortOrder: z.number().int().min(0),
+          sortOrder: z.number().int().min(0).max(10000),
         }),
       )
-      .min(1, "La liste ne peut pas être vide."),
+      .min(1, "La liste ne peut pas être vide.")
+      .max(200, "Maximum 200 éléments par réordonnancement."),
   }),
   handler: async (input, context) => {
-    const user = requireAdmin(context);
+    const user = assertAdmin(context);
     adminRateLimit(context, user.id, "sections");
 
     const db = getDrizzle();
-    for (const item of input.items) {
-      await db
-        .update(pageSections)
-        .set({ sortOrder: item.sortOrder })
-        .where(eq(pageSections.id, item.id));
-    }
+    await db.transaction(async (tx) => {
+      const ids = input.items.map((i) => i.id);
 
-    auditAdmin(context, user.id, "PAGE_SECTION_UPDATE", {
+      // Verify all sections exist and belong to the same page
+      const existingSections = await tx
+        .select({ id: pageSections.id, pageId: pageSections.pageId })
+        .from(pageSections)
+        .where(inArray(pageSections.id, ids));
+      if (existingSections.length !== ids.length) {
+        throw new ActionError({
+          code: "NOT_FOUND",
+          message: "Une ou plusieurs sections introuvables.",
+        });
+      }
+      const pageIds = new Set(existingSections.map((s) => s.pageId));
+      if (pageIds.size !== 1) {
+        throw new ActionError({
+          code: "BAD_REQUEST",
+          message: "Toutes les sections doivent appartenir à la même page.",
+        });
+      }
+
+      const cases = input.items
+        .map((item) => sql`WHEN ${pageSections.id} = ${item.id} THEN ${item.sortOrder}`)
+        .reduce((a, b) => sql`${a} ${b}`);
+      await tx
+        .update(pageSections)
+        .set({ sortOrder: sql`CASE ${cases} END` })
+        .where(inArray(pageSections.id, ids));
+    });
+
+    auditAdmin(context, user.id, "PAGE_SECTION_REORDER", {
       resource: "page_sections",
       metadata: { reorderedCount: input.items.length },
     });
 
+    invalidateCache("page:");
     return { success: true as const };
   },
 });

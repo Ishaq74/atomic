@@ -23,5 +23,16 @@ export default defineConfig({
     outputFile: {
       json: 'tests/reports/vitest-results.json',
     },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/env.d.ts', 'src/**/*.astro', 'src/database/migrations/**'],
+      thresholds: {
+        statements: 70,
+        branches: 65,
+        functions: 65,
+        lines: 70,
+      },
+    },
   },
 });

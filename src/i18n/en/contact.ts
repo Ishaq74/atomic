@@ -70,4 +70,10 @@ export default {
     submit: 'Submit Request',
     disclaimer: 'By submitting, you agree to our terms of service and privacy policy.',
   },
+  feedback: {
+    success: 'Message sent successfully.',
+    error: 'Failed to send. Please try again.',
+    networkError: 'Network error. Check your connection.',
+    rateLimited: 'Too many messages sent. Please try again later.',
+  },
 } satisfies ContactTranslations;

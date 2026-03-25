@@ -8,16 +8,26 @@ import AdminAuditPage from '@pages/admin/AdminAuditPage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro as any);
+const result = await requireAdmin(Astro);
 if ('redirect' in result) return result.redirect;
-const { user, locale, authT } = result;
+const { locale, authT } = result;
 
-const adminAuditLogs = await fetchAdminAuditLogs();
+const PER_PAGE = 25;
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const { rows: adminAuditLogs, total } = await fetchAdminAuditLogs(Astro.request.headers, page, PER_PAGE);
+const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
 ---
 
 <BaseLayout title={authT.meta.admin.title} description={authT.meta.admin.description}>
   <AuthLayout title={authT.admin.tabs.auditLog}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="audit" />
-    <AdminAuditPage t={authT} locale={locale} user={user} adminAuditLogs={adminAuditLogs} />
+    <AdminAuditPage
+      t={authT}
+      locale={locale}
+      adminAuditLogs={adminAuditLogs}
+      currentPage={page}
+      totalPages={totalPages}
+      baseUrl={Astro.url}
+    />
   </AuthLayout>
 </BaseLayout>

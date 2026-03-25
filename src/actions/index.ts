@@ -8,6 +8,11 @@ import {
 import { updateContactInfo } from "./admin/contact";
 import { updateOpeningHours } from "./admin/hours";
 import {
+  createNavigationMenu,
+  updateNavigationMenu,
+  deleteNavigationMenu,
+} from "./admin/menus";
+import {
   createNavigationItem,
   updateNavigationItem,
   deleteNavigationItem,
@@ -43,7 +48,12 @@ export const server = {
   // ─── Horaires ────────────────────────────────────────────────────
   updateOpeningHours,
 
-  // ─── Navigation ──────────────────────────────────────────────────
+  // ─── Navigation (menus) ──────────────────────────────────────────
+  createNavigationMenu,
+  updateNavigationMenu,
+  deleteNavigationMenu,
+
+  // ─── Navigation (items) ──────────────────────────────────────────
   createNavigationItem,
   updateNavigationItem,
   deleteNavigationItem,

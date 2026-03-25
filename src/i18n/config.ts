@@ -23,10 +23,8 @@ export interface CommonTranslations {
     analytics: string;
     integrations: string;
     team: string;
-    pricing: string;
     about: string;
     contact: string;
-    blog: string;
   };
   cta: {
     getStarted: string;
@@ -48,6 +46,7 @@ export interface CommonTranslations {
   a11y: {
     openMenu: string;
     switchLanguage: string;
+    skipToContent: string;
   };
 }
 
@@ -219,6 +218,12 @@ export interface ContactTranslations {
     urgentDescription: string;
     submit: string;
     disclaimer: string;
+  };
+  feedback: {
+    success: string;
+    error: string;
+    networkError: string;
+    rateLimited: string;
   };
 }
 
@@ -470,6 +475,9 @@ export interface AuthTranslations {
         sectionType: string;
         sectionContent: string;
         noSections: string;
+        hidden: string;
+        hide: string;
+        show: string;
       };
       theme: {
         title: string;
@@ -490,7 +498,6 @@ export interface AuthTranslations {
         fontHeading: string;
         fontBody: string;
         borderRadius: string;
-        customCss: string;
         saved: string;
         deleted: string;
         save: string;
@@ -626,6 +633,7 @@ export interface AuthTranslations {
     members: {
       title: string;
       invite: string;
+      email: string;
       emailPlaceholder: string;
       rolePlaceholder: string;
       sendInvite: string;

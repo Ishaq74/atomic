@@ -1,5 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { FullOrganization, Invitation } from '@/lib/auth-data';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
@@ -9,14 +11,15 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
 import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 import Badge from '@atoms/badge/Badge.astro';
 import Button from '@atoms/button/Button.astro';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  activeOrg: any;
-  activeOrgMembers: any[];
-  activeOrgInvitations: any[];
+  user: AppUser;
+  activeOrg: FullOrganization;
+  activeOrgMembers: FullOrganization['members'];
+  activeOrgInvitations: Invitation[];
   activeOrgRole: string | null;
 }
 
@@ -51,7 +54,7 @@ const roleLabels: Record<string, string> = {
   <!-- Org header -->
   <div class="flex items-center gap-4 mb-8">
     <Avatar size="lg" id="org-avatar-display">
-      {activeOrg.logo && <AvatarImage src={activeOrg.logo} alt={activeOrg.name} id="org-avatar-img" />}
+      {activeOrg.logo && safeUrl(activeOrg.logo) && <AvatarImage src={safeUrl(activeOrg.logo)!} alt={activeOrg.name} id="org-avatar-img" />}
       <AvatarFallback id="org-avatar-fallback">{activeOrg.name.charAt(0).toUpperCase()}</AvatarFallback>
     </Avatar>
     <div>
@@ -83,7 +86,7 @@ const roleLabels: Record<string, string> = {
             <CardContent>
               <form id="invite-member-form" class="flex gap-3 items-end flex-wrap">
                 <div class="flex-1 min-w-50">
-                  <Label for="invite-email">Email</Label>
+                  <Label for="invite-email">{t.organizations.members.email}</Label>
                   <Input id="invite-email" type="email" placeholder={t.organizations.members.emailPlaceholder} required />
                 </div>
                 <div class="w-40">
@@ -143,7 +146,7 @@ const roleLabels: Record<string, string> = {
                 return (
                   <div class="flex items-center gap-4 py-3" data-member-id={m.id}>
                     <Avatar size="sm">
-                      {memberUser?.image && <AvatarImage src={memberUser.image} alt={memberUser.name ?? ''} />}
+                      {memberUser?.image && safeUrl(memberUser.image) && <AvatarImage src={safeUrl(memberUser.image)!} alt={memberUser.name ?? ''} />}
                       <AvatarFallback>{mi}</AvatarFallback>
                     </Avatar>
                     <div class="flex-1 min-w-0">

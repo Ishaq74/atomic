@@ -1,8 +1,11 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { Organization } from '@/lib/auth-data';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
 import { Card, CardContent } from '@atoms/card';
 import Button from '@atoms/button/Button.astro';
+import { safeUrl } from '@lib/sanitize';
 import { DataView } from '@molecules/DataView';
 import {
   Dialog,
@@ -17,8 +20,8 @@ import {
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  adminOrgs: any[];
+  user: AppUser;
+  adminOrgs: Organization[];
 }
 
 const { t, locale, adminOrgs } = Astro.props;
@@ -57,7 +60,7 @@ function formatShortDate(d: Date | string | null) {
             <TableRow>
               <TableCell>
                 <div class="flex items-center gap-2">
-                  {org.logo && <img src={org.logo} alt={org.name} class="w-6 h-6 rounded" />}
+                  {org.logo && safeUrl(org.logo) && <img src={safeUrl(org.logo)!} alt={org.name} class="w-6 h-6 rounded" />}
                   <span class="font-medium">{org.name}</span>
                 </div>
               </TableCell>
@@ -100,7 +103,7 @@ function formatShortDate(d: Date | string | null) {
         <Card>
           <CardContent class="p-4">
             <div class="flex items-center gap-3 mb-2">
-              {org.logo && <img src={org.logo} alt={org.name} class="w-8 h-8 rounded" />}
+              {org.logo && safeUrl(org.logo) && <img src={safeUrl(org.logo)!} alt={org.name} class="w-8 h-8 rounded" />}
               <div class="flex-1 min-w-0">
                 <p class="font-medium text-sm truncate">{org.name}</p>
                 <p class="text-xs text-muted-foreground">/{org.slug}</p>

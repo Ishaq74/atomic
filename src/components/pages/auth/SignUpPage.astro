@@ -1,5 +1,6 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@atoms/card';
 import Label from '@atoms/label/Label.astro';
@@ -10,7 +11,7 @@ import AsyncButton from '@wow/AsyncButton.astro';
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser | null;
 }
 
 const { t, locale } = Astro.props;
@@ -31,7 +32,7 @@ const signInUrl = getAuthUrl(locale, 'sign-in', t);
       >
         <div class="grid gap-2">
           <Label for="name">{t.signUp.name}</Label>
-          <Input id="name" name="name" type="text" placeholder={t.signUp.namePlaceholder} required />
+          <Input id="name" name="name" type="text" placeholder={t.signUp.namePlaceholder} required autocomplete="name" />
         </div>
 
         <div class="grid gap-2">
@@ -41,12 +42,12 @@ const signInUrl = getAuthUrl(locale, 'sign-in', t);
 
         <div class="grid gap-2">
           <Label for="email">{t.signUp.email}</Label>
-          <Input id="email" name="email" type="email" placeholder={t.signUp.emailPlaceholder} required />
+          <Input id="email" name="email" type="email" placeholder={t.signUp.emailPlaceholder} required autocomplete="email" />
         </div>
 
         <div class="grid gap-2">
           <Label for="password">{t.signUp.password}</Label>
-          <Input id="password" name="password" type="password" placeholder={t.signUp.passwordPlaceholder} required />
+          <Input id="password" name="password" type="password" placeholder={t.signUp.passwordPlaceholder} required autocomplete="new-password" />
         </div>
 
         <AsyncButton

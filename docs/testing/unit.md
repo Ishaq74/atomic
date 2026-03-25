@@ -8,21 +8,29 @@
 
 | Fichier | Cible | Tests | Status |
 | :-- | :-- | :-- | :-- |
-| `tests/unit/rate-limit.test.ts` | `src/lib/rate-limit.ts` → `checkRateLimit()` | 7 | ✅ |
+| `tests/unit/rate-limit.test.ts` | `src/lib/rate-limit.ts` → `checkRateLimit()` | 8 | ✅ |
 | `tests/unit/i18n-utils.test.ts` | `src/i18n/utils.ts` → `toLocale()`, `isRTL()`, `getDirection()` | 6 | ✅ |
-| `tests/unit/extract-ip.test.ts` | `src/lib/audit.ts` → `extractIp()` | 8 | ✅ |
-| `tests/unit/upload.test.ts` | `src/media/upload.ts`, `delete.ts`, `types.ts` | 10 | ✅ |
+| `tests/unit/extract-ip.test.ts` | `src/lib/audit.ts` → `extractIp()` | 12 | ✅ |
+| `tests/unit/upload.test.ts` | `src/media/upload.ts`, `delete.ts`, `types.ts` | 18 | ✅ |
 | `tests/unit/mask-utils.test.ts` | `src/database/env.ts`, `src/smtp/env.ts` | 10 | ✅ |
-| `tests/unit/i18n-urls.test.ts` | `src/i18n/utils.ts` → URLs, slugs, loaders | 22 | ✅ |
+| `tests/unit/i18n-urls.test.ts` | `src/i18n/utils.ts` → URLs, slugs, loaders | 32 | ✅ |
 | `tests/unit/i18n-translations.test.ts` | `src/i18n/utils.ts` → `get*Translations()` ×4 loaders ×4 locales | 16 | ✅ |
-| `tests/unit/send-email.test.ts` | `src/smtp/send.ts` → `sendEmail()` (mock providers) | 5 | ✅ |
+| `tests/unit/send-email.test.ts` | `src/smtp/send.ts` → `sendEmail()` (mock + retry + backoff) | 14 | ✅ |
+| `tests/unit/smtp-env.test.ts` | `src/smtp/env.ts` → `getSmtpFrom()`, `getNodemailerConfig()`, providers | 20 | ✅ |
+| `tests/unit/audit-fallback.test.ts` | `src/lib/audit.ts` → `logAuditEvent()` JSONL fallback | 1 | ✅ |
 | `tests/unit/schema-validation.test.ts` | `src/database/schemas.ts` → 8 table exports + colonnes critiques | 12 | ✅ |
 | `tests/unit/cli-utils.test.ts` | `src/database/commands/_utils.ts` → `formatPgError()`, ANSI helpers | 12 | ✅ |
-| `tests/unit/cms-schemas.test.ts` | 7 tables CMS : exports + colonnes détaillées | 14 | ✅ |
-| `tests/unit/cms-seeds.test.ts` | 6 fichiers seed CMS : complétude des données | 49 | ✅ |
-| `tests/unit/cms-i18n.test.ts` | Clés i18n CMS ×4 locales (site, nav, theme, common) | 38 | ✅ |
-| `tests/unit/cms-audit.test.ts` | 12 `AuditAction` CMS compilent correctement | 8 | ✅ |
-| **Total** | | **217** | **✅** |
+| `tests/unit/cms-schemas.test.ts` | 7 tables CMS : exports + colonnes détaillées | 80 | ✅ |
+| `tests/unit/cms-seeds.test.ts` | 7 fichiers seed CMS : complétude des données | 11 | ✅ |
+| `tests/unit/cms-i18n.test.ts` | Clés i18n CMS ×4 locales (site, navigation, theme, common) | 16 | ✅ |
+| `tests/unit/cms-audit.test.ts` | 19 `AuditAction` CMS compilent correctement | 1 | ✅ |
+| `tests/unit/cache.test.ts` | `src/database/cache.ts` → TTL cache, invalidation, LRU | 10 | ✅ |
+| `tests/unit/navigation-tree.test.ts` | `src/database/` → `buildNavTree()`, cycle detection | 10 | ✅ |
+| `tests/unit/sanitize.test.ts` | `src/lib/sanitize.ts` → `sanitizeHtml()`, limits | 21 | ✅ |
+| `tests/unit/db-env.test.ts` | `src/database/env.ts` → `getDbUrl()`, `getConnectionLabel()`, pool config | 16 | ✅ |
+| `tests/unit/admin-helpers.test.ts` | `src/actions/admin/_helpers.ts` → `assertAdmin()`, `adminRateLimit()` | 5 | ✅ |
+| `tests/unit/auth-guards.test.ts` | `src/lib/auth-guards.ts` → `requireAuth()`, `requireAdmin()` | 5 | ✅ |
+| **Total** | | **336** | **✅** |
 
 ---
 
@@ -39,11 +47,13 @@
 | 5 | `uses different counters for different keys` | Isolation par clé | 2 clés différentes | clé A bloquée, clé B autorisée |
 | 6 | `resets after window expires` | La fenêtre expire correctement | `vi.useFakeTimers()` + `advanceTimersByTime(11000)` | `allowed: true` après expiration |
 | 7 | `returns fresh remaining after reset` | Le compteur est neuf après expiration | Même clé après reset | `remaining` frais (pas cumulé) |
+| 8 | `evicts oldest entry when MAX_ENTRIES is reached with active entries` | Protection anti-flood : LRU eviction quand 10 000 clés actives | 10 000 clés + 1 overflow | `allowed: true` (oldest evicted) |
 
 ### Stratégie — rate-limit
 
 - **Isolation** : chaque test utilise un `keyPrefix` unique (`Date.now() + Math.random()`) pour éviter les collisions
 - **Fake timers** : tests 6-7 utilisent `vi.useFakeTimers()` pour tester l'expiration de la fenêtre sans attendre
+- **Overflow** : test 8 remplit 10 000 entrées pour vérifier le guard `MAX_ENTRIES`
 
 ---
 
@@ -224,12 +234,47 @@ Round-trip et cas `null` pour slug inconnu.
 | 3 | `routes to NODEMAILER provider` | `getSmtpProvider → 'NODEMAILER'` | `nodemailer.send()` appelé | ✅ |
 | 4 | `does not call other providers` | `getSmtpProvider → 'BREVO'` | `resend.send()` et `nodemailer.send()` non appelés | ✅ |
 | 5 | `passes correct from config` | N'importe quel provider | `getSmtpFrom()` est bien transmis en second argument | ✅ |
+| 6 | `retries on transient network error` | Brevo mock throws ECONNREFUSED 3× | 3 tentatives avec backoff puis throw | ✅ |
+| 7 | `does not retry on permanent auth error` | Brevo mock throws 401 Unauthorized | 1 seule tentative puis throw immédiat | ✅ |
 
 ### Stratégie — send-email
 
 - **`vi.mock('@smtp/env')`** : mock `getSmtpProvider()` et `getSmtpFrom()` pour contrôler le routage
 - **`vi.mock('@smtp/providers/*')`** : mock les 3 providers pour vérifier les appels sans réseau
 - **Aucun email envoyé** : zéro requête SMTP, zéro coût
+- **Retry** : tests 6-7 utilisent `vi.useFakeTimers()` + `advanceTimersByTimeAsync()` pour vérifier le backoff sans délai réel
+
+---
+
+## `smtp-env.test.ts` — Défense anti-injection d'en-têtes SMTP
+
+**Cible** : `getSmtpFrom()` (`src/smtp/env.ts`) — vérifie le rejet des caractères `\r\n` dans l'email expéditeur
+
+| # | Test | Input (`SMTP_FROM_EMAIL`) | Expected |
+| :-- | :-- | :-- | :-- |
+| 1 | `rejects email with \n character` | `evil@example.com\nBcc: victim@test.com` | Throw |
+| 2 | `rejects email with \r character` | `evil@example.com\rBcc: victim@test.com` | Throw |
+| 3 | `accepts valid email address` | `noreply@example.com` | `{ email: 'noreply@example.com' }` |
+
+### Stratégie — smtp-env
+
+- **`vi.resetModules()`** : chaque test réimporte le module pour tester avec différentes variables d'environnement
+- **Sécurité** : vérifie la protection contre l'injection d'en-têtes SMTP (CRLF injection)
+
+---
+
+## `audit-fallback.test.ts` — Fallback JSONL pour l'audit
+
+**Cible** : `logAuditEvent()` (`src/lib/audit.ts`) — vérifie l'écriture en fichier JSONL quand la DB est indisponible
+
+| # | Test | Ce qu'il vérifie | Expected |
+| :-- | :-- | :-- | :-- |
+| 1 | `writes to fallback file when DB insert fails` | Mock `getDrizzle()` throw → écriture `audit-fallback.jsonl` | Fichier JSONL contient `action`, `userId`, `timestamp` |
+
+### Stratégie — audit-fallback
+
+- **`vi.mock('@database/drizzle')`** : mock `getDrizzle()` pour simuler une déconnexion DB
+- **Nettoyage** : `afterEach` supprime le fichier fallback pour isolé chaque run
 
 ---
 
@@ -313,7 +358,7 @@ Temps d'exécution :           ~500 ms (les 14 fichiers)
 | 1 | `CMS table exports` | Les 7 tables (siteSettings, socialLinks, contactInfo, openingHours, navigationMenus, navigationItems, themeSettings) sont exportées |
 | 2 | `siteSettings columns` | 13 colonnes incluant `logoLight`, `logoDark`, `favicon`, `ogImage` |
 | 3 | `openingHours columns` | 12 colonnes incluant `morningOpen`, `morningClose`, `afternoonOpen`, `afternoonClose` (pause méridienne) |
-| 4 | `themeSettings columns` | 16 colonnes incluant couleurs, fonts, `borderRadius`, `customCss`, `isDefault`, `isActive` |
+| 4 | `themeSettings columns` | 15 colonnes incluant couleurs, fonts, `borderRadius`, `isActive` |
 | 5 | `contactInfo columns` | 12 colonnes incluant `mapUrl`, `latitude`, `longitude` |
 | 6 | `navigationItems columns` | 12 colonnes incluant `icon`, `parentId`, `isActive`, `openInNewTab` |
 | 7 | `socialLinks columns` | 9 colonnes incluant `icon`, `isActive`, `sortOrder` |

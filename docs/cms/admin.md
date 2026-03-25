@@ -11,18 +11,18 @@ Le CMS admin permet la gestion du contenu du site (identité, navigation, pages,
 | Composant | Fichiers | Rôle |
 | :-- | :-- | :-- |
 | Routes | 9 pages dans `src/pages/[lang]/admin/` | Routage i18n avec garde admin |
-| Composants | 8 dans `src/components/pages/admin/` | UI des pages admin |
-| Actions | 19 dans `src/actions/admin/` (9 fichiers) | CRUD server-side via Astro Actions |
+| Composants | 9 dans `src/components/pages/admin/` | UI des pages admin |
+| Actions | 25 dans `src/actions/admin/` (9 fichiers) | CRUD server-side via Astro Actions |
 | Loaders | 3 dans `src/database/loaders/` | Lecture DB pour SSR |
 | Schémas | 3 dans `src/database/schemas/` (9 tables) | Modèle de données |
-| Seeds | 6 fichiers dans `src/database/data/` | Données initiales CMS |
+| Seeds | 7 fichiers dans `src/database/data/` | Données initiales CMS |
 | i18n | Clés `admin.*` dans `src/i18n/{locale}/auth.ts` | Traductions 4 locales |
 
 ---
 
 ## Routes admin
 
-Toutes les routes admin sont sous `src/pages/[lang]/admin/` et protégées par `requireAdmin()`.
+Toutes les routes admin sont sous `src/pages/[lang]/admin/` et protégées par `assertAdmin()`.
 
 | Route | Composant | Description |
 | :-- | :-- | :-- |
@@ -45,6 +45,8 @@ requireAdmin()  // → vérifie role === 'admin', sinon redirect vers dashboard
 
 Chaque route admin appelle `requireAdmin()` dans le frontmatter Astro. Les utilisateurs non connectés sont redirigés vers `/auth/sign-in`, les non-admin vers `/auth/dashboard`.
 
+> Note : dans les **Actions** (server-side), le helper est `assertAdmin()` (`src/actions/admin/_helpers.ts`), qui throw au lieu de redirect.
+
 ---
 
 ## Modèle de données
@@ -57,7 +59,7 @@ Chaque route admin appelle `requireAdmin()` dans le frontmatter Astro. Les utili
 | `socialLinks` | `id` (UUID) | Liens réseaux sociaux — plateforme, URL, icône, ordre |
 | `contactInfo` | `id` (singleton) | Coordonnées — email, téléphone, adresse, maps URL |
 | `openingHours` | `dayOfWeek` (PK) | Horaires d'ouverture — matin/après-midi, pause déjeuner, jour fermé |
-| `themeSettings` | `id` (UUID) | Thèmes design — 16 tokens couleur, fonts, border-radius, CSS custom |
+| `themeSettings` | `id` (UUID) | Thèmes design — 7 tokens couleur, fonts, border-radius, CSS custom |
 
 ### Schéma `navigation.schema.ts` (2 tables)
 
@@ -77,15 +79,15 @@ Chaque route admin appelle `requireAdmin()` dans le frontmatter Astro. Les utili
 
 ## Astro Actions
 
-Toutes les actions sont dans `src/actions/admin/` et protégées par `requireAdmin()` + `adminRateLimit()`. Chaque mutation est auditée via `auditAdmin()`.
+Toutes les actions sont dans `src/actions/admin/` et protégées par `assertAdmin()` + `adminRateLimit()`. Chaque mutation est auditée via `auditAdmin()`.
 
 ### Helpers (`_helpers.ts`)
 
 | Fonction | Rôle |
 | :-- | :-- |
-| `requireAdmin(context)` | Vérifie le rôle admin dans le contexte de l'action |
-| `adminRateLimit(context)` | Rate limit par IP (10 req / 60s) |
-| `auditAdmin(action, userId, resource?)` | Log l'action dans `auditLog` |
+| `assertAdmin(context)` | Vérifie le rôle admin dans le contexte de l'action |
+| `adminRateLimit(context, userId, scope, opts?)` | Rate limit par utilisateur + scope (30 req / 60s) |
+| `auditAdmin(context, userId, action, opts?)` | Log l'action dans `auditLog` |
 
 ### Actions par domaine
 
@@ -118,12 +120,13 @@ Toutes les actions sont dans `src/actions/admin/` et protégées par `requireAdm
 | :-- | :-- | :-- |
 | `AdminSitePage` | `src/components/pages/admin/AdminSitePage.astro` | Identité, Contact, Horaires, Réseaux sociaux |
 | `AdminNavigationPage` | `src/components/pages/admin/AdminNavigationPage.astro` | Menus (header, footer), items avec icônes, drag & drop |
-| `AdminThemePage` | `src/components/pages/admin/AdminThemePage.astro` | Liste des thèmes, CRUD, 16 tokens couleur, preview |
+| `AdminThemePage` | `src/components/pages/admin/AdminThemePage.astro` | Liste des thèmes, CRUD, 7 tokens couleur, preview |
 | `AdminPagesPage` | `src/components/pages/admin/AdminPagesPage.astro` | Liste des pages, création, sections typées |
 | `AdminStatsPage` | `src/components/pages/admin/AdminStatsPage.astro` | Statistiques (users, orgs, signups récents) |
 | `AdminUsersPage` | `src/components/pages/admin/AdminUsersPage.astro` | Table users, recherche, ban, rôles |
 | `AdminOrgsPage` | `src/components/pages/admin/AdminOrgsPage.astro` | Table organisations |
 | `AdminAuditPage` | `src/components/pages/admin/AdminAuditPage.astro` | Journal d'audit (date, user, action, IP) |
+| `AdminSectionsEditor` | `src/components/pages/admin/AdminSectionsEditor.astro` | Éditeur de sections de page |
 
 ### IconPicker
 
@@ -132,6 +135,7 @@ Le composant `AdminNavigationPage` utilise un sélecteur d'icônes basé sur l'A
 ### Upload d'images
 
 `AdminSitePage` intègre l'upload d'images via `POST /api/upload` (type `site`) pour :
+
 - Logo clair (`logoLight`)
 - Logo sombre (`logoDark`)
 - Favicon (`favicon`)
@@ -146,6 +150,7 @@ Les fichiers sont stockés dans `public/uploads/images/site/`.
 Les traductions CMS sont sous la clé `admin` dans `src/i18n/{locale}/auth.ts` (4 locales : `fr`, `en`, `es`, `ar`).
 
 Sections traduites :
+
 - `admin.tabs` — noms des onglets (stats, users, organizations, auditLog, site, navigation, pages, theme)
 - `admin.stats` — labels du tableau de bord
 - `admin.users` — colonnes, rôles, actions, confirmations
@@ -163,12 +168,13 @@ Toutes les mutations admin sont tracées dans la table `auditLog` via `auditAdmi
 
 | Action | Déclencheur |
 | :-- | :-- |
-| `SITE_UPDATE` | `updateSiteSettings` |
-| `CONTACT_UPDATE` | `updateContactInfo` |
-| `HOURS_UPDATE` | `updateOpeningHours` |
-| `SOCIAL_CREATE` / `SOCIAL_UPDATE` / `SOCIAL_DELETE` | Actions `social.*` |
-| `NAV_CREATE` / `NAV_UPDATE` / `NAV_DELETE` | Actions `navigation.*` |
+| `SITE_SETTINGS_UPDATE` | `updateSiteSettings` |
+| `CONTACT_INFO_UPDATE` | `updateContactInfo` |
+| `OPENING_HOURS_UPDATE` | `updateOpeningHours` |
+| `SOCIAL_LINK_CREATE` / `SOCIAL_LINK_UPDATE` / `SOCIAL_LINK_DELETE` | Actions `social.*` |
+| `NAVIGATION_ITEM_CREATE` / `NAVIGATION_ITEM_UPDATE` / `NAVIGATION_ITEM_DELETE` | Actions `navigation.*` |
 | `PAGE_CREATE` / `PAGE_UPDATE` / `PAGE_DELETE` / `PAGE_PUBLISH` | Actions `pages.*` |
+| `PAGE_SECTION_CREATE` / `PAGE_SECTION_UPDATE` / `PAGE_SECTION_DELETE` | Actions `sections.*` |
 | `THEME_CREATE` / `THEME_UPDATE` / `THEME_DELETE` | Actions `theme.*` |
 
 ---
@@ -177,10 +183,10 @@ Toutes les mutations admin sont tracées dans la table `auditLog` via `auditAdmi
 
 | Type | Fichier | Tests | Couverture |
 | :-- | :-- | --: | :-- |
-| Unit | `tests/unit/cms-schemas.test.ts` | 14 | Exports tables, colonnes critiques |
-| Unit | `tests/unit/cms-seeds.test.ts` | 49 | Données seed valides, types, contraintes |
-| Unit | `tests/unit/cms-i18n.test.ts` | 38 | Clés i18n × 4 locales |
-| Unit | `tests/unit/cms-audit.test.ts` | 8 | AuditAction type couvre 12 actions CMS |
+| Unit | `tests/unit/cms-schemas.test.ts` | 80 | Exports tables, colonnes critiques |
+| Unit | `tests/unit/cms-seeds.test.ts` | 11 | Données seed valides, types, contraintes |
+| Unit | `tests/unit/cms-i18n.test.ts` | 16 | Clés i18n × 4 locales |
+| Unit | `tests/unit/cms-audit.test.ts` | 1 | AuditAction type couvre 19 actions CMS |
 | E2E | `tests/e2e/cms-admin.spec.ts` | 8 | Garde accès + chargement pages admin |
 | A11y | `.pa11yci.cjs` + `lighthouserc.cjs` | 12 URLs | WCAG AAA + Lighthouse ≥ 0.9 |
 

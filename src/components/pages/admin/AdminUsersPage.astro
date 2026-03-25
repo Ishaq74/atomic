@@ -1,5 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { AdminUser } from '@/lib/auth-data';
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@atoms/table';
 import { Card, CardContent } from '@atoms/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
@@ -8,12 +10,13 @@ import Button from '@atoms/button/Button.astro';
 import { Input } from '@atoms/input';
 import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 import { DataView } from '@molecules/DataView';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  adminUsers: any[];
+  user: AppUser;
+  adminUsers: AdminUser[];
 }
 
 const { t, locale, user, adminUsers } = Astro.props;
@@ -177,7 +180,7 @@ function initials(name?: string) {
           <CardContent class="p-4">
             <div class="flex items-center gap-3 mb-3">
               <Avatar size="sm">
-                {u.image && <AvatarImage src={u.image} alt={u.name ?? ''} />}
+                {u.image && safeUrl(u.image) && <AvatarImage src={safeUrl(u.image)!} alt={u.name ?? ''} />}
                 <AvatarFallback>{initials(u.name)}</AvatarFallback>
               </Avatar>
               <div class="flex-1 min-w-0">

@@ -93,4 +93,17 @@ describe('checkRateLimit', () => {
       vi.useRealTimers();
     }
   });
+
+  it('rejects when MAX_ENTRIES is reached with active entries (fail-closed)', () => {
+    // Fill the store with 10_000 unique active keys
+    const opts = { window: 3600, max: 1 };
+    for (let i = 0; i < 10_000; i++) {
+      checkRateLimit(`${keyPrefix}:flood-${i}`, opts);
+    }
+
+    // The next new key should be rejected (fail-closed) to prevent store-flooding attacks
+    const result = checkRateLimit(`${keyPrefix}:overflow`, opts);
+    expect(result.allowed).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
 });

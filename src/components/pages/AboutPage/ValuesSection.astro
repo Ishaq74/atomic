@@ -97,7 +97,13 @@ const defaultValue = items[0]?.value;
 </section>
 
 <script>
+  let controller: AbortController | null = null;
+
   function setupFeatureAccordion() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const accordions = document.querySelectorAll(".starwind-feature-accordion");
 
     accordions.forEach((accordion) => {
@@ -120,7 +126,7 @@ const defaultValue = items[0]?.value;
             const isActive = container.getAttribute("data-index") === index;
             container.setAttribute("data-active", isActive ? "true" : "false");
           });
-        });
+        }, { signal });
       });
     });
   }
@@ -128,6 +134,7 @@ const defaultValue = items[0]?.value;
   setupFeatureAccordion();
   document.addEventListener("astro:after-swap", setupFeatureAccordion);
   document.addEventListener("starwind:init", setupFeatureAccordion);
+  document.addEventListener("astro:before-swap", () => { controller?.abort(); controller = null; });
 </script>
 
 <style>

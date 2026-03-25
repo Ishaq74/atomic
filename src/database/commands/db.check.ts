@@ -39,6 +39,21 @@ import { c, logTarget, formatPgError } from './_utils';
     console.log(`ENV: ${getConnectionLabel()}`);
     console.table(res.rows);
 
+    // --- PostgreSQL version ---
+    const versionRes = await client.query('SELECT version()');
+    const versionStr = versionRes.rows[0]?.version ?? 'unknown';
+    const match = versionStr.match(/PostgreSQL (\d+)\.(\d+)/);
+    if (match) {
+      const major = parseInt(match[1], 10);
+      if (major < 14) {
+        console.warn(c.yellow(`⚠️  PostgreSQL ${match[1]}.${match[2]} détecté. Version 14+ recommandée pour Drizzle ORM.`));
+      } else {
+        console.log(c.green(`✅ PostgreSQL ${match[1]}.${match[2]}`));
+      }
+    } else {
+      console.log(c.dim(`   Version : ${versionStr}`));
+    }
+
     // --- Tables ---
     const tablesRes = await client.query(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`

@@ -8,10 +8,10 @@
 
 | Fichier | Scope | Tests | Status |
 | :-- | :-- | --: | :-- |
-| `tests/e2e/app.spec.ts` | Homepage, i18n, guest guards | 10 | ✅ |
+| `tests/e2e/app.spec.ts` | Homepage, i18n, guest guards, security headers | 14 | ✅ |
 | `tests/e2e/auth.spec.ts` | Sign-up/in, dashboard, profile, pages publiques | 12 | ✅ |
 | `tests/e2e/cms-admin.spec.ts` | Pages admin CMS (site, navigation, theme) | 8 | ✅ |
-| **Total** | | **30** | **✅** |
+| **Total** | | **34** | **✅** |
 
 ### Infrastructure
 
@@ -65,17 +65,27 @@ Le `global-teardown` :
 
 | # | Test | URL | Assertion |
 | :-- | :-- | :-- | :-- |
-| 6 | `sign-in page renders the login form` | `/fr/connexion/` | Formulaire avec input email visible |
-| 7 | `sign-up page renders the registration form` | `/fr/inscription/` | Formulaire avec input name visible |
-| 8 | `dashboard redirects unauthenticated user to sign-in` | `/fr/tableau-de-bord/` | Redirigé vers page de connexion |
-| 9 | `profile redirects unauthenticated user to sign-in` | `/fr/profil/` | Redirigé vers page de connexion |
-| 10 | `admin redirects unauthenticated user to sign-in` | `/fr/admin/` | Redirigé vers page de connexion |
+| 6 | `sign-in page renders the login form` | `/fr/auth/connexion/` | Formulaire avec input email visible |
+| 7 | `sign-up page renders the registration form` | `/fr/auth/inscription/` | Formulaire avec input name visible |
+| 8 | `dashboard redirects unauthenticated user to sign-in` | `/fr/auth/tableau-de-bord/` | Redirigé vers page de connexion |
+| 9 | `profile redirects unauthenticated user to sign-in` | `/fr/auth/profil/` | Redirigé vers page de connexion |
+| 10 | `admin redirects unauthenticated user to sign-in` | `/fr/admin/stats` | Redirigé vers page de connexion |
+
+### Security headers (4 tests)
+
+| # | Test | URL | Assertion |
+| :-- | :-- | :-- | :-- |
+| 11 | `responses include X-Content-Type-Options: nosniff` | `/fr/` | Header `x-content-type-options: nosniff` |
+| 12 | `responses include X-Frame-Options: DENY` | `/fr/` | Header `x-frame-options: DENY` |
+| 13 | `responses include Referrer-Policy` | `/fr/` | Header `referrer-policy: strict-origin-when-cross-origin` |
+| 14 | `responses include Permissions-Policy` | `/fr/` | Header `permissions-policy` contient `camera=()` |
 
 ### Stratégie
 
 - **Navigation pure** : aucune authentication, teste le HTML rendu
 - **i18n complet** : vérifie `lang` et `dir` pour fr, en, ar
-- **Guards** : les pages protégées redirigent vers `/connexion/`
+- **Guards** : les pages protégées redirigent vers `/auth/connexion/`
+- **Security headers** : vérifie les 4 en-têtes de sécurité injectés par le middleware
 
 ---
 
@@ -165,7 +175,8 @@ Formulaires :                2 (sign-up, sign-in)
 Flow authentifié :           2 (dashboard, profil)
 Pages publiques :            5
 Pages admin CMS :            3 (site, navigation, theme)
-Total tests E2E :            30
+Security headers :           4
+Total tests E2E :            34
 Fichiers :                   3 (+2 setup/teardown)
 Temps d'exécution :          ~45–90 s
 ```

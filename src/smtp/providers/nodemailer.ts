@@ -12,6 +12,8 @@ function getTransporter(): nodemailer.Transporter {
     host: cfg.host,
     port: cfg.port,
     secure: cfg.secure,
+    connectionTimeout: 10_000,
+    socketTimeout: 10_000,
     ...(cfg.user ? { auth: { user: cfg.user, pass: cfg.pass } } : {}),
   });
 
@@ -19,8 +21,9 @@ function getTransporter(): nodemailer.Transporter {
 }
 
 export async function send(payload: EmailPayload, from: EmailFrom): Promise<void> {
+  const safeName = from.name.replace(/[^a-zA-Z0-9 àâäéèêëïîôùûüÿçñ'\-]/g, '') || 'Atomic';
   await getTransporter().sendMail({
-    from: `"${from.name}" <${from.email}>`,
+    from: `"${safeName}" <${from.email}>`,
     to: payload.to,
     subject: payload.subject,
     html: payload.html,

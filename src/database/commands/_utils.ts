@@ -117,7 +117,9 @@ export function formatPgError(err: unknown): string {
 export async function safeConnect(label: string, url: string): Promise<{ client: Client; ok: true } | { client: null; ok: false }> {
   const client = new Client({
     connectionString: url,
-    ssl: url.includes('sslmode=require') ? { rejectUnauthorized: false } : undefined,
+    ssl: url.includes('sslmode=require')
+      ? { rejectUnauthorized: true, ca: process.env.DATABASE_CA_CERT || undefined }
+      : undefined,
   });
   try {
     await client.connect();

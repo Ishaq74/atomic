@@ -43,7 +43,8 @@ export const session = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     impersonatedBy: text("impersonated_by"),
-    activeOrganizationId: text("active_organization_id"),
+    activeOrganizationId: text("active_organization_id")
+      .references(() => organization.id, { onDelete: "set null" }),
   },
   (table) => [index("session_userId_idx").on(table.userId)],
 );
@@ -69,7 +70,10 @@ export const account = pgTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("account_userId_idx").on(table.userId)],
+  (table) => [
+    index("account_userId_idx").on(table.userId),
+    uniqueIndex("account_provider_uidx").on(table.accountId, table.providerId),
+  ],
 );
 
 export const verification = pgTable(
@@ -143,6 +147,7 @@ export const invitation = pgTable(
   (table) => [
     index("invitation_organizationId_idx").on(table.organizationId),
     index("invitation_email_idx").on(table.email),
+    index("invitation_inviterId_idx").on(table.inviterId),
     uniqueIndex("invitation_org_email_uidx").on(table.organizationId, table.email),
   ],
 );

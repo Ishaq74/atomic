@@ -72,5 +72,11 @@ describe('getContactTranslations', () => {
     expect(t.form).toBeDefined();
     expect(t.form.heading).toBeTypeOf('string');
     expect(t.form.submit).toBeTypeOf('string');
+    // feedback keys used by ContactPage data attributes
+    expect(t.feedback).toBeDefined();
+    expect(t.feedback.success).toBeTypeOf('string');
+    expect(t.feedback.error).toBeTypeOf('string');
+    expect(t.feedback.networkError).toBeTypeOf('string');
+    expect(t.feedback.rateLimited).toBeTypeOf('string');
   });
 });

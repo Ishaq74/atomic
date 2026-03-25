@@ -1,0 +1,4 @@
+ALTER TABLE "audit_log" ALTER COLUMN "metadata" SET DATA TYPE jsonb USING metadata::jsonb;--> statement-breakpoint
+ALTER TABLE "opening_hours" ADD CONSTRAINT "opening_hours_day_range" CHECK ("opening_hours"."day_of_week" >= 0 AND "opening_hours"."day_of_week" <= 6);--> statement-breakpoint
+ALTER TABLE "navigation_items" ADD CONSTRAINT "nav_items_no_self_parent" CHECK ("navigation_items"."parent_id" IS NULL OR "navigation_items"."parent_id" != "navigation_items"."id");--> statement-breakpoint
+ALTER TABLE "pages" ADD CONSTRAINT "pages_publish_consistency" CHECK (NOT "pages"."is_published" OR "pages"."published_at" IS NOT NULL);

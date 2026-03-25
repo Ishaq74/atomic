@@ -13,6 +13,14 @@ src/smtp/
 │   ├── nodemailer.ts     # SMTP générique (Nodemailer)
 │   ├── brevo.ts          # API Brevo v3 (fetch, pas de SDK)
 │   └── resend.ts         # SDK Resend
+├── templates/
+│   ├── layout.ts         # Layout HTML partagé (wrapper responsive)
+│   ├── i18n.ts           # Traductions des templates (4 locales)
+│   ├── verify-email.ts   # Vérification email (inscription)
+│   ├── reset-password.ts # Réinitialisation mot de passe
+│   ├── delete-account.ts # Confirmation suppression de compte (RGPD)
+│   ├── contact-form.ts   # Notification admin — formulaire de contact
+│   └── organization-invitation.ts # Invitation à rejoindre une organisation
 └── commands/
     ├── _utils.ts         # Couleurs ANSI, logSmtpTarget()
     └── smtp.check.ts     # Commande pnpm smtp:check
@@ -118,3 +126,15 @@ await sendEmail({
 ```
 
 Le provider est automatiquement sélectionné via `SMTP_PROVIDER`. L'expéditeur est lu depuis `SMTP_FROM_EMAIL` / `SMTP_FROM_NAME`.
+
+## Templates email
+
+Tous les templates sont dans `src/smtp/templates/` et utilisent un layout HTML responsive partagé (`layout.ts`). Chaque template est une fonction qui retourne `{ subject, html, text }` et accepte une `locale` pour l'internationalisation (traductions dans `i18n.ts`).
+
+| Template | Usage | Déclencheur |
+| :-- | :-- | :-- |
+| `verify-email` | Lien de vérification email après inscription | better-auth (automatique) |
+| `reset-password` | Lien de réinitialisation mot de passe | better-auth (automatique) |
+| `delete-account` | Confirmation de suppression de compte (RGPD) | Action utilisateur |
+| `contact-form` | Notification admin d'un message de contact | `POST /api/contact` |
+| `organization-invitation` | Invitation à rejoindre une organisation | better-auth organizations |

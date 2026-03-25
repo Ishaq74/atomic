@@ -1,11 +1,11 @@
 import { toLocale, getAuthTranslations } from '@i18n/utils';
 import type { Locale } from '@i18n/config';
 
-type AstroContext = {
+interface AstroContext {
   params: Record<string, string | undefined>;
-  locals: { user: any; session: any };
-  redirect: (url: string, status?: number) => Response;
-};
+  locals: App.Locals;
+  redirect: (url: string, status?: 300 | 301 | 302 | 303 | 304 | 307 | 308) => Response;
+}
 
 async function resolveLocale(astro: AstroContext) {
   const locale = toLocale(astro.params.lang) as Locale;

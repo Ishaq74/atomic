@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -7,6 +7,8 @@ import {
   integer,
   uniqueIndex,
   index,
+  type AnyPgColumn,
+  check,
 } from "drizzle-orm/pg-core";
 
 // ─── Navigation Menus ────────────────────────────────────────────────────────
@@ -39,7 +41,8 @@ export const navigationItems = pgTable(
     menuId: text("menu_id")
       .notNull()
       .references(() => navigationMenus.id, { onDelete: "cascade" }),
-    parentId: text("parent_id"),
+    parentId: text("parent_id")
+      .references((): AnyPgColumn => navigationItems.id, { onDelete: "set null" }),
     locale: text("locale").notNull(),
     label: text("label").notNull(),
     url: text("url"),
@@ -61,6 +64,7 @@ export const navigationItems = pgTable(
       table.locale,
       table.sortOrder,
     ),
+    check("nav_items_no_self_parent", sql`${table.parentId} IS NULL OR ${table.parentId} != ${table.id}`),
   ],
 );
 

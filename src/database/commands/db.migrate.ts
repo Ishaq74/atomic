@@ -60,34 +60,33 @@ async function main() {
     for (const migration of pending) {
       console.log(c.green(c.bold(`\n[migrate] → ${migration.id}`)));
       const statements = migration.sql.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
-      let allOk = true;
 
-      for (const stmt of statements) {
-        if (!stmt) continue;
-        try {
-          await client.query('BEGIN');
-          await client.query(stmt);
-          await client.query('COMMIT');
-        } catch (error: unknown) {
-          await client.query('ROLLBACK');
-          // Idempotent: ignore already-existing objects
-          const pgCode = (error as { code?: string })?.code;
-          const errMsg = error instanceof Error ? error.message : String(error);
-          if (pgCode && ['42P07', '42710', '42701'].includes(pgCode)) {
-            console.warn(c.yellow(`  ⚠️  Ignoré : ${errMsg}`));
-          } else {
-            allOk = false;
-            console.error(c.red(`  ❌ Erreur : ${errMsg}`));
-            throw error;
+      await client.query('BEGIN');
+      try {
+        for (const stmt of statements) {
+          if (!stmt) continue;
+          try {
+            await client.query(stmt);
+          } catch (error: unknown) {
+            const pgCode = (error as { code?: string })?.code;
+            const errMsg = error instanceof Error ? error.message : String(error);
+            if (pgCode && ['42P07', '42710', '42701'].includes(pgCode)) {
+              console.warn(c.yellow(`  ⚠️  Ignoré : ${errMsg}`));
+            } else {
+              throw error;
+            }
           }
         }
-      }
-
-      if (allOk) {
         await client.query(
           "INSERT INTO __drizzle_migrations (id, hash, created_at) VALUES ($1, '', NOW()) ON CONFLICT (id) DO NOTHING",
           [migration.id],
         );
+        await client.query('COMMIT');
+      } catch (error: unknown) {
+        await client.query('ROLLBACK');
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error(c.red(`  ❌ Erreur : ${errMsg}`));
+        throw error;
       }
     }
 

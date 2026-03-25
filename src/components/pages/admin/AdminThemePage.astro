@@ -5,10 +5,9 @@
  */
 import type { AuthTranslations, Locale } from '@i18n/config';
 import type { themeSettings } from '@database/schemas';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atoms/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@atoms/card';
 import { Input } from '@atoms/input';
 import { Label } from '@atoms/label';
-import { Textarea } from '@atoms/textarea';
 import Button from '@atoms/button/Button.astro';
 import Badge from '@atoms/badge/Badge.astro';
 
@@ -20,11 +19,11 @@ interface Props {
   themes: ThemeRow[];
 }
 
-const { t, locale, themes } = Astro.props;
+const { t, themes } = Astro.props;
 const cms = t.admin.cms.theme;
 ---
 
-<div
+<theme-manager
   id="cms-theme-data"
   data-t-saved={cms.saved}
   data-t-deleted={cms.deleted}
@@ -125,11 +124,6 @@ const cms = t.admin.cms.theme;
               </div>
             </div>
 
-            <!-- Custom CSS -->
-            <div class="grid gap-2">
-              <Label>{cms.customCss}</Label>
-              <Textarea name="customCss" rows={4} class="font-mono text-xs" value={th.customCss ?? ''} />
-            </div>
 
             <div class="flex justify-end gap-2">
               {!th.isActive && (
@@ -145,100 +139,96 @@ const cms = t.admin.cms.theme;
       </Card>
     ))}
   </div>
-</div>
+</theme-manager>
 
 <script>
   import { actions } from 'astro:actions';
   import { toast } from '@atoms/toast';
 
-  function init() {
-    const root = document.getElementById('cms-theme-data');
-    if (!root) return;
-    const tSaved = root.dataset.tSaved ?? 'Saved.';
-    const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
-    const tError = root.dataset.tError ?? 'Error.';
-    const tCannotDelete = root.dataset.tCannotDelete ?? 'Cannot delete active theme.';
+  class ThemeManager extends HTMLElement {
+    connectedCallback() {
+      const tSaved = this.dataset.tSaved ?? 'Saved.';
+      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
+      const tError = this.dataset.tError ?? 'Error.';
 
-    // ─── Toggle accordion ───
-    document.querySelectorAll<HTMLElement>('.theme-toggle-header').forEach((header) => {
-      header.addEventListener('click', () => {
-        const card = header.closest('.theme-card') as HTMLElement;
-        const body = card?.querySelector('.theme-body') as HTMLElement;
-        const chevron = card?.querySelector('.theme-chevron') as HTMLElement;
-        if (!body) return;
-        const isOpen = !body.classList.contains('hidden');
-        // Close all others
-        document.querySelectorAll<HTMLElement>('.theme-body').forEach((b) => b.classList.add('hidden'));
-        document.querySelectorAll<HTMLElement>('.theme-chevron').forEach((c) => c.style.transform = '');
-        if (!isOpen) {
-          body.classList.remove('hidden');
-          chevron.style.transform = 'rotate(180deg)';
-        }
-      });
-    });
-
-    // ─── Create Theme ───
-    document.getElementById('create-theme-form')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const input = document.getElementById('new-theme-name') as HTMLInputElement;
-      const name = input.value.trim();
-      if (!name) return;
-      const { error } = await actions.createTheme({ name });
-      if (!error) location.reload();
-      else toast.error(error.message ?? tError);
-    });
-
-    // ─── Save Theme ───
-    document.querySelectorAll<HTMLFormElement>('.theme-form').forEach((form) => {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = form.dataset.id!;
-        const fd = new FormData(form);
-        const { error } = await actions.updateTheme({
-          id,
-          name: fd.get('name') as string,
-          primaryColor: (fd.get('primaryColor') as string) || null,
-          secondaryColor: (fd.get('secondaryColor') as string) || null,
-          accentColor: (fd.get('accentColor') as string) || null,
-          backgroundColor: (fd.get('backgroundColor') as string) || null,
-          foregroundColor: (fd.get('foregroundColor') as string) || null,
-          mutedColor: (fd.get('mutedColor') as string) || null,
-          mutedForegroundColor: (fd.get('mutedForegroundColor') as string) || null,
-          fontHeading: (fd.get('fontHeading') as string) || null,
-          fontBody: (fd.get('fontBody') as string) || null,
-          borderRadius: (fd.get('borderRadius') as string) || null,
-          customCss: (fd.get('customCss') as string) || null,
+      // ─── Toggle accordion ───
+      this.querySelectorAll<HTMLElement>('.theme-toggle-header').forEach((header) => {
+        header.addEventListener('click', () => {
+          const card = header.closest('.theme-card') as HTMLElement;
+          const body = card?.querySelector('.theme-body') as HTMLElement;
+          const chevron = card?.querySelector('.theme-chevron') as HTMLElement;
+          if (!body) return;
+          const isOpen = !body.classList.contains('hidden');
+          this.querySelectorAll<HTMLElement>('.theme-body').forEach((b) => b.classList.add('hidden'));
+          this.querySelectorAll<HTMLElement>('.theme-chevron').forEach((c) => c.style.transform = '');
+          if (!isOpen) {
+            body.classList.remove('hidden');
+            chevron.style.transform = 'rotate(180deg)';
+          }
         });
-        if (!error) toast.success(tSaved);
-        else toast.error(error.message ?? tError);
       });
-    });
 
-    // ─── Activate Theme ───
-    document.querySelectorAll<HTMLElement>('.theme-activate-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.theme-card') as HTMLElement;
-        const id = card?.dataset.themeId;
-        if (!id) return;
-        const { error } = await actions.updateTheme({ id, isActive: true });
+      // ─── Create Theme ───
+      this.querySelector('#create-theme-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = this.querySelector('#new-theme-name') as HTMLInputElement;
+        const name = input.value.trim();
+        if (!name) return;
+        const { error } = await actions.createTheme({ name });
         if (!error) location.reload();
         else toast.error(error.message ?? tError);
       });
-    });
 
-    // ─── Delete Theme ───
-    document.querySelectorAll<HTMLElement>('.theme-delete-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const card = btn.closest('.theme-card') as HTMLElement;
-        const id = card?.dataset.themeId;
-        if (!id) return;
-        const { error } = await actions.deleteTheme({ id });
-        if (!error) { toast.success(tDeleted); card.remove(); }
-        else toast.error(error.message ?? tError);
+      // ─── Save Theme ───
+      this.querySelectorAll<HTMLFormElement>('.theme-form').forEach((form) => {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = form.dataset.id!;
+          const fd = new FormData(form);
+          const { error } = await actions.updateTheme({
+            id,
+            name: fd.get('name') as string,
+            primaryColor: (fd.get('primaryColor') as string) || null,
+            secondaryColor: (fd.get('secondaryColor') as string) || null,
+            accentColor: (fd.get('accentColor') as string) || null,
+            backgroundColor: (fd.get('backgroundColor') as string) || null,
+            foregroundColor: (fd.get('foregroundColor') as string) || null,
+            mutedColor: (fd.get('mutedColor') as string) || null,
+            mutedForegroundColor: (fd.get('mutedForegroundColor') as string) || null,
+            fontHeading: (fd.get('fontHeading') as string) || null,
+            fontBody: (fd.get('fontBody') as string) || null,
+            borderRadius: (fd.get('borderRadius') as string) || null,
+          });
+          if (!error) toast.success(tSaved);
+          else toast.error(error.message ?? tError);
+        });
       });
-    });
+
+      // ─── Activate Theme ───
+      this.querySelectorAll<HTMLElement>('.theme-activate-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const card = btn.closest('.theme-card') as HTMLElement;
+          const id = card?.dataset.themeId;
+          if (!id) return;
+          const { error } = await actions.updateTheme({ id, isActive: true });
+          if (!error) location.reload();
+          else toast.error(error.message ?? tError);
+        });
+      });
+
+      // ─── Delete Theme ───
+      this.querySelectorAll<HTMLElement>('.theme-delete-btn').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const card = btn.closest('.theme-card') as HTMLElement;
+          const id = card?.dataset.themeId;
+          if (!id) return;
+          const { error } = await actions.deleteTheme({ id });
+          if (!error) { toast.success(tDeleted); card.remove(); }
+          else toast.error(error.message ?? tError);
+        });
+      });
+    }
   }
 
-  init();
-  document.addEventListener('astro:after-swap', init);
+  customElements.define('theme-manager', ThemeManager);
 </script>

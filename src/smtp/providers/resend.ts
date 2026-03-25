@@ -12,8 +12,9 @@ function getClient(): Resend {
 }
 
 export async function send(payload: EmailPayload, from: EmailFrom): Promise<void> {
+  const safeName = from.name.replace(/[^a-zA-Z0-9 àâäéèêëïîôùûüÿçñ'\-]/g, '') || 'Atomic';
   const { error } = await getClient().emails.send({
-    from: `${from.name} <${from.email}>`,
+    from: `${safeName} <${from.email}>`,
     to: [payload.to],
     subject: payload.subject,
     html: payload.html || '',
@@ -31,9 +32,17 @@ export async function verify(): Promise<void> {
   // Resend n'a pas d'endpoint dédié "verify".
   // On tente /domains — si la clé est restreinte (send-only), on obtient 401
   // avec "restricted_api_key" : la clé est valide, juste limitée à l'envoi.
-  const res = await fetch('https://api.resend.com/domains', {
-    headers: { 'Authorization': `Bearer ${apiKey}` },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  let res: Response;
+  try {
+    res = await fetch('https://api.resend.com/domains', {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (res.ok) return;
 
@@ -45,5 +54,6 @@ export async function verify(): Promise<void> {
   }
 
   // 401 pour une autre raison = clé invalide
-  throw new Error(`Resend API ${res.status}: ${text}`);
+  console.error(`[SMTP] Resend verify error ${res.status}:`, text);
+  throw new Error(`Resend API error (HTTP ${res.status})`);
 }

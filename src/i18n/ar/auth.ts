@@ -254,6 +254,9 @@ export default {
         sectionType: 'نوع القسم',
         sectionContent: 'المحتوى',
         noSections: 'لا توجد أقسام.',
+        hidden: 'مخفي',
+        hide: 'إخفاء',
+        show: 'إظهار',
       },
       theme: {
         title: 'المظهر',
@@ -274,7 +277,6 @@ export default {
         fontHeading: 'خط العناوين',
         fontBody: 'خط النص',
         borderRadius: 'نصف قطر الحدود',
-        customCss: 'CSS مخصص',
         saved: 'تم حفظ المظهر.',
         deleted: 'تم حذف المظهر.',
         save: 'حفظ',
@@ -410,6 +412,7 @@ export default {
     members: {
       title: 'الأعضاء',
       invite: 'دعوة عضو',
+      email: 'البريد الإلكتروني',
       emailPlaceholder: 'بريد العضو لدعوته',
       rolePlaceholder: 'اختر دوراً',
       sendInvite: 'إرسال الدعوة',

@@ -1,5 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { Invitation } from '@/lib/auth-data';
 import { getAuthUrl, getOrgUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
@@ -18,13 +20,14 @@ import {
   DialogClose,
   DialogFooter,
 } from '@atoms/dialog';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  organizations?: any[];
-  userInvitations?: any[];
+  user: AppUser;
+  organizations?: unknown[];
+  userInvitations?: Invitation[];
 }
 
 const { t, locale, user, organizations = [], userInvitations = [] } = Astro.props;
@@ -34,7 +37,7 @@ const initials = user?.name
   ? user.name.split(' ').map((w: string) => w[0]).join('').toUpperCase().slice(0, 2)
   : '?';
 
-const pendingInvitations = userInvitations.filter((inv: any) => inv.status === 'pending');
+const pendingInvitations = userInvitations.filter((inv) => inv.status === 'pending');
 const roleLabels: Record<string, string> = {
   owner: t.organizations.members.owner,
   admin: t.organizations.members.admin,
@@ -54,7 +57,7 @@ const roleLabels: Record<string, string> = {
       <CardContent>
         <div class="flex items-center gap-4 mb-6">
           <Avatar size="lg">
-            {user?.image && <AvatarImage src={user.image} alt={user.name ?? ''} />}
+            {user?.image && safeUrl(user.image) && <AvatarImage src={safeUrl(user.image)!} alt={user.name ?? ''} />}
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <div>
@@ -166,7 +169,7 @@ const roleLabels: Record<string, string> = {
             {organizations.map((org: any) => (
               <a href={getOrgUrl(locale, org.slug, 'members')} class="flex items-center gap-4 py-3 hover:bg-muted/50 -mx-3 px-3 rounded-md transition-colors">
                 <Avatar size="sm">
-                  {org.logo && <AvatarImage src={org.logo} alt={org.name} />}
+                  {org.logo && safeUrl(org.logo) && <AvatarImage src={safeUrl(org.logo)!} alt={org.name} />}
                   <AvatarFallback>{org.name.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div class="flex-1 min-w-0">

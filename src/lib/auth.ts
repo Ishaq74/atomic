@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { getDrizzle, schema } from "@database/drizzle";
+import { getLazyDrizzle, schema } from "@database/drizzle";
 import { username, admin, organization, testUtils } from "better-auth/plugins";
 
 const isTest = process.env.NODE_ENV === 'test';
@@ -26,7 +26,7 @@ function extractLocale(url: string): Locale {
 }
 
 export const auth = betterAuth({
-  database: drizzleAdapter(getDrizzle(), {
+  database: drizzleAdapter(getLazyDrizzle(), {
     provider: "pg",
     schema,
   }),
@@ -54,12 +54,15 @@ export const auth = betterAuth({
         userName: user.name,
         resetUrl: url,
       });
-      if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => console.error('[SMTP] Reset password email failed:', err));
+      if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => {
+        console.error('[SMTP] Reset password email failed:', err);
+        void logAuditEvent({ action: 'EMAIL_SEND_FAILED', resource: 'email', metadata: { template: 'reset-password', to: user.email, error: String(err) } });
+      });
     },
   },
   emailVerification: {
     sendOnSignUp: true,
-    autoSignInAfterVerification: true,
+    autoSignInAfterVerification: false,
     sendVerificationEmail: async ({ user, url }) => {
       const locale = extractLocale(url);
       const { subject, html, text } = verifyEmailTemplate({
@@ -67,7 +70,10 @@ export const auth = betterAuth({
         userName: user.name,
         verificationUrl: url,
       });
-      if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => console.error('[SMTP] Verification email failed:', err));
+      if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => {
+        console.error('[SMTP] Verification email failed:', err);
+        void logAuditEvent({ action: 'EMAIL_SEND_FAILED', resource: 'email', metadata: { template: 'verify-email', to: user.email, error: String(err) } });
+      });
     },
   },
   user: {
@@ -80,7 +86,10 @@ export const auth = betterAuth({
           userName: user.name,
           deleteUrl: url,
         });
-        if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => console.error('[SMTP] Delete account email failed:', err));
+        if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: user.email, subject, html, text })).catch(err => {
+          console.error('[SMTP] Delete account email failed:', err);
+          void logAuditEvent({ action: 'EMAIL_SEND_FAILED', resource: 'email', metadata: { template: 'delete-account', to: user.email, error: String(err) } });
+        });
       },
       beforeDelete: async (user) => {
         if (user.image?.startsWith('/uploads/')) {
@@ -123,24 +132,47 @@ export const auth = betterAuth({
       const mapping = pathActionMap[ctx.path];
       if (!mapping) return;
 
-      // Only log successful responses (not errors)
+      // Log both successful and failed attempts for security visibility
       const returned = ctx.context.returned;
-      if (returned instanceof Error) return;
+      const isFailed = returned instanceof Error
+        || (returned && typeof returned === 'object' && 'status' in returned && (returned as { status: number }).status >= 400);
+
+      // For failed auth attempts, log with limited info
+      if (isFailed) {
+        const failPaths = new Set(['/sign-in/email', '/sign-up/email', '/change-password', '/reset-password']);
+        if (failPaths.has(ctx.path)) {
+          const ip = ctx.headers ? extractIp(ctx.headers) : null;
+          const ua = ctx.headers?.get('user-agent') ?? null;
+          ctx.context.runInBackground(
+            logAuditEvent({
+              userId: null,
+              action: (mapping.action + '_FAILED') as AuditAction,
+              resource: mapping.resource,
+              resourceId: null,
+              metadata: { path: ctx.path },
+              ipAddress: ip,
+              userAgent: ua,
+            }),
+          );
+        }
+        return;
+      }
 
       const userId = ctx.context.newSession?.user?.id
-        ?? ctx.body?.userId
         ?? ctx.context.session?.user?.id
         ?? null;
 
       const ip = ctx.headers ? extractIp(ctx.headers) : null;
       const ua = ctx.headers?.get("user-agent") ?? null;
 
-      // Build metadata from body — whitelist safe fields only
-      const SAFE_FIELDS = new Set(['userId', 'organizationId', 'memberId', 'invitationId', 'role', 'name', 'email', 'slug', 'username']);
-      const body: Record<string, unknown> = {};
+      // Build metadata from body — whitelist safe fields only (IDs and roles, no PII)
+      const SAFE_FIELDS = new Set(['userId', 'organizationId', 'memberId', 'invitationId', 'role', 'slug']);
+      const body: Record<string, string> = {};
       if (ctx.body) {
         for (const [key, value] of Object.entries(ctx.body)) {
-          if (SAFE_FIELDS.has(key)) body[key] = value;
+          if (SAFE_FIELDS.has(key) && typeof value === 'string' && value.length <= 255) {
+            body[key] = value;
+          }
         }
       }
 
@@ -162,16 +194,31 @@ export const auth = betterAuth({
     admin(),
     organization({
       async sendInvitationEmail(data) {
-        const baseUrl = process.env.BETTER_AUTH_URL ?? 'http://localhost:4321';
-        const inviteUrl = `${baseUrl}/${DEFAULT_LOCALE}/auth/${DEFAULT_LOCALE === 'fr' ? 'organisations' : 'organizations'}?invitation=${data.id}`;
+        const rawBaseUrl = process.env.BETTER_AUTH_URL;
+        if (!rawBaseUrl) {
+          throw new Error('[AUTH] BETTER_AUTH_URL is required — set it in your environment variables.');
+        }
+        let baseUrl: string;
+        try {
+          const parsed = new URL(rawBaseUrl);
+          if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+          baseUrl = parsed.origin;
+        } catch {
+          throw new Error(`[AUTH] BETTER_AUTH_URL is invalid: "${rawBaseUrl}". Must be a valid http(s) URL.`);
+        }
+        const inviterLocale = (data.inviter.user as Record<string, unknown>).locale as Locale | undefined ?? DEFAULT_LOCALE;
+        const inviteUrl = `${baseUrl}/${inviterLocale}/auth/${inviterLocale === 'fr' ? 'organisations' : 'organizations'}?org=${encodeURIComponent(data.organization.slug)}&invitation=${encodeURIComponent(data.id)}`;
         const { subject, html, text } = organizationInvitationTemplate({
-          locale: DEFAULT_LOCALE,
+          locale: inviterLocale,
           inviterName: data.inviter.user.name,
           orgName: data.organization.name,
           role: data.role ?? 'member',
           inviteUrl,
         });
-        if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: data.email, subject, html, text })).catch(err => console.error('[SMTP] Organization invitation email failed:', err));
+        if (!isTest) import("@smtp/send").then(m => m.sendEmail({ to: data.email, subject, html, text })).catch(err => {
+          console.error('[SMTP] Organization invitation email failed:', err);
+          void logAuditEvent({ action: 'EMAIL_SEND_FAILED', resource: 'email', metadata: { template: 'org-invitation', to: data.email, error: String(err) } });
+        });
       },
       organizationHooks: {
         beforeDeleteOrganization: async (data) => {

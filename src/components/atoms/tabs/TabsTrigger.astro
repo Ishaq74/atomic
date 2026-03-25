@@ -4,6 +4,8 @@ import { tv } from "tailwind-variants";
 
 interface Props extends Omit<HTMLAttributes<"button">, "type" | "id" | "role"> {
   value: string;
+  /** Render this trigger as active on the server to avoid CLS */
+  defaultActive?: boolean;
 }
 
 export const tabsTrigger = tv({
@@ -17,16 +19,16 @@ export const tabsTrigger = tv({
   ],
 });
 
-const { value, class: className, ...rest } = Astro.props;
+const { value, defaultActive = false, class: className, ...rest } = Astro.props;
 ---
 
 <button
   class={tabsTrigger({ class: className })}
   data-tabs-trigger
   data-value={value}
-  data-state="inactive"
+  data-state={defaultActive ? "active" : "inactive"}
   role="tab"
-  aria-selected="false"
+  aria-selected={defaultActive ? "true" : "false"}
   {...rest}
   data-slot="tabs-trigger"
 >

@@ -34,6 +34,34 @@
       "when": 1773559334841,
       "tag": "0004_sharp_cloak",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773607529183,
+      "tag": "0005_woozy_forgotten_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773619443202,
+      "tag": "0006_certain_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1773692611370,
+      "tag": "0007_smart_kree",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774207043639,
+      "tag": "0008_tidy_mantis",
+      "breakpoints": true
     }
   ]
 }

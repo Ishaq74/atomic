@@ -8,11 +8,11 @@ import AdminUsersPage from '@pages/admin/AdminUsersPage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro as any);
+const result = await requireAdmin(Astro);
 if ('redirect' in result) return result.redirect;
 const { user, locale, authT } = result;
 
-const adminUsers = await fetchAdminUsers(Astro.request.headers);
+const { users: adminUsers } = await fetchAdminUsers(Astro.request.headers);
 ---
 
 <BaseLayout title={authT.meta.admin.title} description={authT.meta.admin.description}>

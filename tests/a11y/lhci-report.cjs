@@ -28,6 +28,8 @@ let perfPass = 0;
 const perfFails = [];
 const a11yFails = [];
 const contrastDetails = [];
+let bpPass = 0;
+let seoPass = 0;
 
 console.log('');
 console.log('═══════════════════════════════════════════════════════════════════════════════');
@@ -55,6 +57,9 @@ files.forEach(f => {
   else perfFails.push({ page: f.replace('.json', ''), score: p });
 
   if (a < 90) a11yFails.push({ page: f.replace('.json', ''), score: a });
+
+  if (bp >= 90) bpPass++;
+  if (s >= 90) seoPass++;
 
   const lcp = r.audits['largest-contentful-paint']?.numericValue;
   const si = r.audits['speed-index']?.numericValue;
@@ -100,8 +105,8 @@ console.log('');
 console.log(`  Total pages audited:  ${total}`);
 console.log(`  Performance >=90:     ${perfPass}/${total}  ${perfPass === total ? '✅' : '⚠️'}`);
 console.log(`  Accessibility >=90:   ${a11yPass}/${total}  ${a11yPass === total ? '✅' : '⚠️'}`);
-console.log(`  Best Practices:       100/100 all pages ✅`);
-console.log(`  SEO:                  100/100 all pages ✅`);
+console.log(`  Best Practices >=90:  ${bpPass}/${total}  ${bpPass === total ? '✅' : '⚠️'}`);
+console.log(`  SEO >=90:             ${seoPass}/${total}  ${seoPass === total ? '✅' : '⚠️'}`);
 
 if (perfFails.length) {
   console.log('');

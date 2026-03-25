@@ -95,7 +95,14 @@ const row2 = [...t.items].reverse();
 </section>
 
 <script>
+  let controller: AbortController | null = null;
+  let observerRef: IntersectionObserver | null = null;
+
   function initPillarsMarquee() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const marquee = document.getElementById("pillars-marquee");
     if (!marquee) return;
 
@@ -105,34 +112,35 @@ const row2 = [...t.items].reverse();
         row.querySelectorAll(".pillars-animate").forEach((el) => {
           (el as HTMLElement).style.animationPlayState = "paused";
         });
-      });
+      }, { signal });
       row.addEventListener("mouseleave", () => {
         row.querySelectorAll(".pillars-animate").forEach((el) => {
           (el as HTMLElement).style.animationPlayState = "running";
         });
-      });
+      }, { signal });
     });
   }
 
   // Header stagger animation on scroll
   function initPillarsHeaderReveal() {
+    observerRef?.disconnect();
     const section = document.querySelector(".pillars-header-stagger")?.closest("section");
     if (!section) return;
     const staggerEls = section.querySelectorAll<HTMLElement>(".pillars-header-stagger");
-    const observer = new IntersectionObserver(
+    observerRef = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             staggerEls.forEach((el) => {
               el.style.animationPlayState = "running";
             });
-            observer.unobserve(entry.target);
+            observerRef!.unobserve(entry.target);
           }
         });
       },
       { threshold: 0.2 }
     );
-    observer.observe(section);
+    observerRef.observe(section);
   }
 
   initPillarsMarquee();
@@ -140,6 +148,10 @@ const row2 = [...t.items].reverse();
   document.addEventListener("astro:after-swap", () => {
     initPillarsMarquee();
     initPillarsHeaderReveal();
+  });
+  document.addEventListener("astro:before-swap", () => {
+    controller?.abort(); controller = null;
+    observerRef?.disconnect(); observerRef = null;
   });
 </script>
 

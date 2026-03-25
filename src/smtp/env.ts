@@ -49,20 +49,14 @@ const ACTIVE_PROVIDER: SmtpProvider = (() => {
   const normalized = raw.trim().toUpperCase();
   if (SMTP_PROVIDERS.includes(normalized as SmtpProvider)) return normalized as SmtpProvider;
 
-  console.error(`\x1b[31m\x1b[1m❌ SMTP_PROVIDER invalide : "${raw}"\x1b[0m`);
-  console.error(`\x1b[33m   Valeurs acceptées : ${SMTP_PROVIDERS.join(', ')}\x1b[0m`);
-  console.error(`\x1b[2m   Vérifiez votre fichier .env\x1b[0m`);
-  return process.exit(1);
+  throw new Error(`SMTP_PROVIDER invalide : "${raw}". Valeurs acceptées : ${SMTP_PROVIDERS.join(', ')}`);
 })();
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 function requireEnv(name: string): string {
   const val = process.env[name];
   if (!val || val.trim() === '') {
-    console.error(`\x1b[31m\x1b[1m❌ Variable d'environnement manquante : ${name}\x1b[0m`);
-    console.error(`\x1b[33m   Provider actif : ${ACTIVE_PROVIDER}\x1b[0m`);
-    console.error(`\x1b[2m   Ajoutez ${name}=... dans votre fichier .env\x1b[0m`);
-    return process.exit(1);
+    throw new Error(`Variable d'environnement manquante : ${name} (provider actif : ${ACTIVE_PROVIDER})`);
   }
   return val.trim();
 }
@@ -72,16 +66,27 @@ export const getSmtpProvider = (): SmtpProvider => ACTIVE_PROVIDER;
 export const getProviderLabel = (): string => PROVIDER_LABELS[ACTIVE_PROVIDER];
 
 export function getSmtpFrom(): EmailFrom {
+  const email = requireEnv('SMTP_FROM_EMAIL');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error(`SMTP_FROM_EMAIL invalide : "${email}"`);
+  }
+  if (/[\r\n]/.test(email)) {
+    throw new Error(`SMTP_FROM_EMAIL contient des caractères invalides (retour à la ligne)`);
+  }
   return {
-    email: requireEnv('SMTP_FROM_EMAIL'),
+    email,
     name: process.env.SMTP_FROM_NAME?.trim() || 'Atomic',
   };
 }
 
 export function getNodemailerConfig(): NodemailerConfig {
+  const port = parseInt(process.env.SMTP_PORT ?? '587', 10);
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error(`SMTP_PORT invalide : "${process.env.SMTP_PORT}". Doit être entre 1 et 65535.`);
+  }
   return {
     host: requireEnv('SMTP_HOST'),
-    port: parseInt(process.env.SMTP_PORT ?? '587', 10),
+    port,
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER?.trim() ?? '',
     pass: process.env.SMTP_PASS?.trim() ?? '',

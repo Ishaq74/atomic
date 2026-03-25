@@ -1,7 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { extractIp } from '@/lib/audit';
 
 describe('extractIp', () => {
+  const originalTrustProxy = process.env.TRUST_PROXY;
+  beforeAll(() => { process.env.TRUST_PROXY = 'true'; });
+  afterAll(() => {
+    if (originalTrustProxy === undefined) delete process.env.TRUST_PROXY;
+    else process.env.TRUST_PROXY = originalTrustProxy;
+  });
+
   it('returns first IP from x-forwarded-for', () => {
     const headers = new Headers({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' });
     expect(extractIp(headers)).toBe('1.2.3.4');
@@ -43,5 +50,25 @@ describe('extractIp', () => {
   it('handles full IPv6 address in x-forwarded-for', () => {
     const headers = new Headers({ 'x-forwarded-for': '2001:db8::1, ::1' });
     expect(extractIp(headers)).toBe('2001:db8::1');
+  });
+
+  it('returns null for XSS attempt in x-forwarded-for', () => {
+    const headers = new Headers({ 'x-forwarded-for': '<script>alert(1)</script>' });
+    expect(extractIp(headers)).toBeNull();
+  });
+
+  it('returns null for non-IP string in x-forwarded-for', () => {
+    const headers = new Headers({ 'x-forwarded-for': 'not-an-ip' });
+    expect(extractIp(headers)).toBeNull();
+  });
+
+  it('returns null for empty x-forwarded-for value', () => {
+    const headers = new Headers({ 'x-forwarded-for': '' });
+    expect(extractIp(headers)).toBeNull();
+  });
+
+  it('returns null for invalid x-real-ip', () => {
+    const headers = new Headers({ 'x-real-ip': 'DROP TABLE users;--' });
+    expect(extractIp(headers)).toBeNull();
   });
 });

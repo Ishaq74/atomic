@@ -143,7 +143,7 @@ describe('Seed — theme', () => {
     const requiredKeys = [
       'name', 'isActive', 'primaryColor', 'secondaryColor', 'accentColor',
       'backgroundColor', 'foregroundColor', 'mutedColor', 'mutedForegroundColor',
-      'fontHeading', 'fontBody', 'borderRadius', 'customCss',
+      'fontHeading', 'fontBody', 'borderRadius',
     ];
 
     for (const key of requiredKeys) {

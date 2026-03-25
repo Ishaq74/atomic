@@ -305,7 +305,6 @@ Le schéma `themeSettings` stocke tous les design tokens en base de données :
 | `fontHeading` | text | `Inter` |
 | `fontBody` | text | `Inter` |
 | `borderRadius` | text | `0.625rem` |
-| `customCss` | text (nullable) | CSS personnalisé libre |
 | `isDefault` | boolean | Thème par défaut (non supprimable) |
 | `isActive` | boolean | Thème actuellement appliqué |
 

@@ -254,6 +254,9 @@ export default {
         sectionType: 'Section type',
         sectionContent: 'Content',
         noSections: 'No sections.',
+        hidden: 'hidden',
+        hide: 'Hide',
+        show: 'Show',
       },
       theme: {
         title: 'Theme',
@@ -274,7 +277,6 @@ export default {
         fontHeading: 'Heading font',
         fontBody: 'Body font',
         borderRadius: 'Border radius',
-        customCss: 'Custom CSS',
         saved: 'Theme saved.',
         deleted: 'Theme deleted.',
         save: 'Save',
@@ -410,6 +412,7 @@ export default {
     members: {
       title: 'Members',
       invite: 'Invite a member',
+      email: 'Email',
       emailPlaceholder: 'Email of the member to invite',
       rolePlaceholder: 'Select a role',
       sendInvite: 'Send invitation',

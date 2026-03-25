@@ -4,23 +4,25 @@ import { tv } from "tailwind-variants";
 
 interface Props extends Omit<HTMLAttributes<"div">, "id" | "role" | "tabindex" | "hidden"> {
   value: string;
+  /** Render this tab visible on the server to avoid CLS */
+  defaultActive?: boolean;
 }
 
 export const tabsContent = tv({
   base: "mt-2 focus-visible:outline-2 focus-visible:outline-offset-2",
 });
 
-const { value, class: className, ...rest } = Astro.props;
+const { value, defaultActive = false, class: className, ...rest } = Astro.props;
 ---
 
 <div
   class={tabsContent({ class: className })}
   data-tabs-content
   data-value={value}
-  data-state="inactive"
+  data-state={defaultActive ? "active" : "inactive"}
   role="tabpanel"
   tabindex="0"
-  hidden
+  hidden={!defaultActive}
   {...rest}
   data-slot="tabs-content"
 >

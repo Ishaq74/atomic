@@ -6,6 +6,12 @@ import {
   resolvePageSlug,
   getAuthTranslations,
   getCommonTranslations,
+  getAdminUrl,
+  getOrgUrl,
+  toLocale,
+  isValidLocale,
+  isRTL,
+  getDirection,
 } from '@/i18n/utils';
 import type { Locale, AuthPageId, PageId } from '@/i18n/config';
 
@@ -149,5 +155,82 @@ describe('Translation loaders', () => {
     expect(typeof t.pageRoutes.about).toBe('string');
     expect(typeof t.pageRoutes.contact).toBe('string');
     expect(typeof t.pageRoutes.legal).toBe('string');
+  });
+});
+
+// ─── getAdminUrl ────────────────────────────────────────────────────
+
+describe('getAdminUrl', () => {
+  it('generates base admin URL without subpage', () => {
+    expect(getAdminUrl('fr')).toBe('/fr/admin');
+    expect(getAdminUrl('en')).toBe('/en/admin');
+  });
+
+  it('generates admin URL with subpage', () => {
+    expect(getAdminUrl('fr', 'users')).toBe('/fr/admin/users');
+    expect(getAdminUrl('en', 'audit')).toBe('/en/admin/audit');
+    expect(getAdminUrl('es', 'theme')).toBe('/es/admin/theme');
+  });
+});
+
+// ─── getOrgUrl ──────────────────────────────────────────────────────
+
+describe('getOrgUrl', () => {
+  it('generates base org URL without subpage', () => {
+    expect(getOrgUrl('fr', 'my-org')).toBe('/fr/organizations/my-org');
+  });
+
+  it('generates org URL with subpage', () => {
+    expect(getOrgUrl('en', 'acme', 'members')).toBe('/en/organizations/acme/members');
+    expect(getOrgUrl('fr', 'acme', 'settings')).toBe('/fr/organizations/acme/settings');
+  });
+});
+
+// ─── toLocale ───────────────────────────────────────────────────────
+
+describe('toLocale', () => {
+  it('returns valid locale as-is', () => {
+    expect(toLocale('fr')).toBe('fr');
+    expect(toLocale('en')).toBe('en');
+    expect(toLocale('ar')).toBe('ar');
+  });
+
+  it('returns default locale for invalid value', () => {
+    expect(toLocale('xx')).toBe('fr');
+    expect(toLocale(undefined)).toBe('fr');
+    expect(toLocale('')).toBe('fr');
+  });
+});
+
+// ─── isValidLocale ──────────────────────────────────────────────────
+
+describe('isValidLocale', () => {
+  it('returns true for supported locales', () => {
+    expect(isValidLocale('fr')).toBe(true);
+    expect(isValidLocale('en')).toBe(true);
+    expect(isValidLocale('es')).toBe(true);
+    expect(isValidLocale('ar')).toBe(true);
+  });
+
+  it('returns false for unsupported values', () => {
+    expect(isValidLocale('de')).toBe(false);
+    expect(isValidLocale(undefined)).toBe(false);
+    expect(isValidLocale('')).toBe(false);
+  });
+});
+
+// ─── isRTL / getDirection ───────────────────────────────────────────
+
+describe('isRTL / getDirection', () => {
+  it('Arabic is RTL', () => {
+    expect(isRTL('ar')).toBe(true);
+    expect(getDirection('ar')).toBe('rtl');
+  });
+
+  it('French/English/Spanish are LTR', () => {
+    for (const locale of ['fr', 'en', 'es'] as const) {
+      expect(isRTL(locale)).toBe(false);
+      expect(getDirection(locale)).toBe('ltr');
+    }
   });
 });

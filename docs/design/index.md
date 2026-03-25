@@ -3,7 +3,7 @@
 > **Projet** : Atomic  
 > **Stack** : Astro 6 + Tailwind CSS 4 + Starwind UI + tailwind-variants  
 > **Palette** : Fire Brand — OKLCH color space — hue 68° (golden yellow)  
-> **Composants** : 45 atoms + 8 wow effects  
+> **Composants** : 47 atoms + 8 wow effects  
 > **Thème** : Light / Dark + thèmes custom extensibles
 
 ---
@@ -13,7 +13,7 @@
 | Document | Contenu |
 | :-- | :-- |
 | [tokens.md](tokens.md) | Design tokens OKLCH — couleurs, rayons, surfaces, gradients, mode sombre |
-| [components.md](components.md) | Catalogue complet des 45 composants — props, slots, variants |
+| [components.md](components.md) | Catalogue complet des 47 composants — props, slots, variants |
 | [variants.md](variants.md) | Système de variants Tailwind — `tv()`, compound variants, composition |
 | [create-component.md](create-component.md) | Guide pas-à-pas pour créer un nouveau composant Starwind |
 | [theming.md](theming.md) | Créer un thème custom (retro, luxury, zen…) — light + dark, accessible |
@@ -34,7 +34,7 @@ src/
 │   ├── positioning.ts          ← Système de positionnement flottant
 │   └── config-schema.json      ← Schéma JSON de la config Starwind
 ├── components/
-│   ├── atoms/                  ← 45 composants de base (Button, Card, Input…)
+│   ├── atoms/                  ← 47 composants de base (Button, Card, Input…)
 │   │   └── {name}/
 │   │       ├── {Name}.astro    ← Composant principal + tv() variants
 │   │       ├── {Sub}.astro     ← Sous-composants (CardHeader, AlertTitle…)

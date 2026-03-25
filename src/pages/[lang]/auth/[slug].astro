@@ -11,7 +11,7 @@ import ForgotPasswordPage from '@pages/auth/ForgotPasswordPage.astro';
 import ResetPasswordPage from '@pages/auth/ResetPasswordPage.astro';
 import VerifyEmailPage from '@pages/auth/VerifyEmailPage.astro';
 import ProfilePage from '@pages/auth/ProfilePage.astro';
-import { fetchUserOrganizations, fetchUserInvitations } from '@/lib/auth-data';
+import { fetchUserOrganizations, fetchUserInvitations, type Invitation } from '@/lib/auth-data';
 
 export const prerender = false;
 
@@ -57,14 +57,14 @@ if ((pageId === 'dashboard' || pageId === 'profile') && isGuest) {
 // reset-password and verify-email are accessible to anyone (token-based)
 
 // ─── Dashboard: server-side data fetching ───
-let organizations: any[] = [];
-let userInvitations: any[] = [];
+let organizations: unknown[] = [];
+let userInvitations: Invitation[] = [];
 
 if (pageId === 'dashboard' && user) {
   const headers = Astro.request.headers;
   [organizations, userInvitations] = await Promise.all([
     fetchUserOrganizations(headers),
-    fetchUserInvitations(user.email),
+    fetchUserInvitations(headers),
   ]);
 }
 
@@ -83,7 +83,7 @@ const meta = authT.meta[metaKeys[pageId]];
 
 type FlowPageId = 'sign-in' | 'sign-up' | 'forgot-password' | 'reset-password' | 'verify-email' | 'dashboard' | 'profile';
 
-const pages: Record<FlowPageId, any> = {
+const pages = {
   'sign-in': SignInPage,
   'sign-up': SignUpPage,
   'forgot-password': ForgotPasswordPage,
@@ -108,10 +108,10 @@ const needsSidebar = pageId === 'dashboard' || pageId === 'profile';
 <BaseLayout title={meta.title} description={meta.description}>
   {needsSidebar ? (
     <AuthLayout title={meta.title}>
-      <AuthSidebar slot="sidebar" t={authT} locale={locale} user={user} activeItem={pageId as 'dashboard' | 'profile'} />
-      <Page t={authT} locale={locale} user={user} {...extraProps} />
+      <AuthSidebar slot="sidebar" t={authT} locale={locale} user={user!} activeItem={pageId as 'dashboard' | 'profile'} />
+      <Page t={authT as never} locale={locale} user={user as never} {...extraProps} />
     </AuthLayout>
   ) : (
-    <Page t={authT} locale={locale} user={user} {...extraProps} />
+    <Page t={authT as never} locale={locale} user={user as never} {...extraProps} />
   )}
 </BaseLayout>

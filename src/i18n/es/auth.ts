@@ -254,6 +254,9 @@ export default {
         sectionType: 'Tipo de sección',
         sectionContent: 'Contenido',
         noSections: 'Sin secciones.',
+        hidden: 'oculto',
+        hide: 'Ocultar',
+        show: 'Mostrar',
       },
       theme: {
         title: 'Tema',
@@ -274,7 +277,6 @@ export default {
         fontHeading: 'Fuente de títulos',
         fontBody: 'Fuente del cuerpo',
         borderRadius: 'Radio de bordes',
-        customCss: 'CSS personalizado',
         saved: 'Tema guardado.',
         deleted: 'Tema eliminado.',
         save: 'Guardar',
@@ -410,6 +412,7 @@ export default {
     members: {
       title: 'Miembros',
       invite: 'Invitar un miembro',
+      email: 'Correo electr\u00f3nico',
       emailPlaceholder: 'Correo del miembro a invitar',
       rolePlaceholder: 'Seleccione un rol',
       sendInvite: 'Enviar invitación',

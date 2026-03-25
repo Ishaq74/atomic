@@ -38,6 +38,9 @@ function parseArgs(): { source: DbEnv; target: DbEnv } {
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
+// Safe identifier regex — only allow normal PostgreSQL identifiers
+const SAFE_IDENT = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
 async function getTables(client: Client): Promise<string[]> {
   const res = await client.query(
     `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`,
@@ -46,18 +49,36 @@ async function getTables(client: Client): Promise<string[]> {
 }
 
 async function copyTableData(from: Client, to: Client, table: string) {
+  if (!SAFE_IDENT.test(table)) throw new Error(`Invalid table name: ${table}`);
   const { rows } = await from.query(`SELECT * FROM "${table}"`);
   if (rows.length === 0) {
     console.log(c.dim(`  [SKIP] ${table} — vide`));
     return;
   }
   const columns = Object.keys(rows[0]);
+  for (const col of columns) {
+    if (!SAFE_IDENT.test(col)) throw new Error(`Invalid column name: ${col}`);
+  }
+  const cols = columns.map(col => `"${col}"`).join(',');
   await to.query(`TRUNCATE TABLE "${table}" RESTART IDENTITY CASCADE`);
-  for (const row of rows) {
-    const values = columns.map(col => row[col]);
-    const placeholders = columns.map((_, i) => `$${i + 1}`).join(',');
-    const cols = columns.map(col => `"${col}"`).join(',');
-    await to.query(`INSERT INTO "${table}" (${cols}) VALUES (${placeholders})`, values);
+
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+    const batch = rows.slice(i, i + BATCH_SIZE);
+    const valueSets: string[] = [];
+    const params: unknown[] = [];
+    let paramIdx = 1;
+
+    for (const row of batch) {
+      const placeholders = columns.map(() => `$${paramIdx++}`);
+      valueSets.push(`(${placeholders.join(',')})`);
+      for (const col of columns) params.push(row[col]);
+    }
+
+    await to.query(
+      `INSERT INTO "${table}" (${cols}) VALUES ${valueSets.join(',')}`,
+      params,
+    );
   }
   console.log(c.green(`  [OK] ${table} (${rows.length} lignes)`));
 }
@@ -104,11 +125,17 @@ async function sync() {
       console.log(c.yellow('[INFO] Aucune table trouvée dans la source.'));
     } else {
       console.log(`\nSynchronisation de ${c.bold(String(tables.length))} tables…\n`);
-      await to.query('SET session_replication_role = replica;');
-      for (const table of tables) {
-        await copyTableData(from, to, table);
+      await to.query('BEGIN');
+      try {
+        await to.query('SET LOCAL session_replication_role = replica;');
+        for (const table of tables) {
+          await copyTableData(from, to, table);
+        }
+        await to.query('COMMIT');
+      } catch (err) {
+        await to.query('ROLLBACK').catch(() => {});
+        throw err;
       }
-      await to.query('SET session_replication_role = DEFAULT;');
     }
 
     console.log(c.green(c.bold('\n✔️  Synchronisation terminée.')));

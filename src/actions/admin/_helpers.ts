@@ -8,7 +8,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
  * Lance une ActionError si ce n'est pas le cas.
  * Retourne l'utilisateur typé (non-null).
  */
-export function requireAdmin(context: ActionAPIContext) {
+export function assertAdmin(context: ActionAPIContext) {
   const user = context.locals.user;
   if (!user) {
     throw new ActionError({
@@ -22,6 +22,12 @@ export function requireAdmin(context: ActionAPIContext) {
       message: "Accès réservé aux administrateurs.",
     });
   }
+  if (user.banned) {
+    throw new ActionError({
+      code: "FORBIDDEN",
+      message: "Compte suspendu.",
+    });
+  }
   return user;
 }
 
@@ -30,13 +36,13 @@ export function requireAdmin(context: ActionAPIContext) {
  * Lance une ActionError TOO_MANY_REQUESTS si le seuil est dépassé.
  */
 export function adminRateLimit(
-  context: ActionAPIContext,
+  _context: ActionAPIContext,
   userId: string,
   scope: string,
   opts = { window: 60, max: 30 },
 ) {
-  const ip = extractIp(context.request.headers) ?? userId;
-  const rl = checkRateLimit(`admin-${scope}:${ip}`, opts);
+  // Key on userId (always available after assertAdmin) to avoid NAT/shared-IP collisions.
+  const rl = checkRateLimit(`admin-${scope}:${userId}`, opts);
   if (!rl.allowed) {
     throw new ActionError({
       code: "TOO_MANY_REQUESTS",

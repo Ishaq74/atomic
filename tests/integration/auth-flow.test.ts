@@ -58,7 +58,7 @@ describe('Auth — Sign-up & Sign-in flow', () => {
       await auth.api.signInEmail({
         body: { email, password: 'WrongPassword!' },
       });
-      expect.unreachable('Should have thrown');
+      throw new Error('Should have thrown');
     } catch (err: any) {
       expect(err).toBeDefined();
     }
@@ -69,7 +69,7 @@ describe('Auth — Sign-up & Sign-in flow', () => {
       await auth.api.signInEmail({
         body: { email: 'no-such-user@test.com', password },
       });
-      expect.unreachable('Should have thrown');
+      throw new Error('Should have thrown');
     } catch (err: any) {
       expect(err).toBeDefined();
     }

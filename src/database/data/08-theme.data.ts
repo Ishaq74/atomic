@@ -13,6 +13,5 @@ export default [
     fontHeading: "system-ui, sans-serif",
     fontBody: "system-ui, sans-serif",
     borderRadius: "0.625rem",
-    customCss: null,
   },
 ];

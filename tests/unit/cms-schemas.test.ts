@@ -57,7 +57,7 @@ describe('themeSettings table columns', () => {
     'id', 'name', 'isActive', 'primaryColor', 'secondaryColor',
     'accentColor', 'backgroundColor', 'foregroundColor',
     'mutedColor', 'mutedForegroundColor', 'fontHeading', 'fontBody',
-    'borderRadius', 'customCss', 'createdAt', 'updatedAt',
+    'borderRadius', 'createdAt', 'updatedAt',
   ])('has %s column', (col) => {
     expect(cols[col]).toBeDefined();
   });
@@ -71,6 +71,18 @@ describe('contactInfo table columns', () => {
   it.each([
     'id', 'email', 'phone', 'address', 'city', 'postalCode',
     'country', 'mapUrl', 'latitude', 'longitude', 'createdAt', 'updatedAt',
+  ])('has %s column', (col) => {
+    expect(cols[col]).toBeDefined();
+  });
+});
+
+// ─── navigationMenus columns ────────────────────────────────────────
+
+describe('navigationMenus table columns', () => {
+  const cols = schema.navigationMenus as unknown as Record<string, unknown>;
+
+  it.each([
+    'id', 'name', 'description', 'createdAt', 'updatedAt',
   ])('has %s column', (col) => {
     expect(cols[col]).toBeDefined();
   });

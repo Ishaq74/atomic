@@ -28,7 +28,7 @@ const translations = {
 
 const t = await translations[pageId]();
 
-const pages: Record<PageId, any> = {
+const pages = {
   about: AboutPage,
   contact: ContactPage,
   legal: LegalPage,
@@ -38,5 +38,5 @@ const Page = pages[pageId];
 ---
 
 <BaseLayout>
-  <Page t={t} />
+  <Page t={t as never} />
 </BaseLayout>

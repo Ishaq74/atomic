@@ -16,6 +16,7 @@ import { Input } from '@atoms/input';
 import { Label } from '@atoms/label';
 import { Textarea } from '@atoms/textarea';
 import Button from '@atoms/button/Button.astro';
+import { safeUrl } from '@lib/sanitize';
 
 type SiteRow = typeof siteSettings.$inferSelect;
 type SocialRow = typeof socialLinks.$inferSelect;
@@ -86,7 +87,7 @@ const cms = t.admin.cms.site;
               <div class="grid gap-2">
                 <Label>{cms.logoLight}</Label>
                 <div class="site-upload-field flex items-center gap-3" data-field="logoLight">
-                  {settings?.logoLight && <img src={settings.logoLight} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  {settings?.logoLight && safeUrl(settings.logoLight) && <img src={safeUrl(settings.logoLight)!} alt="" role="presentation" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
                   <Input type="hidden" name="logoLight" value={settings?.logoLight ?? ''} class="site-upload-value" />
                   <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
                   <input type="file" accept="image/*" class="site-upload-input hidden" />
@@ -96,7 +97,7 @@ const cms = t.admin.cms.site;
               <div class="grid gap-2">
                 <Label>{cms.logoDark}</Label>
                 <div class="site-upload-field flex items-center gap-3" data-field="logoDark">
-                  {settings?.logoDark && <img src={settings.logoDark} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  {settings?.logoDark && safeUrl(settings.logoDark) && <img src={safeUrl(settings.logoDark)!} alt="" role="presentation" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
                   <Input type="hidden" name="logoDark" value={settings?.logoDark ?? ''} class="site-upload-value" />
                   <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
                   <input type="file" accept="image/*" class="site-upload-input hidden" />
@@ -108,7 +109,7 @@ const cms = t.admin.cms.site;
               <div class="grid gap-2">
                 <Label>{cms.favicon}</Label>
                 <div class="site-upload-field flex items-center gap-3" data-field="favicon">
-                  {settings?.favicon && <img src={settings.favicon} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  {settings?.favicon && safeUrl(settings.favicon) && <img src={safeUrl(settings.favicon)!} alt="" role="presentation" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
                   <Input type="hidden" name="favicon" value={settings?.favicon ?? ''} class="site-upload-value" />
                   <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
                   <input type="file" accept="image/*,.ico" class="site-upload-input hidden" />
@@ -118,7 +119,7 @@ const cms = t.admin.cms.site;
               <div class="grid gap-2">
                 <Label>{cms.ogImage}</Label>
                 <div class="site-upload-field flex items-center gap-3" data-field="ogImage">
-                  {settings?.ogImage && <img src={settings.ogImage} alt="" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
+                  {settings?.ogImage && safeUrl(settings.ogImage) && <img src={safeUrl(settings.ogImage)!} alt="" role="presentation" class="site-upload-preview h-10 w-10 rounded border object-contain" />}
                   <Input type="hidden" name="ogImage" value={settings?.ogImage ?? ''} class="site-upload-value" />
                   <Button type="button" size="sm" variant="outline" class="site-upload-btn">{cms.uploadImage}</Button>
                   <input type="file" accept="image/*" class="site-upload-input hidden" />
@@ -338,11 +339,12 @@ const cms = t.admin.cms.site;
             const img = document.createElement('img');
             img.src = data.url;
             img.alt = '';
+            img.setAttribute('role', 'presentation');
             img.className = 'site-upload-preview h-10 w-10 rounded border object-contain';
             field.insertBefore(img, field.firstChild);
           }
-        } catch (err: any) {
-          toast.error(err.message || tError);
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : tError);
         }
       });
     });

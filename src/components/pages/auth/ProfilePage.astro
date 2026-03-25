@@ -1,5 +1,6 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
@@ -8,11 +9,12 @@ import { Label } from '@atoms/label';
 import { Checkbox } from '@atoms/checkbox';
 import Separator from '@atoms/separator/Separator.astro';
 import Button from '@atoms/button/Button.astro';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser;
 }
 
 const { t, locale, user } = Astro.props;
@@ -45,7 +47,7 @@ const initials = user?.name
             class="relative group cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Avatar size="lg" id="avatar-display">
-              {user?.image && <AvatarImage src={user.image} alt={user.name ?? ''} id="avatar-img" />}
+              {user?.image && safeUrl(user.image) && <AvatarImage src={safeUrl(user.image)!} alt={user.name ?? ''} id="avatar-img" />}
               <AvatarFallback id="avatar-fallback">{initials}</AvatarFallback>
             </Avatar>
             <div class="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -232,13 +234,14 @@ const initials = user?.name
           const img = document.createElement('img');
           img.src = data.url;
           img.alt = '';
+          img.setAttribute('role', 'presentation');
           img.className = 'aspect-square h-full w-full object-cover';
           img.id = 'avatar-img';
           avatarFallback.parentElement!.insertBefore(img, avatarFallback);
           avatarFallback.style.display = 'none';
         }
-      } catch (err: any) {
-        toast.error(err.message || T.unknown);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : T.unknown);
       }
     });
 
@@ -297,8 +300,8 @@ const initials = user?.name
         pendingAvatarUrl = '';
         toast.success(T.saveSuccess);
         setTimeout(() => { window.location.href = d.dashboardUrl!; }, 600);
-      } catch (err: any) {
-        toast.error(err.message || T.unknown);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : T.unknown);
       }
     });
 
@@ -326,8 +329,8 @@ const initials = user?.name
         (securityForm as HTMLFormElement).reset();
         toast.success(T.passwordChanged);
         setTimeout(() => { window.location.href = d.dashboardUrl!; }, 600);
-      } catch (err: any) {
-        toast.error(err.message || T.unknown);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : T.unknown);
       }
     });
 
@@ -370,8 +373,8 @@ const initials = user?.name
         });
         if (error) throw error;
         toast.success(T.deleteSent);
-      } catch (err: any) {
-        toast.error(err.message || T.deleteFailed);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : T.deleteFailed);
       }
     });
   }

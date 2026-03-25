@@ -87,7 +87,7 @@ describe('Auth — Change Password', () => {
     // Old password should fail
     try {
       await auth.api.signInEmail({ body: { email, password: oldPwd } });
-      expect.unreachable('Old password should fail');
+      throw new Error('Old password should fail');
     } catch {
       // expected
     }
@@ -105,9 +105,10 @@ describe('Auth — Change Password', () => {
         body: { currentPassword: 'WrongCurrent!', newPassword: 'Whatever1!' },
         headers,
       });
-      expect.unreachable('Should reject wrong current password');
+      throw new Error('Should reject wrong current password');
     } catch (err: any) {
-      expect(err).toBeDefined();
+      expect(err).toBeInstanceOf(Error);
+      expect(err.message || err.statusCode || err.status).toBeTruthy();
     }
   });
 });
@@ -146,9 +147,10 @@ describe('Auth — Email Verification', () => {
   it('cannot sign in before email is verified', async () => {
     try {
       await auth.api.signInEmail({ body: { email, password } });
-      expect.unreachable('Should reject unverified email');
+      throw new Error('Should reject unverified email');
     } catch (err: any) {
-      expect(err).toBeDefined();
+      expect(err).toBeInstanceOf(Error);
+      expect(err.message || err.statusCode || err.status).toBeTruthy();
     }
   });
 

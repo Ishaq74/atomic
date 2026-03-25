@@ -6,6 +6,8 @@
 import type { AuthTranslations, Locale } from '@i18n/config';
 import { getAuthUrl, getAdminUrl } from '@i18n/utils';
 
+import type { AppUser } from '@/lib/types';
+
 import DashboardIcon from '@tabler/icons/outline/layout-dashboard.svg';
 import UserIcon from '@tabler/icons/outline/user.svg';
 import ShieldIcon from '@tabler/icons/outline/shield.svg';
@@ -26,11 +28,12 @@ import {
   SidebarSeparator,
 } from '@atoms/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@atoms/avatar';
+import { safeUrl } from '@lib/sanitize';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser;
   activeItem?: 'dashboard' | 'profile' | 'organizations' | 'admin';
 }
 
@@ -57,7 +60,7 @@ const navItems = [
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" href={dashboardUrl}>
           <Avatar class="size-10 shrink-0 rounded-lg">
-            {user?.image && <AvatarImage src={user.image} alt={user.name ?? ''} />}
+            {user?.image && safeUrl(user.image) && <AvatarImage src={safeUrl(user.image)} alt={user.name ?? ''} />}
             <AvatarFallback class="rounded-lg">{initials}</AvatarFallback>
           </Avatar>
           <div class="grid flex-1 text-left text-sm leading-tight">

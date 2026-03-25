@@ -79,3 +79,27 @@ test.describe('Auth - Guest guards', () => {
     await expect(page).toHaveURL(/connexion/);
   });
 });
+
+// ─── Security headers ───────────────────────────────────────────────
+
+test.describe('Security headers', () => {
+  test('responses include X-Content-Type-Options: nosniff', async ({ page }) => {
+    const response = await page.goto('/fr/');
+    expect(response?.headers()['x-content-type-options']).toBe('nosniff');
+  });
+
+  test('responses include X-Frame-Options: DENY', async ({ page }) => {
+    const response = await page.goto('/fr/');
+    expect(response?.headers()['x-frame-options']).toBe('DENY');
+  });
+
+  test('responses include Referrer-Policy', async ({ page }) => {
+    const response = await page.goto('/fr/');
+    expect(response?.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+  });
+
+  test('responses include Permissions-Policy', async ({ page }) => {
+    const response = await page.goto('/fr/');
+    expect(response?.headers()['permissions-policy']).toContain('camera=()');
+  });
+});

@@ -2,7 +2,7 @@
 
 > **Projet** : Atomic  
 > **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright + Pa11y + Lighthouse  
-> **Couverture globale** : **266 tests** · **78 audits a11y/perf** · **24 fichiers de test** · **4 générateurs de rapports** · **~90 % des modules couverts**
+> **Couverture globale** : **457 tests** · **104 audits a11y/perf** · **36 fichiers de test** · **4 générateurs de rapports** · **~90 % des modules couverts**
 
 ---
 
@@ -26,12 +26,12 @@
 
 | Type | Fichiers | Tests/Audits | Status |
 | :-- | :-- | :-- | :-- |
-| Unit | 14 | 217 | ✅ 217/217 |
-| Integration | 8 | 49 | ✅ 49/49 |
-| E2E (Playwright) | 3 | 30 | ✅ 30/30 |
-| A11y — Pa11y-ci (WCAG AAA) | 1 config | 40 URLs | ✅ 40/40 |
-| A11y — Lighthouse CI | 3 configs | 38 URLs | ⚠️ 32/38 (≤6 perf < 0.9) |
-| **Total** | **24** (+8 support) | **266 tests + 78 audits** | |
+| Unit | 27 | 358 | ✅ 358/358 |
+| Integration | 9 | 99 | ✅ 99/99 |
+| E2E (Playwright) | 3 | 34 (×2 browsers = 68) | ✅ 68/68 |
+| A11y — Pa11y-ci (WCAG AAA) | 1 config | 52 URLs | ✅ 52/52 |
+| A11y — Lighthouse CI | 3 configs | 52 URLs | ⚠️ (≤6 perf < 0.9) |
+| **Total** | **36** (+11 support) | **457 tests + 104 audits** | |
 
 ### Fichiers support
 
@@ -47,8 +47,8 @@
 | `tests/helpers/vitest-report.cjs` | Génère `tests/reports/vitest-report.txt` depuis le JSON Vitest |
 | `tests/helpers/playwright-report.cjs` | Génère `tests/reports/playwright-report.txt` depuis le JSON Playwright |
 | `tests/helpers/lighthouse-report.cjs` | Génère `tests/reports/lighthouse-report.txt` (scores, CWV, audits échoués) |
-| `.pa11yci.cjs` | Configuration Pa11y-ci (40 URLs, WCAG AAA, axe) |
-| `lighthouserc.cjs` | Configuration Lighthouse CI (26 URLs publiques, ≥0.9 gates) |
+| `.pa11yci.cjs` | Configuration Pa11y-ci (52 URLs, WCAG AAA, axe) |
+| `lighthouserc.cjs` | Configuration Lighthouse CI (28 URLs publiques, ≥0.9 gates) |
 
 ### Par module source — Couverture fonctionnelle
 
@@ -60,7 +60,7 @@
 | `src/actions/admin/` | 9 | 19 | 4 ¹ | 15 | **21 %** |
 | `src/pages/api/` | 3 | 3 | 2 | 1 | **67 %** |
 | `src/media/` | 3 | 4 | 3 | 1 | **75 %** |
-| `src/smtp/` | 3 | 10 | 6 | 4 | **60 %** |
+| `src/smtp/` | 3 | 10 | 8 | 2 | **80 %** |
 | `src/middleware.ts` | 1 | 1 | 1 | 0 | **100 %** |
 | `src/components/pages/` | 24 | — | 10 ² | 14 | **42 %** |
 | `src/layouts/` | 1 | — | 1 ² | 0 | **100 %** |
@@ -77,9 +77,9 @@
 
 | Fonction | Fichier source | Type | Test | Status |
 | :-- | :-- | :-- | :-- | :-- |
-| `checkRateLimit(key, opts)` | `src/lib/rate-limit.ts` | Pure | `tests/unit/rate-limit.test.ts` | ✅ 7 tests |
+| `checkRateLimit(key, opts)` | `src/lib/rate-limit.ts` | Pure | `tests/unit/rate-limit.test.ts` | ✅ 8 tests |
 | `extractIp(headers)` | `src/lib/audit.ts` | Pure | `tests/unit/extract-ip.test.ts` | ✅ 8 tests |
-| `logAuditEvent(input)` | `src/lib/audit.ts` | Side-effect (DB) | `tests/integration/audit.test.ts` | ✅ 6 tests |
+| `logAuditEvent(input)` | `src/lib/audit.ts` | Side-effect (DB) | `tests/integration/audit.test.ts` + `tests/unit/audit-fallback.test.ts` | ✅ 6+1 tests |
 | `auth` (instance) | `src/lib/auth.ts` | Config | `tests/integration/auth.test.ts` + `auth-advanced.test.ts` + `auth-org.test.ts` | ✅ 42 tests |
 | `authClient` | `src/lib/auth-client.ts` | Client-side | — | ❌ Non testé |
 
@@ -114,8 +114,8 @@
 | `formatPgError(err)` | `src/database/commands/_utils.ts` | Pure | `tests/unit/cli-utils.test.ts` | ✅ 10 tests |
 | ANSI helpers (`c.green`, `c.red`) | `src/database/commands/_utils.ts` | Pure | `tests/unit/cli-utils.test.ts` | ✅ 2 tests |
 | Schema exports (8 tables) | `src/database/schemas.ts` | Exports | `tests/unit/schema-validation.test.ts` | ✅ 12 tests |
-| CMS schemas (7 tables) | `src/database/schemas/site.schema.ts`, `navigation.schema.ts` | Déclaratif | `tests/unit/cms-schemas.test.ts` | ✅ 14 tests |
-| CMS seed data (6 fichiers) | `src/database/data/03-08` | Données | `tests/unit/cms-seeds.test.ts` | ✅ 49 tests |
+| CMS schemas (7 tables) | `src/database/schemas/site.schema.ts`, `navigation.schema.ts` | Déclaratif | `tests/unit/cms-schemas.test.ts` | ✅ 80 tests |
+| CMS seed data (6 fichiers) | `src/database/data/03-08` | Données | `tests/unit/cms-seeds.test.ts` | ✅ 11 tests |
 | CMS loaders | `src/database/loaders/site.loader.ts`, `navigation.loader.ts` | Async DB | Indirectement via E2E | ⚠️ Implicite |
 | `getPgClient()` | `src/database/drizzle.ts` | Connexion | — | ❌ Non testé |
 | `shutdownDb()` | `src/database/drizzle.ts` | Cleanup | — | ❌ Non testé |
@@ -132,17 +132,17 @@
 | `createTheme` / `update` / `delete` | `src/actions/admin/theme.ts` | Side-effect (DB) | E2E admin theme page | ⚠️ E2E |
 | `createPage` / `update` / `delete` / `publish` | `src/actions/admin/pages.ts` | Side-effect (DB) | — | ❌ Non testé |
 | `createSection` / `update` / `delete` / `reorder` | `src/actions/admin/sections.ts` | Side-effect (DB) | — | ❌ Non testé |
-| CMS audit actions (12 types) | `src/lib/audit.ts` | Types | `tests/unit/cms-audit.test.ts` | ✅ 8 tests |
-| CMS i18n keys (4 namespaces) | `src/i18n/*/auth.ts` | Traductions | `tests/unit/cms-i18n.test.ts` | ✅ 38 tests |
+| CMS audit actions (12 types) | `src/lib/audit.ts` | Types | `tests/unit/cms-audit.test.ts` | ✅ 1 test |
+| CMS i18n keys (4 namespaces) | `src/i18n/*/auth.ts` | Traductions | `tests/unit/cms-i18n.test.ts` | ✅ 16 tests |
 
 ### `src/smtp/` — Email
 
 | Fonction | Fichier source | Type | Test | Status |
 | :-- | :-- | :-- | :-- | :-- |
-| `sendEmail(payload)` | `src/smtp/send.ts` | Side-effect | `tests/unit/send-email.test.ts` | ✅ 5 tests (mock providers) |
+| `sendEmail(payload)` | `src/smtp/send.ts` | Side-effect | `tests/unit/send-email.test.ts` | ✅ 7 tests (mock + retry) |
 | `maskApiKey(key)` | `src/smtp/env.ts` | Pure | `tests/unit/mask-utils.test.ts` | ✅ 4 tests |
 | `getSmtpProvider()` | `src/smtp/env.ts` | Config | Indirectement via `send-email` | ⚠️ Implicite |
-| `getSmtpFrom()` | `src/smtp/env.ts` | Config | Indirectement via `send-email` | ⚠️ Implicite |
+| `getSmtpFrom()` | `src/smtp/env.ts` | Config | `tests/unit/smtp-env.test.ts` | ✅ 3 tests |
 | Providers (brevo, resend, nodemailer) | `src/smtp/providers/` | Side-effect | Mockés dans `send-email.test.ts` | ✅ Mockés |
 
 ### `src/middleware.ts` — Session injection
@@ -180,9 +180,9 @@
 | Fonction | Fichier source | Type | Test | Status |
 | :-- | :-- | :-- | :-- | :-- |
 | `maskApiKey(key)` | `src/smtp/env.ts` | Pure | `tests/unit/mask-utils.test.ts` | ✅ 4 tests |
-| `sendEmail(payload)` | `src/smtp/send.ts` | Side-effect (réseau) | — | ❌ Non testé |
-| `getSmtpProvider()` | `src/smtp/env.ts` | Env reader | — | ❌ Non testé |
-| `getSmtpFrom()` | `src/smtp/env.ts` | Env reader | — | ❌ Non testé |
+| `sendEmail(payload)` | `src/smtp/send.ts` | Side-effect (réseau) | `tests/unit/send-email.test.ts` | ✅ 7 tests (mock + retry) |
+| `getSmtpProvider()` | `src/smtp/env.ts` | Env reader | Indirectement via `send-email` | ⚠️ Implicite |
+| `getSmtpFrom()` | `src/smtp/env.ts` | Env reader | `tests/unit/smtp-env.test.ts` | ✅ 3 tests |
 | `getNodemailerConfig()` | `src/smtp/env.ts` | Env reader | — | ❌ Non testé |
 | Autres config providers | `src/smtp/env.ts` | Env readers | — | ❌ Non testé |
 

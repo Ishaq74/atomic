@@ -1,5 +1,6 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@atoms/card';
 import Separator from '@atoms/separator/Separator.astro';
@@ -8,7 +9,7 @@ import Spinner from '@atoms/spinner/Spinner.astro';
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser | null;
 }
 
 const { t, locale } = Astro.props;

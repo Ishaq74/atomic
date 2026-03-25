@@ -6,7 +6,7 @@
 
 ## Vue d'ensemble
 
-Le dossier `src/components/wow/` contient 7 composants d'effets visuels. Aucun n'utilise de bibliothèque d'animation externe — uniquement **CSS natif** et **vanilla JavaScript**.
+Le dossier `src/components/wow/` contient 8 composants d'effets visuels. Aucun n'utilise de bibliothèque d'animation externe — uniquement **CSS natif** et **vanilla JavaScript**.
 
 | Composant | Technique | JS requis | GPU hint |
 | :-- | :-- | :-- | :-- |
@@ -17,6 +17,7 @@ Le dossier `src/components/wow/` contient 7 composants d'effets visuels. Aucun n
 | MouseRepelParticles | requestAnimationFrame + CSS @property | Oui | `will-change` |
 | MarqueeContent | CSS @keyframes + JS pause/play | Oui (minimal) | Non |
 | LogoCloud | CSS @keyframes + JS pause/play | Oui (minimal) | Non |
+| AsyncButton | CSS transition + Custom Element | Oui | Non |
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkConnection, getDrizzle } from '@database/drizzle';
+import { checkConnection, getDrizzle, getLazyDrizzle } from '@database/drizzle';
 
 describe('Database — Health', () => {
   it('checkConnection returns ok with valid latency', async () => {
@@ -18,6 +18,12 @@ describe('Database — Health', () => {
   it('can execute a raw query via drizzle', async () => {
     const db = getDrizzle();
     const result = await db.execute('SELECT 1 as val');
+    expect(result).toBeDefined();
+  });
+
+  it('getLazyDrizzle proxy delegates to current instance', async () => {
+    const lazy = getLazyDrizzle();
+    const result = await lazy.execute('SELECT 1 as val');
     expect(result).toBeDefined();
   });
 });

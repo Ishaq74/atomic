@@ -2,7 +2,7 @@ import eslintPluginAstro from "eslint-plugin-astro";
 
 export default [
   // ── Ignore build output ──────────────────────────────────────────────
-  { ignores: ["dist/**", "playwright-report/**"] },
+  { ignores: ["dist/**", ".astro/**", "playwright-report/**"] },
 
   // ── All astro rules (strictest preset) ────────────────────────────────
   ...eslintPluginAstro.configs["all"],
@@ -36,6 +36,14 @@ export default [
       // Astro <script> tags are bundled at build time, NOT traditional
       // inline scripts — this rule is a false positive in Astro projects
       "astro/no-unsafe-inline-scripts": "off",
+    },
+  },
+
+  // ── CMS SectionRenderer — set:html used with DOMPurify-sanitized content ──
+  {
+    files: ["src/components/pages/cms/SectionRenderer.astro"],
+    rules: {
+      "astro/no-set-html-directive": "off",
     },
   },
 

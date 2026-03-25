@@ -2,6 +2,16 @@ import type { Locale } from '@i18n/config';
 import { isRTL } from '@i18n/utils';
 import type { EmailLayoutStrings } from './i18n';
 
+/** Escape HTML special characters for safe embedding in email templates */
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ─── Shared Email Layout ─────────────────────────────────────────────
 // Produces a clean, responsive HTML email compatible with all major
 // email clients (Gmail, Outlook, Apple Mail, Yahoo, etc.).
@@ -35,6 +45,15 @@ export function renderEmailHtml(
   const lang = locale;
   const align = isRTL(locale) ? 'right' : 'left';
 
+  // Escape dynamic content for safe HTML embedding
+  const h = esc(section.heading);
+  const g = esc(section.greeting);
+  const b = esc(section.body);
+  const btn = esc(section.buttonText);
+  const url = esc(section.buttonUrl);
+  const fn = esc(section.footnote);
+  const ex = section.extra ? esc(section.extra) : '';
+
   return `<!DOCTYPE html>
 <html lang="${lang}" dir="${dir}">
 <head>
@@ -42,7 +61,7 @@ export function renderEmailHtml(
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="supported-color-schemes" content="light">
-  <title>${section.heading}</title>
+  <title>${h}</title>
   <!--[if mso]>
   <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
   <![endif]-->
@@ -78,39 +97,39 @@ export function renderEmailHtml(
 
           <!-- Heading -->
           <h1 style="margin:0 0 20px;font-size:24px;font-weight:700;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:${align};line-height:1.3">
-            ${section.heading}
+            ${h}
           </h1>
 
           <!-- Greeting + Body -->
           <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:${align};line-height:1.6">
-            ${section.greeting}
+            ${g}
           </p>
           <p style="margin:0 0 28px;font-size:15px;color:#475569;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:${align};line-height:1.6">
-            ${section.body}
+            ${b}
           </p>
 
           <!-- CTA Button -->
           <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 28px">
             <tr><td align="center">
               <!--[if mso]>
-              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${section.buttonUrl}" style="height:48px;v-text-anchor:middle;width:280px" arcsize="17%" fill="t" stroke="f">
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${url}" style="height:48px;v-text-anchor:middle;width:280px" arcsize="17%" fill="t" stroke="f">
                 <v:fill type="gradient" color="#6d28d9" color2="#7c3aed"/>
                 <w:anchorlock/>
-                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600">${section.buttonText}</center>
+                <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:600">${btn}</center>
               </v:roundrect>
               <![endif]-->
               <!--[if !mso]><!-->
-              <a href="${section.buttonUrl}" style="display:inline-block;padding:14px 36px;background-color:#6d28d9;color:#ffffff;font-size:15px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-decoration:none;border-radius:8px;line-height:1;text-align:center;mso-padding-alt:0">
-                ${section.buttonText}
+              <a href="${url}" style="display:inline-block;padding:14px 36px;background-color:#6d28d9;color:#ffffff;font-size:15px;font-weight:600;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-decoration:none;border-radius:8px;line-height:1;text-align:center;mso-padding-alt:0">
+                ${btn}
               </a>
               <!--<![endif]-->
             </td></tr>
           </table>
 
-          ${section.extra ? `
+          ${ex ? `
           <!-- Extra info (e.g. expiry) -->
           <p style="margin:0 0 20px;font-size:13px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:center;line-height:1.5">
-            ${section.extra}
+            ${ex}
           </p>
           ` : ''}
 
@@ -121,7 +140,7 @@ export function renderEmailHtml(
                 ${layout.fallbackLink}
               </p>
               <p style="margin:0;font-size:12px;color:#6d28d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;word-break:break-all;text-align:${align};line-height:1.4">
-                ${section.buttonUrl}
+                ${url}
               </p>
             </td></tr>
           </table>
@@ -131,7 +150,7 @@ export function renderEmailHtml(
 
           <!-- Footnote -->
           <p style="margin:0;font-size:13px;color:#94a3b8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;text-align:${align};line-height:1.5">
-            ${section.footnote}
+            ${fn}
           </p>
 
         </td></tr>

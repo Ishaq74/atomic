@@ -70,4 +70,10 @@ export default {
     submit: 'Envoyer la demande',
     disclaimer: 'En soumettant ce formulaire, vous acceptez nos conditions d\'utilisation et notre politique de confidentialité.',
   },
+  feedback: {
+    success: 'Message envoyé avec succès.',
+    error: 'Erreur lors de l\'envoi. Veuillez réessayer.',
+    networkError: 'Erreur réseau. Vérifiez votre connexion.',
+    rateLimited: 'Trop de messages envoyés. Veuillez réessayer plus tard.',
+  },
 } satisfies ContactTranslations;

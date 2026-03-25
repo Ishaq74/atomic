@@ -8,7 +8,7 @@ import AdminStatsPage from '@pages/admin/AdminStatsPage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro as any);
+const result = await requireAdmin(Astro);
 if ('redirect' in result) return result.redirect;
 const { user, locale, authT } = result;
 

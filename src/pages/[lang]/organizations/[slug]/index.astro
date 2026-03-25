@@ -3,7 +3,7 @@ import { requireAuth } from '@/lib/auth-guards';
 
 export const prerender = false;
 
-const result = await requireAuth(Astro as any);
+const result = await requireAuth(Astro);
 if ('redirect' in result) return result.redirect;
 
 const slug = Astro.params.slug;

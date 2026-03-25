@@ -81,6 +81,32 @@ const iconName = value?.replace(/^mdi:/, '') ?? '';
 </div>
 
 <script>
+  const SVG_ALLOWED_TAGS = new Set([
+    'svg', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon',
+    'g', 'defs', 'use', 'ellipse', 'text', 'tspan', 'clippath', 'mask',
+  ]);
+
+  function sanitizeSvg(raw: string): string {
+    const doc = new DOMParser().parseFromString(raw, 'image/svg+xml');
+    const svg = doc.querySelector('svg');
+    if (!svg) return '';
+    stripUnsafe(svg);
+    return svg.outerHTML;
+  }
+
+  function stripUnsafe(el: Element) {
+    for (const child of Array.from(el.children)) {
+      if (!SVG_ALLOWED_TAGS.has(child.tagName.toLowerCase())) {
+        child.remove();
+      } else {
+        for (const attr of Array.from(child.attributes)) {
+          if (attr.name.startsWith('on')) child.removeAttribute(attr.name);
+        }
+        stripUnsafe(child);
+      }
+    }
+  }
+
   function initIconPickers() {
     document.querySelectorAll<HTMLElement>('.icon-picker').forEach((picker) => {
       const id = picker.dataset.pickerId;
@@ -109,7 +135,8 @@ const iconName = value?.replace(/^mdi:/, '') ?? '';
 
       async function fetchIconSvg(name: string): Promise<string> {
         const res = await fetch(`https://api.iconify.design/mdi/${encodeURIComponent(name)}.svg?height=20`);
-        return await res.text();
+        const raw = await res.text();
+        return sanitizeSvg(raw);
       }
 
       function open() {
@@ -159,8 +186,11 @@ const iconName = value?.replace(/^mdi:/, '') ?? '';
 
           renderGrid(results, data.total ?? results.length);
         } catch {
-          grid.innerHTML =
-            '<p class="col-span-8 text-xs text-muted-foreground py-4 text-center">Error</p>';
+          grid.textContent = '';
+          const errorP = document.createElement('p');
+          errorP.className = 'col-span-8 text-xs text-muted-foreground py-4 text-center';
+          errorP.textContent = 'Error';
+          grid.appendChild(errorP);
         }
       }
 

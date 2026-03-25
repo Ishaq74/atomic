@@ -131,6 +131,10 @@ export function toLocale(value: string | undefined): Locale {
   return DEFAULT_LOCALE;
 }
 
+export function isValidLocale(value: string | undefined): value is Locale {
+  return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
+}
+
 export function isRTL(locale: Locale): boolean {
   return RTL_LOCALES.includes(locale);
 }

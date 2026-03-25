@@ -42,14 +42,14 @@ const { t, locale, activeItem } = Astro.props;
 
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
 
-const navItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = [
+const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof ChartBarIcon }[] = [
   { id: 'stats', title: t.admin.tabs.stats, url: getAdminUrl(locale, 'stats'), icon: ChartBarIcon },
   { id: 'users', title: t.admin.tabs.users, url: getAdminUrl(locale, 'users'), icon: UsersIcon },
   { id: 'organizations', title: t.admin.tabs.organizations, url: getAdminUrl(locale, 'organizations'), icon: BuildingIcon },
   { id: 'audit', title: t.admin.tabs.auditLog, url: getAdminUrl(locale, 'audit'), icon: FileTextIcon },
 ];
 
-const cmsItems: { id: AdminSubpage; title: string; url: string; icon: any }[] = [
+const cmsItems: { id: AdminSubpage; title: string; url: string; icon: typeof SettingsIcon }[] = [
   { id: 'site', title: t.admin.tabs.site, url: getAdminUrl(locale, 'site'), icon: SettingsIcon },
   { id: 'navigation', title: t.admin.tabs.navigation, url: getAdminUrl(locale, 'navigation'), icon: MenuIcon },
   { id: 'pages', title: t.admin.tabs.pages, url: getAdminUrl(locale, 'pages'), icon: LayoutIcon },

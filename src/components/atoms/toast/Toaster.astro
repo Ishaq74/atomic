@@ -176,6 +176,16 @@ const {
     transform: translateY(-150%);
     opacity: 0;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .starwind-toast-viewport [data-slot="toast"] {
+      transition: none !important;
+    }
+    .starwind-toast-viewport [data-slot="toast"][data-starting-style] {
+      opacity: 1;
+      transform: none;
+    }
+  }
 </style>
 
 <script>

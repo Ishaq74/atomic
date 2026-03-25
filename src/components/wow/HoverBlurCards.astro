@@ -49,6 +49,13 @@ const { cards = [], class: className, ...rest } = Astro.props;
     }
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    @keyframes blur-card-enter {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  }
+
   .starwind-hover-blur:hover > div {
     opacity: 0.5;
     filter: blur(2px);

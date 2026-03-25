@@ -68,7 +68,13 @@ const { logos = [], class: className, ...rest } = Astro.props;
 </section>
 
 <script>
+  let controller: AbortController | null = null;
+
   function initMarquee() {
+    controller?.abort();
+    controller = new AbortController();
+    const { signal } = controller;
+
     const marqueeContainer = document.querySelector("#marquee-logo-cloud-03");
 
     if (!marqueeContainer) {
@@ -81,13 +87,13 @@ const { logos = [], class: className, ...rest } = Astro.props;
       animations.forEach((animation) => {
         (animation as HTMLElement).style.animationPlayState = "paused";
       });
-    });
+    }, { signal });
 
     marqueeContainer.addEventListener("mouseleave", () => {
       animations.forEach((animation) => {
         (animation as HTMLElement).style.animationPlayState = "running";
       });
-    });
+    }, { signal });
   }
 
   // Initialize on page load
@@ -95,6 +101,7 @@ const { logos = [], class: className, ...rest } = Astro.props;
 
   // Re-initialize on page navigation (for SPAs)
   document.addEventListener("astro:after-swap", initMarquee);
+  document.addEventListener("astro:before-swap", () => { controller?.abort(); controller = null; });
 </script>
 
 <style>
@@ -109,5 +116,11 @@ const { logos = [], class: className, ...rest } = Astro.props;
 
   .animate-marquee {
     animation: marquee var(--marquee-duration) linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee {
+      animation-play-state: paused;
+    }
   }
 </style>

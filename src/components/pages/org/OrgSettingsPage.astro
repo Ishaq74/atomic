@@ -1,5 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
+import type { FullOrganization } from '@/lib/auth-data';
 import { getAuthUrl } from '@i18n/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 import { Input } from '@atoms/input';
@@ -9,8 +11,8 @@ import Button from '@atoms/button/Button.astro';
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
-  activeOrg: any;
+  user: AppUser;
+  activeOrg: FullOrganization;
   activeOrgRole: string | null;
 }
 

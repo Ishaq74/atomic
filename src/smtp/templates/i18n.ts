@@ -222,10 +222,20 @@ export function getEmailTranslations(locale: Locale): EmailTranslations {
   return translations[locale] ?? translations.fr;
 }
 
-/** Replace `{name}` placeholder in a string */
+/** Escape HTML special characters to prevent XSS in email templates */
+function htmlEscape(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Replace `{name}` placeholder in a string, HTML-escaping values */
 export function interpolate(str: string, vars: Record<string, string>): string {
   return Object.entries(vars).reduce(
-    (result, [key, value]) => result.replaceAll(`{${key}}`, value),
+    (result, [key, value]) => result.replaceAll(`{${key}}`, htmlEscape(value)),
     str,
   );
 }

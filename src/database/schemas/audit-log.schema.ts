@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, index, jsonb } from "drizzle-orm/pg-core";
 import { user } from "./auth.schema";
 
 export const auditLog = pgTable(
@@ -14,7 +14,7 @@ export const auditLog = pgTable(
     action: text("action").notNull(),
     resource: text("resource"),
     resourceId: text("resource_id"),
-    metadata: text("metadata"),
+    metadata: jsonb("metadata"),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

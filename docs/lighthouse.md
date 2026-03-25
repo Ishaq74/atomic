@@ -5,7 +5,7 @@ Audits automatisés Lighthouse sur les 4 locales (fr, en, es, ar) avec des gates
 ## Architecture
 
 ```text
-├── lighthouserc.cjs                   # Config principale — pages publiques (26 URLs)
+├── lighthouserc.cjs                   # Config principale — pages publiques (28 URLs)
 ├── .a11y-cookies.json                 # Cookies de session (généré, gitignored)
 ├── .lighthouseci/                     # Rapports HTML + JSON (généré, gitignored)
 └── tests/a11y/
@@ -22,7 +22,7 @@ Audits automatisés Lighthouse sur les 4 locales (fr, en, es, ar) avec des gates
 
 | Paramètre | Valeur | Rôle |
 | :-- | :-- | :-- |
-| `collect.url` | 26 URLs publiques | Toutes les pages sans auth (4 locales × 7 pages) |
+| `collect.url` | 28 URLs publiques | Toutes les pages sans auth (4 locales × 7 pages) |
 | `collect.numberOfRuns` | 1 | Une seule exécution par URL (suffisant en CI) |
 | `collect.settings.preset` | `desktop` | Simule un desktop (pas mobile) |
 | `collect.settings.chromeFlags` | `--no-sandbox --disable-setuid-sandbox` | Requis en CI (conteneur Docker) |
@@ -57,9 +57,9 @@ LHCI ne supporte pas les headers par URL dans la config. Les pages authentifiée
 
 | Batch | URLs | Cookie | Config | Script |
 | :-- | --: | :-- | :-- | :-- |
-| Public | 26 | Aucun | `lighthouserc.cjs` | `lhci autorun` |
+| Public | 28 | Aucun | `lighthouserc.cjs` | `lhci autorun` |
 | Authenticated | 8 | Session user | `.lighthouseci-authed.json` (temp) | `lhci-authed.cjs` |
-| Admin | 4 | Session admin | `.lighthouseci-admin.json` (temp) | `lhci-authed.cjs` |
+| Admin | 16 | Session admin | `.lighthouseci-admin.json` (temp) | `lhci-authed.cjs` |
 
 ### `lhci-authed.cjs` — Pages authentifiées
 
@@ -74,7 +74,7 @@ Le script :
 
 ## URLs auditées
 
-### Pages publiques (26 URLs)
+### Pages publiques (28 URLs)
 
 | Locale | Homepage | About | Contact | Legal | Sign-in | Sign-up | Forgot |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -92,14 +92,14 @@ Le script :
 | `es` | `/es/auth/panel` | `/es/auth/perfil` |
 | `ar` | `/ar/auth/لوحة-التحكم` | `/ar/auth/الملف-الشخصي` |
 
-### Pages admin (4 URLs)
+### Pages admin (16 URLs)
 
 | Locale | Admin |
 | :-- | :-- |
-| `fr` | `/fr/admin/stats` |
-| `en` | `/en/admin/stats` |
-| `es` | `/es/admin/stats` |
-| `ar` | `/ar/admin/stats` |
+| `fr` | `/fr/admin/stats`, `/fr/admin/site`, `/fr/admin/navigation`, `/fr/admin/theme` |
+| `en` | `/en/admin/stats`, `/en/admin/site`, `/en/admin/navigation`, `/en/admin/theme` |
+| `es` | `/es/admin/stats`, `/es/admin/site`, `/es/admin/navigation`, `/es/admin/theme` |
+| `ar` | `/ar/admin/stats`, `/ar/admin/site`, `/ar/admin/navigation`, `/ar/admin/theme` |
 
 ## Rapports
 
@@ -138,8 +138,8 @@ pnpm a11y:lighthouse-only         # Lighthouse seulement
 
 # Commandes individuelles (serveur requis sur localhost:4321)
 pnpm a11y:setup                   # Seed users + export cookies
-pnpm a11y:lighthouse              # Pages publiques (26 URLs)
-pnpm a11y:lighthouse:authed       # Pages authentifiées + admin (12 URLs)
+pnpm a11y:lighthouse              # Pages publiques (28 URLs)
+pnpm a11y:lighthouse:authed       # Pages authentifiées + admin (24 URLs)
 pnpm a11y:lighthouse:rename       # Renommer les rapports
 pnpm a11y:teardown                # Cleanup users + cookies
 

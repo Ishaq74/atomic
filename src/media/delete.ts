@@ -1,5 +1,5 @@
 import { unlink } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 /**
  * Supprime un fichier uploadé à partir de son URL publique.
@@ -13,11 +13,18 @@ export async function deleteUpload(url: string): Promise<void> {
 
   // Résoudre le chemin absolu et vérifier qu'il reste dans public/uploads/
   const uploadsRoot = resolve(process.cwd(), 'public', 'uploads');
-  const filePath = resolve(process.cwd(), 'public', url);
+  const filePath = join(process.cwd(), 'public', url.slice(1));
+  const resolved = resolve(filePath);
 
-  if (!filePath.startsWith(uploadsRoot)) {
+  if (!resolved.startsWith(uploadsRoot)) {
     throw new Error('Chemin invalide — tentative de path traversal détectée');
   }
 
-  await unlink(filePath);
+  await unlink(resolved);
+
+  // Also remove the companion WebP variant if it exists (generated for JPEG/PNG uploads)
+  const webpPath = resolved.replace(/\.[^.]+$/, '.webp');
+  if (webpPath !== resolved) {
+    await unlink(webpPath).catch(() => {});
+  }
 }

@@ -128,6 +128,13 @@ const particles = Array.from({ length: particleCount }, (_, i) => {
     will-change: transform, opacity;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .rising-particle {
+      animation: none;
+      opacity: var(--particle-opacity, 0.4);
+    }
+  }
+
   @keyframes rise {
     0% {
       transform: translateY(0) translateX(0);

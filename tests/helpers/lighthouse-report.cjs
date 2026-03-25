@@ -205,7 +205,7 @@ for (const pg of pages) {
 
 lines.push('');
 lines.push('  Thresholds: 🟢 Good  🟡 Needs Improvement  🔴 Poor');
-for (const [key, t] of Object.entries(CWV_THRESHOLDS)) {
+for (const [, t] of Object.entries(CWV_THRESHOLDS)) {
   const u = t.unit || '';
   lines.push(`    ${t.label}: 🟢 ≤${t.good}${u}  🟡 ≤${t.poor}${u}  🔴 >${t.poor}${u}`);
 }

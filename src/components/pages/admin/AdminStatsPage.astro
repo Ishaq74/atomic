@@ -1,11 +1,12 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
+import type { AppUser } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@atoms/card';
 
 interface Props {
   t: AuthTranslations;
   locale: Locale;
-  user: any;
+  user: AppUser;
   adminStats: { totalUsers: number; totalOrganizations: number; recentSignups: number };
 }
 

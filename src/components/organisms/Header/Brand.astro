@@ -68,6 +68,11 @@ const desk = layout;
 const mobDir  = mob  === "col" ? "flex-col"    : "flex-row";
 const deskDir = desk === "col" ? "sm:flex-col" : "sm:flex-row";
 const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
+
+/** Build a WebP variant URL (for raster images uploaded via the CMS) */
+function toWebpUrl(url: string): string {
+  return url.replace(/\.(jpe?g|png)$/i, '.webp');
+}
 ---
 
 <a
@@ -78,24 +83,26 @@ const dirClass = mob === desk ? mobDir : `${mobDir} ${deskDir}`;
   <span class:list={["items-center", logoVis]}>
     {useDbLogo ? (
       <>
-        <img
-          src={logoLightUrl ?? logoDarkUrl!}
-          alt={alt}
-          class:list={[logoHeight, "w-30 dark:hidden"]}
-          loading="eager"
-          fetchpriority="high"
-          width="120"
-          height="32"
-        />
-        <img
-          src={logoDarkUrl ?? logoLightUrl!}
-          alt={alt}
-          class:list={["hidden", logoHeight, "w-30 dark:block"]}
-          loading="eager"
-          fetchpriority="high"
-          width="120"
-          height="32"
-        />
+        <picture class:list={[logoHeight, "w-auto max-w-30 dark:hidden"]}>
+          <source srcset={toWebpUrl(logoLightUrl ?? logoDarkUrl!)} type="image/webp" />
+          <img
+            src={logoLightUrl ?? logoDarkUrl!}
+            alt={alt}
+            class:list={[logoHeight, "w-auto"]}
+            loading="eager"
+            fetchpriority="high"
+          />
+        </picture>
+        <picture class:list={["hidden", logoHeight, "w-auto max-w-30 dark:block"]}>
+          <source srcset={toWebpUrl(logoDarkUrl ?? logoLightUrl!)} type="image/webp" />
+          <img
+            src={logoDarkUrl ?? logoLightUrl!}
+            alt={alt}
+            class:list={[logoHeight, "w-auto"]}
+            loading="eager"
+            fetchpriority="high"
+          />
+        </picture>
       </>
     ) : (
       <>

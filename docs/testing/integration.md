@@ -16,7 +16,8 @@
 | `tests/integration/auth-org.test.ts` | Organization CRUD, invitations, membres | 5 | ✅ |
 | `tests/integration/middleware.test.ts` | `getSession()` avec différents headers | 4 | ✅ |
 | `tests/integration/db-health.test.ts` | `checkConnection()`, singleton Drizzle, raw query | 3 | ✅ |
-| **Total** | | **49** | **✅** |
+| `tests/integration/cms-admin.test.ts` | Actions CMS admin : CRUD site, social, nav, theme, hours, pages | 14 | ✅ |
+| **Total** | | **63** | **✅** |
 
 ### Prérequis
 

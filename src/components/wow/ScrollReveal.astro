@@ -66,8 +66,9 @@ const {
 </div>
 
 <script>
-  function setupScrollReveal() {
+  function setupScrollReveal(): () => void {
     const elements = document.querySelectorAll<HTMLElement>("[data-reveal]");
+    const observers: IntersectionObserver[] = [];
 
     elements.forEach((el) => {
       const direction = el.dataset.revealDirection || "up";
@@ -86,7 +87,10 @@ const {
 
       el.style.opacity = "0";
       el.style.transform = transforms[direction] || transforms.up;
-      el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`;
+      const motionOk = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el.style.transition = motionOk
+        ? `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`
+        : "none";
 
       const observer = new IntersectionObserver(
         (entries) => {
@@ -105,9 +109,20 @@ const {
       );
 
       observer.observe(el);
+      observers.push(observer);
     });
+
+    return () => observers.forEach((o) => o.disconnect());
   }
 
-  setupScrollReveal();
-  document.addEventListener("astro:after-swap", setupScrollReveal);
+  let cleanup: (() => void) | null = null;
+
+  function start() {
+    cleanup?.();
+    cleanup = setupScrollReveal();
+  }
+
+  start();
+  document.addEventListener("astro:after-swap", start);
+  document.addEventListener("astro:before-swap", () => { cleanup?.(); cleanup = null; });
 </script>

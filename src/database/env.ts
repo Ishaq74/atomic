@@ -11,6 +11,10 @@ export interface PoolConfig {
   idleTimeoutMillis: number;
   connectionTimeoutMillis: number;
   allowExitOnIdle?: boolean;
+  /** Per-connection statement timeout (ms). Kills queries exceeding this. */
+  statement_timeout?: number;
+  /** Abort transactions idle longer than this (ms). Prevents connection starvation. */
+  idle_in_transaction_session_timeout?: number;
 }
 
 export interface DbConfig {
@@ -30,20 +34,26 @@ const ENV_VAR_MAP: Record<DbEnv, string> = {
 
 const POOL_CONFIGS: Record<DbEnv, PoolConfig> = {
   PROD: {
-    max: parseInt(process.env.DB_POOL_MAX ?? '20', 10),
+    max: Math.min(Math.max(parseInt(process.env.DB_POOL_MAX ?? '20', 10) || 20, 1), 100),
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 5_000,
     allowExitOnIdle: true,
+    statement_timeout: 30_000,
+    idle_in_transaction_session_timeout: 60_000,
   },
   TEST: {
     max: 5,
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 3_000,
+    statement_timeout: 15_000,
+    idle_in_transaction_session_timeout: 30_000,
   },
   LOCAL: {
     max: 10,
     idleTimeoutMillis: 15_000,
     connectionTimeoutMillis: 5_000,
+    statement_timeout: 30_000,
+    idle_in_transaction_session_timeout: 60_000,
   },
 };
 
@@ -75,10 +85,9 @@ const ACTIVE_ENV: DbEnv = (() => {
   if (DB_ENVS.includes(normalized as DbEnv)) return normalized as DbEnv;
 
   // DB_ENV contient une valeur invalide
-  console.error(`\x1b[31m\x1b[1m❌ DB_ENV invalide : "${raw}"\x1b[0m`);
-  console.error(`\x1b[33m   Valeurs acceptées : ${DB_ENVS.join(', ')}\x1b[0m`);
-  console.error(`\x1b[2m   Vérifiez votre fichier .env\x1b[0m`);
-  return process.exit(1);
+  throw new Error(
+    `❌ DB_ENV invalide : "${raw}". Valeurs acceptées : ${DB_ENVS.join(', ')}. Vérifiez votre fichier .env`
+  );
 })();
 
 // ─── Lazy URL resolution (only resolves the env you ask for) ────────
@@ -86,11 +95,9 @@ function resolveUrl(env: DbEnv): string {
   const varName = ENV_VAR_MAP[env];
   const url = process.env[varName];
   if (!url) {
-    console.error(`\x1b[31m\x1b[1m❌ Variable d'environnement manquante : ${varName}\x1b[0m`);
-    console.error(`\x1b[33m   Environnement cible : ${env}\x1b[0m`);
-    console.error(`\x1b[33m   → Ajoutez ${varName}=postgresql://... dans votre fichier .env\x1b[0m`);
-    console.error(`\x1b[2m   Voir .env.example pour un modèle complet.\x1b[0m`);
-    return process.exit(1);
+    throw new Error(
+      `❌ Variable d'environnement manquante : ${varName} (environnement : ${env}). Ajoutez ${varName}=postgresql://... dans votre fichier .env`
+    );
   }
   return url;
 }

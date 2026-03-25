@@ -65,13 +65,11 @@ pnpm run db:seed -- --reset  # vide les tables puis insère
 src/database/
 ├── data/
 │   ├── manifest.ts                  ← source de vérité : ordre + mapping
-│   ├── 01-users.data.ts             ← données users (admin seed)
-│   ├── 02-organizations.data.ts     ← données organizations
 │   ├── 03-site-settings.data.ts     ← paramètres site ×4 locales
 │   ├── 04-social-links.data.ts      ← liens sociaux
 │   ├── 05-contact-info.data.ts      ← coordonnées + géolocalisation
 │   ├── 06-opening-hours.data.ts     ← horaires ×7 jours + pause méridienne
-│   ├── 07-navigation.data.ts        ← menus (header, footer, sidebar, mobile)
+│   ├── 07-navigation.data.ts        ← menus (header, footer_primary, footer_secondary, footer_legal)
 │   ├── 07b-navigation-items.data.ts ← items de navigation ×4 locales
 │   └── 08-theme.data.ts             ← thème design (couleurs, fonts, CSS)
 ├── schemas/
@@ -89,10 +87,10 @@ src/database/
 | `03-site-settings` | `siteSettings` | `siteName`, `siteDescription`, `siteSlogan`, `metaTitle`, `metaDescription`, `logoLight`, `logoDark`, `favicon`, `ogImage` ×4 locales |
 | `04-social-links` | `socialLinks` | `platform`, `url`, `label`, `icon`, `isActive`, `sortOrder` |
 | `05-contact-info` | `contactInfo` | `email`, `phone`, `address`, `city`, `postalCode`, `country`, `mapUrl`, `latitude`, `longitude` |
-| `06-opening-hours` | `openingHours` | `dayOfWeek` (0-6), `isOpen`, `morningOpen/Close`, `afternoonOpen/Close` (pause méridienne) |
-| `07-navigation` | `navigationMenus` | `name`, `slug` (header, footer, sidebar, mobile) |
+| `06-opening-hours` | `openingHours` | `dayOfWeek` (0-6), `isClosed`, `openTime`/`closeTime`, `morningOpen/Close`, `afternoonOpen/Close` (pause méridienne) |
+| `07-navigation` | `navigationMenus` | `name` (header, footer_primary, footer_secondary, footer_legal) |
 | `07b-navigation-items` | `navigationItems` | `label`, `url`, `icon` (mdi:xxx), `sortOrder`, `parentId`, `isActive`, `openInNewTab` ×4 locales |
-| `08-theme` | `themeSettings` | couleurs (primary, secondary, accent, background, foreground, muted), `fontHeading`, `fontBody`, `borderRadius`, `customCss` |
+| `08-theme` | `themeSettings` | couleurs (primary, secondary, accent, background, foreground, muted), `fontHeading`, `fontBody`, `borderRadius` |
 
 ## Normalisation automatique
 

@@ -15,10 +15,8 @@ export default {
     analytics: 'Analytics',
     integrations: 'Integrations',
     team: 'Team',
-    pricing: 'Pricing',
     about: 'About',
     contact: 'Contact',
-    blog: 'Blog',
   },
   cta: {
     getStarted: 'Get Started',
@@ -40,5 +38,6 @@ export default {
   a11y: {
     openMenu: 'Open menu',
     switchLanguage: 'Switch language',
+    skipToContent: 'Skip to main content',
   },
 } satisfies CommonTranslations;

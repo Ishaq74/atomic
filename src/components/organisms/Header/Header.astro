@@ -256,9 +256,15 @@ const {
 </style>
 
 <script>
+  let observer: MutationObserver | null = null;
+  let scrollController: AbortController | null = null;
+
   function initNavbar2() {
+    observer?.disconnect();
+    observer = null;
+
     // Watch for sheet open state changes
-    const observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.type === "attributes" && mutation.attributeName === "data-state") {
           const target = mutation.target as HTMLElement;
@@ -294,6 +300,9 @@ const {
 
   // Handle scroll-based navbar styling
   function initNavbarScroll() {
+    scrollController?.abort();
+    scrollController = new AbortController();
+
     const navbar = document.querySelector("[data-navbar-2]");
     if (!navbar) return;
 
@@ -315,9 +324,10 @@ const {
     updateNavbarStyle();
 
     // Listen for scroll events
-    scrollContainer.addEventListener("scroll", updateNavbarStyle, { passive: true });
+    scrollContainer.addEventListener("scroll", updateNavbarStyle, { passive: true, signal: scrollController.signal });
   }
 
   initNavbarScroll();
   document.addEventListener("astro:after-swap", initNavbarScroll);
+  document.addEventListener("astro:before-swap", () => { observer?.disconnect(); observer = null; scrollController?.abort(); scrollController = null; });
 </script>

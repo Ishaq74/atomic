@@ -1,7 +1,6 @@
 ---
 import "@styles/global.css";
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import { toLocale, getCommonTranslations, getAuthTranslations, getDirection, getPageUrl } from '@i18n/utils';
+import { toLocale, getCommonTranslations, getAuthTranslations, getDirection } from '@i18n/utils';
 import type { Locale } from '@i18n/config';
 import Header, { type NavLink } from "@organisms/Header/Header.astro";
 import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
@@ -22,7 +21,7 @@ const authT = await getAuthTranslations(locale);
 
 const user = Astro.locals.user;
 const session = Astro.locals.session;
-const isImpersonating = !!(session as any)?.impersonatedBy;
+const isImpersonating = !!session?.impersonatedBy;
 
 // ─── Load CMS data from database ────────────────────────────────────────────
 const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, activeTheme] = await Promise.all([
@@ -68,19 +67,27 @@ const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
   icon: s.icon ?? `mdi:${s.platform}`,
 }));
 
+// Type-specific CSS validators matching the Zod schemas in theme.ts
+const safeColor = (v: string | null | undefined) =>
+  v && /^oklch\(\s*\d+(?:\.\d+)?%?\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s*\)$/.test(v) ? v : null;
+const safeLength = (v: string | null | undefined) =>
+  v && /^\d+(?:\.\d+)?(rem|px|em|%)$/.test(v) ? v : null;
+const safeFont = (v: string | null | undefined) =>
+  v && /^[a-zA-Z0-9\s,'\-]+$/.test(v) ? v : null;
+
 // Build theme CSS custom properties from active DB theme
 const themeVars = activeTheme
   ? [
-      activeTheme.primaryColor && `--cms-primary: ${activeTheme.primaryColor}`,
-      activeTheme.secondaryColor && `--cms-secondary: ${activeTheme.secondaryColor}`,
-      activeTheme.accentColor && `--cms-accent: ${activeTheme.accentColor}`,
-      activeTheme.backgroundColor && `--cms-background: ${activeTheme.backgroundColor}`,
-      activeTheme.foregroundColor && `--cms-foreground: ${activeTheme.foregroundColor}`,
-      activeTheme.mutedColor && `--cms-muted: ${activeTheme.mutedColor}`,
-      activeTheme.mutedForegroundColor && `--cms-muted-foreground: ${activeTheme.mutedForegroundColor}`,
-      activeTheme.borderRadius && `--cms-radius: ${activeTheme.borderRadius}`,
-      activeTheme.fontHeading && `--cms-font-heading: ${activeTheme.fontHeading}`,
-      activeTheme.fontBody && `--cms-font-body: ${activeTheme.fontBody}`,
+      safeColor(activeTheme.primaryColor) && `--cms-primary: ${safeColor(activeTheme.primaryColor)}`,
+      safeColor(activeTheme.secondaryColor) && `--cms-secondary: ${safeColor(activeTheme.secondaryColor)}`,
+      safeColor(activeTheme.accentColor) && `--cms-accent: ${safeColor(activeTheme.accentColor)}`,
+      safeColor(activeTheme.backgroundColor) && `--cms-background: ${safeColor(activeTheme.backgroundColor)}`,
+      safeColor(activeTheme.foregroundColor) && `--cms-foreground: ${safeColor(activeTheme.foregroundColor)}`,
+      safeColor(activeTheme.mutedColor) && `--cms-muted: ${safeColor(activeTheme.mutedColor)}`,
+      safeColor(activeTheme.mutedForegroundColor) && `--cms-muted-foreground: ${safeColor(activeTheme.mutedForegroundColor)}`,
+      safeLength(activeTheme.borderRadius) && `--cms-radius: ${safeLength(activeTheme.borderRadius)}`,
+      safeFont(activeTheme.fontHeading) && `--cms-font-heading: ${safeFont(activeTheme.fontHeading)}`,
+      safeFont(activeTheme.fontBody) && `--cms-font-body: ${safeFont(activeTheme.fontBody)}`,
     ]
       .filter(Boolean)
       .join("; ")
@@ -99,6 +106,9 @@ const themeVars = activeTheme
 </head>
 
 <body class="flex min-h-screen flex-col">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-ring">
+      {t.a11y.skipToContent}
+    </a>
     {isImpersonating && (
       <div class="bg-warning text-warning-foreground flex items-center justify-center gap-3 px-4 py-2 text-sm font-medium" id="impersonation-banner">
         <span>{authT.admin.impersonation.banner.replace('{name}', user?.name ?? '')}</span>
@@ -122,7 +132,7 @@ const themeVars = activeTheme
         authTranslations={authT}
         locale={locale}
     />
-    <main class="flex-1">
+    <main id="main-content" class="flex-1">
         <slot />
     </main>
     <Footer

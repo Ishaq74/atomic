@@ -9,8 +9,8 @@ Application web SSR multi-langue avec authentification complète, gestion d'orga
 | **Astro 6** (`@astrojs/node`) | Framework SSR |
 | **better-auth** | Authentification (email/password, admin, organisations) |
 | **Drizzle ORM** + **PostgreSQL 16** | Base de données |
-| **Tailwind CSS 4** + **Starwind** | Design system (45+ composants) |
-| **Vitest** + **Playwright** | Tests (179 tests) |
+| **Tailwind CSS 4** + **Starwind** | Design system (47+ composants) |
+| **Vitest** + **Playwright** | Tests (510+ tests) |
 | **GitHub Actions** | CI/CD |
 
 ## Prérequis
@@ -100,7 +100,7 @@ Voir `.env.example` pour la liste complète.
 ```md
 src/
 ├── components/          # Design system
-│   ├── atoms/           # 45+ composants de base (Button, Card, Input, Dialog…)
+│   ├── atoms/           # 47+ composants de base (Button, Card, Input, Dialog…)
 │   ├── molecules/       # Composants composés
 │   ├── organisms/       # Header, Footer, Testimonials
 │   ├── pages/           # Composants de pages (Home, About, Contact, Auth…)
@@ -159,14 +159,14 @@ Basée sur **better-auth** avec les fonctionnalités :
 
 ## Tests
 
-**179 tests** répartis en 3 suites :
+**510+ tests** répartis en 3 suites :
 
 | Suite | Fichiers | Tests |
 | :-- | --: | --: |
-| Unit (Vitest) | 10 | 108 |
-| Integration (Vitest) | 8 | 49 |
-| E2E (Playwright) | 2 | 22 |
-| **Total** | **20** | **179** |
+| Unit (Vitest) | 36 | 400+ |
+| Integration (Vitest) | 9 | 99 |
+| E2E (Playwright) | 6 | 68 |
+| **Total** | **51+** | **510+** |
 
 Voir `docs/testing/` pour la documentation complète.
 
@@ -174,9 +174,10 @@ Voir `docs/testing/` pour la documentation complète.
 
 Pipeline GitHub Actions sur chaque push/PR vers `main` :
 
-1. **Lint & Type Check** — ESLint + `astro check`
-2. **Unit & Integration** — Vitest (PostgreSQL 16)
-3. **E2E** — Playwright (Chromium)
+1. **Lint & Type Check** — ESLint + `astro check` + `pnpm audit`
+2. **Unit & Integration** — Vitest + coverage (PostgreSQL 16)
+3. **E2E** — Playwright (Chromium + WebKit)
+4. **Accessibility & Performance** — Pa11y (WCAG AAA) + Lighthouse CI
 
 ## Documentation
 
