@@ -16,12 +16,28 @@ function createPool(): { pool: Pool; db: DrizzleDB; isHealthy: boolean } {
   const url = getDbUrl();
   const poolConfig = getPoolConfig();
 
+  // Extract non-standard pool options before passing to pg
+  const { statement_timeout, idle_in_transaction_session_timeout, ...pgPoolConfig } = poolConfig;
+
   const p = new Pool({
     connectionString: url,
     ssl: url.includes('sslmode=require')
       ? { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT } : {}) }
       : undefined,
-    ...poolConfig,
+    ...pgPoolConfig,
+  });
+
+  // Apply per-connection session settings (statement_timeout, idle_in_transaction)
+  // These are not pg Pool options — they must be SET on each new connection.
+  p.on('connect', (client) => {
+    const stmts: string[] = [];
+    if (statement_timeout) stmts.push(`SET statement_timeout = ${Number(statement_timeout)}`);
+    if (idle_in_transaction_session_timeout) stmts.push(`SET idle_in_transaction_session_timeout = ${Number(idle_in_transaction_session_timeout)}`);
+    if (stmts.length) {
+      client.query(stmts.join('; ')).catch((err) => {
+        console.error('[DB] Failed to set session parameters:', err);
+      });
+    }
   });
 
   const entry = { pool: p, db: drizzle(p, { schema }), isHealthy: true };

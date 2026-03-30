@@ -23,17 +23,11 @@ const contactSchema = z.object({
 export const POST: APIRoute = async ({ request }) => {
   const ip = extractIp(request.headers);
 
-  // Refuse to process without identifiable IP to prevent shared-bucket abuse
-  if (!ip) {
-    return Response.json(
-      { error: 'UNABLE_TO_IDENTIFY_CLIENT' },
-      { status: 403 },
-    );
-  }
-
-  // Aggressive rate limiting for anonymous endpoint: 3 per 5 minutes per IP
-  const rlKey = `contact:${ip}`;
-  const rl = checkRateLimit(rlKey, { window: 300, max: 3 });
+  // Rate-limit on IP if available, fallback to a global bucket (tighter limit)
+  // so the endpoint still works when TRUST_PROXY is not set.
+  const rlKey = ip ? `contact:${ip}` : 'contact:__global__';
+  const rlOpts = ip ? { window: 300, max: 3 } : { window: 300, max: 10 };
+  const rl = checkRateLimit(rlKey, rlOpts);
   if (!rl.allowed) {
     return Response.json(
       { error: 'RATE_LIMITED' },

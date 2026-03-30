@@ -21,21 +21,21 @@ function dashboardUrl(locale: Locale, authT: { routes: Record<string, string> })
   return `/${locale}/auth/${authT.routes['dashboard']}`;
 }
 
-/** Require authenticated user. Redirects guests to sign-in. */
+/** Require authenticated user. Redirects guests to sign-in, banned users to sign-in. */
 export async function requireAuth(astro: AstroContext) {
   const { locale, authT } = await resolveLocale(astro);
   const user = astro.locals.user;
-  if (!user) {
+  if (!user || user.banned) {
     return { redirect: astro.redirect(signInUrl(locale, authT)) };
   }
   return { user, locale, authT };
 }
 
-/** Require admin role. Redirects guests to sign-in, non-admins to dashboard. */
+/** Require admin role. Redirects guests/banned to sign-in, non-admins to dashboard. */
 export async function requireAdmin(astro: AstroContext) {
   const { locale, authT } = await resolveLocale(astro);
   const user = astro.locals.user;
-  if (!user) {
+  if (!user || user.banned) {
     return { redirect: astro.redirect(signInUrl(locale, authT)) };
   }
   if (user.role !== 'admin') {

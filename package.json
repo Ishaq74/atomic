@@ -45,15 +45,15 @@
     "a11y:lighthouse-only": "node tests/a11y/run.cjs --lighthouse"
   },
   "dependencies": {
-    "@astrojs/node": "^10.0.1",
-    "@astrojs/sitemap": "^3.7.1",
+    "@astrojs/node": "10.0.4",
+    "@astrojs/sitemap": "3.7.2",
     "@iconify-json/circle-flags": "^1.2.10",
     "@iconify-json/mdi": "^1.2.3",
     "@iconify-json/openmoji": "^1.2.23",
     "@tabler/icons": "^3",
     "@tailwindcss/forms": "^0.5",
     "@tailwindcss/vite": "^4",
-    "astro": "^6.0.4",
+    "astro": "6.1.2",
     "astro-icon": "^1.1.5",
     "better-auth": "^1.5.5",
     "dotenv": "^17.3.1",
@@ -72,7 +72,7 @@
     "tw-animate-css": "^1"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.7",
+    "@astrojs/check": "^0.9.8",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.58.2",
     "@types/nodemailer": "^7.0.11",

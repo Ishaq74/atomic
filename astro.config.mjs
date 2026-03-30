@@ -42,24 +42,31 @@ export default defineConfig({
     },
   },
 
-  integrations: [Icon(), sitemap()],
+  integrations: [
+    Icon(),
+    sitemap({
+      // SSR mode: no pages are prerendered, so auto-discovery finds nothing.
+      // All public URLs live in /sitemap-cms.xml (runtime endpoint).
+      // customSitemaps adds it to the generated sitemap-index.xml.
+      customSitemaps: [
+        `${process.env.SITE_URL || 'http://localhost:4321'}/sitemap-cms.xml`,
+      ],
+      i18n: {
+        defaultLocale: 'fr',
+        locales: {
+          fr: 'fr-FR',
+          en: 'en-US',
+          es: 'es-ES',
+          ar: 'ar',
+        },
+      },
+    }),
+  ],
 
   adapter: node({
     mode: 'standalone'
   }),
 
-  security: {
-    csp: {
-      directives: [
-        "default-src 'self'",
-        "img-src 'self' data: blob:",
-        "font-src 'self' data:",
-        "connect-src 'self'",
-        "base-uri 'self'",
-        "form-action 'self'",
-        "object-src 'none'",
-        "frame-ancestors 'none'",
-      ],
-    },
-  },
+  // CSP is managed exclusively in src/middleware.ts to avoid duplication.
+  // Astro's security.csp was removed — the middleware sets all directives.
 });

@@ -1,0 +1,13 @@
+[    5813ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[    5842ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0
+[   10320ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/favicon.ico:0
+[   65808ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[   65819ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0
+[  395331ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[  395332ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0
+[  414585ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[  414587ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0
+[  419452ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[  419466ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0
+[  435114ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-light.svg:0
+[  435146ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:4322/uploads/images/site/logo-dark.svg:0

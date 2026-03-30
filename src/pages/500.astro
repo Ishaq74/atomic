@@ -1,10 +1,12 @@
 ---
 export const prerender = false;
 
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { Container } from '@components/atoms/container';
+import { Button } from '@components/atoms/button';
 import { DEFAULT_LOCALE, type Locale } from '@i18n/config';
 import { toLocale } from '@i18n/utils';
 
-// Try to detect locale from the request URL path
 const url = new URL(Astro.request.url);
 const pathSegments = url.pathname.split('/').filter(Boolean);
 const locale: Locale = toLocale(pathSegments[0]);
@@ -16,30 +18,13 @@ const messages: Record<string, { title: string; heading: string; message: string
   ar: { title: 'خطأ في الخادم', heading: 'خطأ داخلي في الخادم', message: 'حدث خطأ ما. يرجى المحاولة مرة أخرى لاحقاً.', back: 'العودة إلى الصفحة الرئيسية' },
 };
 const t = messages[locale] ?? messages[DEFAULT_LOCALE];
-const dir = locale === 'ar' ? 'rtl' : 'ltr';
 ---
 
-<html lang={locale} dir={dir}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>500 — {t.title}</title>
-    <style>
-      body { font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #fafaf9; color: #1c1917; }
-      .container { text-align: center; max-width: 480px; padding: 2rem; }
-      h1 { font-size: 4rem; font-weight: 800; margin: 0; color: #a8a29e; }
-      h2 { font-size: 1.25rem; margin: 0.5rem 0 1rem; }
-      p { color: #78716c; line-height: 1.6; }
-      a { display: inline-block; margin-top: 1.5rem; padding: 0.75rem 1.5rem; background: #1c1917; color: #fff; text-decoration: none; border-radius: 0.5rem; }
-      a:hover { background: #44403c; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>500</h1>
-      <h2>{t.heading}</h2>
-      <p>{t.message}</p>
-      <a href={`/${locale}/`}>{t.back}</a>
-    </div>
-  </body>
-</html>
+<BaseLayout title={`500 — ${t.title}`}>
+  <Container size="sm" layout="centered" minHeight="half" gutter="md" paddingY="xl">
+    <h1 class="text-7xl font-extrabold text-muted-foreground">500</h1>
+    <h2 class="text-xl font-medium">{t.heading}</h2>
+    <p class="text-muted-foreground leading-relaxed">{t.message}</p>
+    <Button href={`/${locale}/`} variant="default">{t.back}</Button>
+  </Container>
+</BaseLayout>

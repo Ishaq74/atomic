@@ -63,8 +63,8 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
           code: (err as NodeJS.ErrnoException).code ?? null,
           attempts: attempt,
         });
-        mkdir(logsDir, { recursive: true })
-          .then(() => appendFile(dlPath, record + '\n'))
+        mkdir(logsDir, { recursive: true, mode: 0o700 })
+          .then(() => appendFile(dlPath, record + '\n', { mode: 0o600 }))
           .catch((fileErr) => {
             console.error('[SMTP] Dead-letter write failed:', fileErr);
           });

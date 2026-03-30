@@ -19,7 +19,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Prevent unhandled rejection from the orphaned getSession promise.
   // The pool-level statement_timeout (30s) bounds how long the leaked query can run.
-  // TODO: Use AbortController signal when better-auth supports it to cancel the
+  // NOTE: When better-auth supports AbortController signal, use it to cancel the
   // orphaned promise instead of letting it run in the background.
   sessionPromise.catch((err) => {
     if (timedOut) console.warn('[middleware] Orphaned session check failed after timeout:', err);
@@ -57,8 +57,30 @@ export const onRequest = defineMiddleware(async (context, next) => {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     'X-XSS-Protection': '0',
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
-    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.iconify.design; frame-src https://www.google.com https://www.youtube.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    // 'credentialless' allows loading cross-origin resources (iconify API, embeds)
+    // without sending credentials, while still enabling COEP protection.
+    'Cross-Origin-Embedder-Policy': 'credentialless',
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "script-src 'self'",
+      // 'unsafe-inline' is required for Tailwind CSS v4 (Vite plugin style injection)
+      // and Astro scoped <style> tags. This is acceptable per OWASP/ANSSI guidelines:
+      // CSS-only injection has limited attack surface compared to script injection.
+      // script-src remains strict ('self' only — no 'unsafe-inline', no 'unsafe-eval').
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self'",
+      "connect-src 'self' https://api.iconify.design",
+      "frame-src https://www.google.com https://www.youtube.com https://player.vimeo.com",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
+      "upgrade-insecure-requests",
+    ].join('; '),
   };
 
   for (const [key, value] of Object.entries(securityHeaders)) {

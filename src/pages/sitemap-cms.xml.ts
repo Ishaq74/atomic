@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getPagesList } from "@database/loaders/page.loader";
-import { LOCALES, DEFAULT_LOCALE } from "@i18n/config";
+import { LOCALES, type Locale } from "@i18n/config";
+import { getCommonTranslations } from "@i18n/utils";
 
 export const prerender = false;
 
@@ -12,24 +13,32 @@ export const GET: APIRoute = async ({ site }) => {
   const baseUrl = site?.origin ?? "http://localhost:4321";
   const urls: string[] = [];
 
-  // Homepage per locale
+  // Homepage per locale (prefixDefaultLocale is true — all locales get /{locale}/ prefix)
   for (const locale of LOCALES) {
-    const prefix = locale === DEFAULT_LOCALE ? "" : `/${locale}`;
-    urls.push(`  <url>\n    <loc>${escapeXml(baseUrl)}${prefix}/</loc>\n  </url>`);
+    urls.push(`  <url>\n    <loc>${escapeXml(baseUrl)}/${locale}/</loc>\n  </url>`);
   }
 
-  // CMS pages per locale
+  // Static content pages per locale (about, contact, legal — with localized slugs)
+  for (const locale of LOCALES) {
+    const commonT = await getCommonTranslations(locale as Locale);
+    for (const slug of Object.values(commonT.pageRoutes)) {
+      urls.push(
+        `  <url>\n    <loc>${escapeXml(baseUrl)}/${locale}/${escapeXml(slug)}</loc>\n  </url>`,
+      );
+    }
+  }
+
+  // CMS pages per locale (dynamic content from database)
   for (const locale of LOCALES) {
     let pages: { slug: string }[] = [];
     try {
-      pages = await getPagesList(locale);
+      pages = await getPagesList(locale as Locale);
     } catch (err) {
       console.error(`[sitemap] Failed to load CMS pages for locale "${locale}":`, err);
     }
-    const prefix = locale === DEFAULT_LOCALE ? "" : `/${locale}`;
     for (const page of pages) {
       urls.push(
-        `  <url>\n    <loc>${escapeXml(baseUrl)}${prefix}/${escapeXml(page.slug)}</loc>\n  </url>`,
+        `  <url>\n    <loc>${escapeXml(baseUrl)}/${locale}/${escapeXml(page.slug)}</loc>\n  </url>`,
       );
     }
   }

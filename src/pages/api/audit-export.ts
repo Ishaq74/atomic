@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { fetchAdminAuditLogs, type AuditFilters } from "@/lib/auth-data";
 import { logAuditEvent, extractIp } from "@/lib/audit";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const prerender = false;
 
@@ -16,6 +17,14 @@ export const GET: APIRoute = async (context) => {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const rl = checkRateLimit(`audit-export:${user.id}`, { window: 60, max: 5 });
+  if (!rl.allowed) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
     });
   }
 

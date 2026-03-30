@@ -40,6 +40,5 @@ export function sanitizeHtml(dirty: unknown): string {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
     ALLOW_DATA_ATTR: false,
-
   });
 }
