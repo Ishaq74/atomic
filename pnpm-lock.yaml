@@ -60,8 +60,8 @@ importers:
         specifier: ^12.36.0
         version: 12.36.0
       nodemailer:
-        specifier: ^8.0.2
-        version: 8.0.2
+        specifier: ^8.0.4
+        version: 8.0.4
       pg:
         specifier: ^8.20.0
         version: 8.20.0
@@ -3813,8 +3813,8 @@ packages:
     resolution: {integrity: sha512-xwADg/okH48PvBmRZyoX8i8GJaKuJ1CqlqotlZOhUio8egD1P5trJupHKBzcPjSF9ifK2gPcEICRBnkfPqQXZw==}
     engines: {node: '>=0.4.0'}
 
-  nodemailer@8.0.2:
-    resolution: {integrity: sha512-zbj002pZAIkWQFxyAaqoxvn+zoIwRnS40hgjqTXudKOOJkiFFgBeNqjgD3/YCR12sZnrghWYBY+yP1ZucdDRpw==}
+  nodemailer@8.0.4:
+    resolution: {integrity: sha512-k+jf6N8PfQJ0Fe8ZhJlgqU5qJU44Lpvp2yvidH3vp1lPnVQMgi4yEEMPXg5eJS1gFIJTVq1NHBk7Ia9ARdSBdQ==}
     engines: {node: '>=6.0.0'}
 
   normalize-path@3.0.0:
@@ -9255,7 +9255,7 @@ snapshots:
       hasown: 2.0.2
       is: 3.3.2
 
-  nodemailer@8.0.2: {}
+  nodemailer@8.0.4: {}
 
   normalize-path@3.0.0: {}
 
