@@ -106,12 +106,42 @@ Les fichiers SVG uploadés (`/uploads/*.svg`) sont servis avec :
 
 ## 4. Protection CSRF
 
+### Astro `security.checkOrigin` (framework-level)
+
+Astro v5+ enables `checkOrigin: true` by default. This is explicitly set in `astro.config.mjs` for clarity:
+
+```javascript
+security: {
+  checkOrigin: true,
+}
+```
+
+**Fonctionnement** :
+
+- Vérifie que l'en-tête `Origin` de la requête correspond à l'URL du serveur
+- S'applique aux méthodes **POST, PATCH, DELETE, PUT** avec des Content-Type spécifiques (`application/x-www-form-urlencoded`, `multipart/form-data`, `text/plain`, `application/json`)
+- Retourne **403 Forbidden** si l'origine ne correspond pas
+- Protège automatiquement **tous les endpoints API** (`/api/contact`, `/api/upload`, `/api/export-data`, `/api/audit-export`, etc.) et **tous les Astro Actions** (`/_actions/*`)
+
+**Endpoints couverts** :
+
+| Endpoint | Méthode | Protection |
+| :-- | :-- | :-- |
+| `/api/contact` | POST | ✅ checkOrigin |
+| `/api/upload` | POST | ✅ checkOrigin |
+| `/api/export-data` | GET | N/A (GET non-mutant) |
+| `/api/audit-export` | GET | N/A (GET non-mutant) |
+| `/api/media` | GET | N/A (GET non-mutant) |
+| `/api/preview` | GET | N/A (GET non-mutant) |
+| `/_actions/*` | POST | ✅ checkOrigin + Astro Actions built-in |
+| `/api/auth/*` | POST | ✅ checkOrigin + better-auth SameSite cookies |
+
 ### Astro Actions (POST)
 
 Les `defineAction()` d'Astro 6 incluent une protection CSRF implicite :
 
-- Vérification automatique de l'origine de la requête
-- Token géré par le framework, transparent pour le développeur
+- Vérification automatique de l'origine de la requête (via `checkOrigin`)
+- Les actions sont exposées comme endpoints publics (`/_actions/{name}`) — les mêmes vérifications d'autorisation que pour les endpoints API s'appliquent
 
 ### better-auth
 
@@ -121,7 +151,8 @@ Les `defineAction()` d'Astro 6 incluent une protection CSRF implicite :
 ### Points d'attention
 
 - Les requêtes GET **ne sont pas protégées** par CSRF — ne jamais faire d'action state-changing via GET
-- Les endpoints API (`src/pages/api/`) nécessitent une vérification de session manuelle
+- Les endpoints GET authentifiés (`/api/export-data`, `/api/audit-export`) utilisent des vérifications de session + rate limiting comme protection complémentaire
+- `checkOrigin` requiert que le navigateur envoie l'en-tête `Origin` — les clients API (curl, Postman) doivent le fournir explicitement
 
 ---
 

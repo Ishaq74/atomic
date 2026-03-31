@@ -67,6 +67,13 @@ export default defineConfig({
     mode: 'standalone'
   }),
 
+  // Astro v5+ enables security.checkOrigin by default — explicit for clarity.
+  // This validates the Origin header on POST/PATCH/DELETE/PUT requests,
+  // providing CSRF protection for all API endpoints and Astro Actions.
+  security: {
+    checkOrigin: true,
+  },
+
   // CSP is managed exclusively in src/middleware.ts to avoid duplication.
   // Astro's security.csp was removed — the middleware sets all directives.
 });

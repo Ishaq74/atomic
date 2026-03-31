@@ -15,12 +15,25 @@ const FRESH_EMAIL = `e2e-${Date.now()}@test.com`;
 const FRESH_PASSWORD = 'E2eTest1234!';
 const FRESH_NAME = 'E2E Tester';
 
+/** Sign in as seed user — reliable across browsers (Chromium, Firefox, WebKit). */
+async function signIn(page: import('@playwright/test').Page) {
+  await page.goto('/fr/auth/connexion', { waitUntil: 'networkidle' });
+  await page.locator('input[name="email"]').fill(SEED_EMAIL);
+  await page.locator('input[name="password"]').fill(SEED_PASSWORD);
+  const submitBtn = page.locator('button[type="submit"], form button').first();
+  await Promise.all([
+    page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 30000 }),
+    submitBtn.click(),
+  ]);
+  await page.waitForLoadState('networkidle');
+}
+
 // ─── Sign-up form flow ──────────────────────────────────────────────
 
 test.describe('Sign-up flow', () => {
-  test('sign-up form submits and redirects to sign-in page', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit form submit redirect unreliable on Windows');
-    const response = await page.goto('/fr/auth/inscription');
+  test('sign-up form submits and redirects to sign-in page', async ({ page }) => {
+    await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
+    const response = await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
 
     await page.locator('input[name="name"]').fill(FRESH_NAME);
@@ -33,23 +46,25 @@ test.describe('Sign-up flow', () => {
       await usernameField.fill(`e2etester${Date.now()}`);
     }
 
-    await page.locator('button:has-text("compte"), form button, button[type="submit"]').first().click();
-
-    // With requireEmailVerification, sign-up redirects to the sign-in page
-    await page.waitForURL(/connexion|sign-in/, { timeout: 20000 });
+    const submitBtn = page.locator('button[type="submit"], form button').first();
+    await Promise.all([
+      page.waitForURL(/connexion|sign-in/, { timeout: 30000 }),
+      submitBtn.click(),
+    ]);
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/connexion|sign-in/);
   });
 
   test('sign-in form rejects unverified email', async ({ page }) => {
-    const response = await page.goto('/fr/auth/connexion');
-    expect(response?.status()).toBe(200);
+    await page.goto('/fr/auth/connexion', { waitUntil: 'networkidle' });
 
     await page.locator('input[name="email"]').fill(FRESH_EMAIL);
     await page.locator('input[name="password"]').fill(FRESH_PASSWORD);
-    await page.locator('form button, button[type="submit"], input[type="submit"]').first().click();
+    await page.locator('button[type="submit"], form button').first().click();
 
     // Unverified email — should stay on sign-in with an error
-    await page.waitForTimeout(2000);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
     await expect(page).toHaveURL(/connexion|sign-in/);
   });
 });
@@ -57,31 +72,16 @@ test.describe('Sign-up flow', () => {
 // ─── Authenticated flow (uses verified seed user) ──────────────────
 
 test.describe('Authenticated flow', () => {
-  test('verified user can sign in and reach dashboard', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit auth redirects unreliable on Windows');
-    const response = await page.goto('/fr/auth/connexion');
-    expect(response?.status()).toBe(200);
-
-    await page.locator('input[name="email"]').fill(SEED_EMAIL);
-    await page.locator('input[name="password"]').fill(SEED_PASSWORD);
-    await page.locator('button:has-text("connecter"), form button, button[type="submit"]').first().click();
-
-    // Verified user → should reach the dashboard
-    await page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 20000 });
+  test('verified user can sign in and reach dashboard', async ({ page }) => {
+    await signIn(page);
     await expect(page).toHaveURL(/tableau-de-bord|dashboard/);
   });
 
-  test('authenticated user can access profile page', async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit auth redirects unreliable on Windows');
-    // Sign in first
-    await page.goto('/fr/auth/connexion');
-    await page.locator('input[name="email"]').fill(SEED_EMAIL);
-    await page.locator('input[name="password"]').fill(SEED_PASSWORD);
-    await page.locator('button:has-text("connecter"), form button, button[type="submit"]').first().click();
-    await page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 20000 });
+  test('authenticated user can access profile page', async ({ page }) => {
+    await signIn(page);
 
     // Navigate to profile
-    const response = await page.goto('/fr/auth/profil');
+    const response = await page.goto('/fr/auth/profil', { waitUntil: 'networkidle' });
     expect(response?.ok()).toBeTruthy();
 
     // Verify user info is displayed

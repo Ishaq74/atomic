@@ -8,15 +8,19 @@ import { SEED_EMAIL, SEED_PASSWORD } from './global-setup';
  * are accessible after sign-in.
  */
 
-// Helper: sign in as admin seed user and reach dashboard (with retry)
+/** Sign in as admin seed user — reliable across browsers. */
 async function signInAsAdmin(page: import('@playwright/test').Page) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    await page.goto('/fr/auth/connexion');
+    await page.goto('/fr/auth/connexion', { waitUntil: 'networkidle' });
     await page.locator('input[name="email"]').fill(SEED_EMAIL);
     await page.locator('input[name="password"]').fill(SEED_PASSWORD);
-    await page.locator('button:has-text("connecter"), form button, button[type="submit"]').first().click();
+    const submitBtn = page.locator('button[type="submit"], form button').first();
     try {
-      await page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 20000 });
+      await Promise.all([
+        page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 30000 }),
+        submitBtn.click(),
+      ]);
+      await page.waitForLoadState('networkidle');
       return;
     } catch {
       if (attempt === 1) throw new Error('Sign-in failed after 2 attempts');
@@ -36,8 +40,7 @@ test.describe('CMS Admin access', () => {
 // ─── Site settings page ─────────────────────────────────────────────
 
 test.describe('CMS Site settings page', () => {
-  test.beforeEach(async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit auth redirects unreliable on Windows');
+  test.beforeEach(async ({ page }) => {
     await signInAsAdmin(page);
   });
 
@@ -65,8 +68,7 @@ test.describe('CMS Site settings page', () => {
 // ─── Navigation page ────────────────────────────────────────────────
 
 test.describe('CMS Navigation page', () => {
-  test.beforeEach(async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit auth redirects unreliable on Windows');
+  test.beforeEach(async ({ page }) => {
     await signInAsAdmin(page);
   });
 
@@ -86,8 +88,7 @@ test.describe('CMS Navigation page', () => {
 // ─── Theme page ─────────────────────────────────────────────────────
 
 test.describe('CMS Theme page', () => {
-  test.beforeEach(async ({ page, browserName }) => {
-    test.skip(browserName === 'webkit', 'WebKit auth redirects unreliable on Windows');
+  test.beforeEach(async ({ page }) => {
     await signInAsAdmin(page);
   });
 

@@ -34,6 +34,7 @@ Tous les fonctionnels (auth, audit, admin, export) étaient déjà couverts dans
 | P2-12 | E2E password-forgot page | Test ajouté : `forgot password page loads` | `tests/e2e/auth.spec.ts` |
 | P2-13 | E2E Spanish locale | Test ajouté : `Spanish locale loads correctly` | `tests/e2e/auth.spec.ts` |
 | P2-14 | E2E profile access | Test ajouté : `authenticated user can access profile page` | `tests/e2e/auth.spec.ts` |
+| P2-15 | `/api/contact` intégration | 14 tests : validation Zod, sanitisation XSS (DOMPurify), rate limiting (IP + global), template email, audit log DB, pipeline complète | `tests/integration/contact-api.test.ts` |
 
 ### P3 — Résolus ✅
 
@@ -59,7 +60,22 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 | P4-4 | Components UI | Tests de rendu des composants Astro/Starwind | Nécessiterait Container API (expérimental dans Astro) |
 | P4-5 | Admin CMS CRUD | Tests E2E de soumission réelle des formulaires admin | Couvert structurellement (page loads + form visible) ; le CRUD complet nécessiterait des fixtures seed complexes |
 | P4-6 | Actions admin | Tests d'intégration des 19 Astro Actions admin | Partiellement couvert par `cms-admin.test.ts` (14 tests) + `admin-helpers.test.ts` (5 tests). Restant : test des handlers individuels via harness Astro Actions |
-| P4-7 | `/api/contact` | Test d'intégration de l'endpoint de formulaire de contact | Nécessite mock SMTP complet ; logique Zod couverte par `contact-form-template.test.ts` |
+
+---
+
+## Corrections E2E & Lighthouse CI
+
+### E2E — Stabilité WebKit & flaky tests (résolu)
+
+- **WebKit skips supprimés** : les 10 `test.skip(browserName === 'webkit')` ont été retirés de `auth.spec.ts` (3), `cms-admin.spec.ts` (3×2 hooks) et `app.spec.ts`.
+- **Pattern robuste** : tous les sign-in E2E utilisent désormais `Promise.all([page.waitForURL(...), button.click()])` + `page.waitForLoadState('networkidle')` pour éviter les race conditions.
+- **`waitUntil: 'networkidle'`** ajouté à tous les `page.goto()` dans les 3 fichiers de specs E2E.
+- **Timeouts portés à 30 s** sur les navigations critiques (sign-up, sign-in, guards).
+
+### Lighthouse CI — NO_NAVSTART (résolu)
+
+- Ajout des flags Chrome `--disable-extensions --disable-component-extensions-with-background-pages` dans `lighthouserc.cjs`.
+- Ajout de `maxWaitForLoad: 45000` dans les settings Lighthouse pour laisser le temps au navigateur de terminer la navigation.
 
 ---
 

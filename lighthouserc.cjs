@@ -88,8 +88,9 @@ module.exports = {
       url: publicUrls,
       numberOfRuns: 1,
       settings: {
-        chromeFlags: '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu',
+        chromeFlags: '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --disable-extensions --disable-component-extensions-with-background-pages',
         preset: 'desktop',
+        maxWaitForLoad: 45000,
         ...(chromePath ? { chromePath } : {}),
       },
     },
