@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { cached, invalidateCache } from '@database/cache';
+import { cached, invalidateCache, getCacheStats, shutdownCache } from '@database/cache';
 
 describe('Cache — cached() wrapper', () => {
   beforeEach(() => {
@@ -208,5 +208,34 @@ describe('Cache — cached() wrapper', () => {
     // Target should still be cached because it was recently accessed
     await target();
     expect(targetCalls).toBe(1); // still served from cache
+  });
+});
+
+describe('getCacheStats', () => {
+  it('returns hit/miss/size/inflight statistics', async () => {
+    invalidateCache();
+    const fn = cached(() => 'stats-test', async () => 42);
+    await fn(); // miss
+    await fn(); // hit
+
+    const stats = getCacheStats();
+    expect(stats).toHaveProperty('hits');
+    expect(stats).toHaveProperty('misses');
+    expect(stats).toHaveProperty('size');
+    expect(stats).toHaveProperty('inflight');
+    expect(stats.size).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('shutdownCache', () => {
+  it('clears all cache entries and inflight', async () => {
+    const fn = cached(() => 'shutdown-test', async () => 'val', 60_000);
+    await fn();
+
+    shutdownCache();
+
+    const stats = getCacheStats();
+    expect(stats.size).toBe(0);
+    expect(stats.inflight).toBe(0);
   });
 });

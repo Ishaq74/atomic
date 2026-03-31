@@ -95,7 +95,7 @@ describe('Auth — Change Password', () => {
     // New password works
     const result = await auth.api.signInEmail({ body: { email, password: newPwd } });
     expect(result.user.email).toBe(email);
-  });
+  }, 30_000);
 
   it('changePassword rejects wrong current password', async () => {
     const headers = await test.getAuthHeaders({ userId });

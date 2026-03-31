@@ -94,6 +94,7 @@ const legalHeading = footerLegalMeta?.showHeading !== false
     <title>{metaTitle}</title>
     <meta name="description" content={metaDesc} />
     {siteData?.ogImage && <meta property="og:image" content={siteData.ogImage} />}
+    {/* eslint-disable-next-line astro/no-set-html-directive -- theme CSS is generated server-side from validated OKLCH tokens */}
     {themeCss && <style set:html={themeCss} />}
 </head>
 

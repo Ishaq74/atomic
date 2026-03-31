@@ -36,6 +36,9 @@ test-results/
 playwright-report/
 tests/reports/*/
 
+# coverage reports
+coverage/
+
 # a11y audit artifacts
 .a11y-cookies.json
 .lighthouseci/

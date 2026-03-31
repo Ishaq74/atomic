@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildNavTree } from '@database/loaders/navigation.loader';
 
 function item(id: string, parentId: string | null = null, label = id) {
-  return { id, parentId, label, url: null, icon: null, openInNewTab: false };
+  return { id, parentId, label, url: null, icon: null, showIcon: false, openInNewTab: false };
 }
 
 describe('buildNavTree', () => {

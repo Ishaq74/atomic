@@ -8,7 +8,7 @@ import { isValidLocale } from '@/i18n/utils';
  */
 
 describe('buildNavTree', () => {
-  const base = { url: '/test', icon: null, openInNewTab: false };
+  const base = { url: '/test', icon: null, showIcon: false, openInNewTab: false };
 
   it('returns roots for items without parentId', () => {
     const items = [
