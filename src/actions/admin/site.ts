@@ -12,7 +12,7 @@ const urlField = z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/)
 export const upsertSiteSettings = defineAction({
   input: z.object({
     locale: z.string().min(2).max(5),
-    siteName: z.string().trim().min(1, "Le nom du site est requis.").max(200),
+    siteName: z.string().trim().min(1, "Le nom du site est requis.").max(200).optional(),
     siteDescription: z.string().trim().max(500).nullable().optional(),
     siteSlogan: z.string().trim().max(200).nullable().optional(),
     metaTitle: z.string().trim().max(70).nullable().optional(),
@@ -21,6 +21,19 @@ export const upsertSiteSettings = defineAction({
     logoDark: urlField,
     favicon: urlField,
     ogImage: urlField,
+    // Header layout
+    headerCtaText: z.string().trim().max(100).nullable().optional(),
+    headerCtaUrl: urlField,
+    headerSecondaryText: z.string().trim().max(100).nullable().optional(),
+    headerSecondaryUrl: urlField,
+    headerSticky: z.boolean().optional(),
+    // Footer layout
+    footerCopyrightText: z.string().trim().max(200).nullable().optional(),
+    footerCopyrightUrl: urlField,
+    footerSocialHeading: z.string().trim().max(100).nullable().optional(),
+    footerNavPrimaryHeading: z.string().trim().max(100).nullable().optional(),
+    footerNavSecondaryHeading: z.string().trim().max(100).nullable().optional(),
+    footerLegalHeading: z.string().trim().max(100).nullable().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);
@@ -48,9 +61,12 @@ export const upsertSiteSettings = defineAction({
         .where(eq(siteSettings.id, existing.id))
         .returning();
     } else {
+      if (!data.siteName) {
+        throw new ActionError({ code: "BAD_REQUEST", message: "Le nom du site est requis pour la première configuration." });
+      }
       [result] = await db
         .insert(siteSettings)
-        .values({ locale, ...data })
+        .values({ locale, ...data, siteName: data.siteName })
         .returning();
     }
 

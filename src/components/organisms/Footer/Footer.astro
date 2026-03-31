@@ -60,17 +60,31 @@ const {
   class: className,
   ...rest
 } = Astro.props;
+
+const visibleSections =
+  (showSocial && socialLinks.length > 0 ? 1 : 0) +
+  (showNavPrimary && navLinks.length > 0 ? 1 : 0) +
+  (showNavSecondary && navLinksSecondary.length > 0 ? 1 : 0) +
+  (showLegal && legalLinks.length > 0 ? 1 : 0);
+
+const gridCols =
+  visibleSections <= 1 ? 'lg:grid-cols-1'
+  : visibleSections === 2 ? 'lg:grid-cols-2'
+  : visibleSections === 3 ? 'lg:grid-cols-3'
+  : 'lg:grid-cols-4';
 ---
 
 <footer class={footerStyles({ class: className })} {...rest}>
   <Container paddingY="md">
-    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    <div class:list={['grid grid-cols-1 gap-8 sm:grid-cols-2', gridCols]}>
 
       {showSocial && socialLinks.length > 0 && (
         <div>
-          <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
-            {socialHeading}
-          </span>
+          {socialHeading && (
+            <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
+              {socialHeading}
+            </span>
+          )}
           <ul class="mt-4 flex flex-wrap gap-3">
             {socialLinks.map((social) => (
               <li>
@@ -91,9 +105,11 @@ const {
 
       {showNavPrimary && navLinks.length > 0 && (
         <div>
-          <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
-            {navPrimaryHeading}
-          </span>
+          {navPrimaryHeading && (
+            <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
+              {navPrimaryHeading}
+            </span>
+          )}
           <ul class="mt-4 space-y-2.5">
             {navLinks.map((link) => (
               <li>
@@ -112,9 +128,11 @@ const {
 
       {showNavSecondary && navLinksSecondary.length > 0 && (
         <div>
-          <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
-            {navSecondaryHeading}
-          </span>
+          {navSecondaryHeading && (
+            <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
+              {navSecondaryHeading}
+            </span>
+          )}
           <ul class="mt-4 space-y-2.5">
             {navLinksSecondary.map((link) => (
               <li>
@@ -133,9 +151,11 @@ const {
 
       {showLegal && legalLinks.length > 0 && (
         <div>
-          <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
-            {legalHeadingProp}
-          </span>
+          {legalHeadingProp && (
+            <span class="text-foreground text-sm font-semibold uppercase tracking-wide">
+              {legalHeadingProp}
+            </span>
+          )}
           <ul class="mt-4 space-y-2.5">
             {legalLinks.map((link) => (
               <li>

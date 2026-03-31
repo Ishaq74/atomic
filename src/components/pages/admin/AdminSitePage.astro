@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@atom
 import { Input } from '@atoms/input';
 import { Label } from '@atoms/label';
 import { Textarea } from '@atoms/textarea';
+import { Switch } from '@atoms/switch';
 import Button from '@atoms/button/Button.astro';
 import { safeUrl } from '@lib/sanitize';
 
@@ -80,6 +81,8 @@ const cms = t.admin.cms.site;
       <TabsTrigger value="social">{cms.tabSocial}</TabsTrigger>
       <TabsTrigger value="contact">{cms.tabContact}</TabsTrigger>
       <TabsTrigger value="hours">{cms.tabHours}</TabsTrigger>
+      <TabsTrigger value="header">{cms.tabHeader}</TabsTrigger>
+      <TabsTrigger value="footer">{cms.tabFooter}</TabsTrigger>
     </TabsList>
 
     <!-- ─── General Settings (per locale) ─── -->
@@ -363,6 +366,137 @@ const cms = t.admin.cms.site;
               <Button type="submit" id="hours-submit">{cms.save}</Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+    </TabsContent>
+
+    <!-- ─── Header Settings (per locale) ─── -->
+    <TabsContent value="header">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabHeader}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex gap-1 mb-6 border-b pb-3" id="header-locale-tabs">
+            {LOCALES.map((l) => (
+              <button
+                type="button"
+                class:list={[
+                  'header-locale-btn px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  { 'bg-primary text-primary-foreground': l === locale },
+                  { 'hover:bg-muted text-muted-foreground': l !== locale },
+                ]}
+                data-locale-tab={l}
+              >
+                {LOCALE_LABELS[l]}
+              </button>
+            ))}
+          </div>
+          {LOCALES.map((l) => {
+            const s = allSettings[l];
+            return (
+              <form
+                class="grid gap-4 header-settings-form"
+                data-form-locale={l}
+                style={l !== locale ? 'display:none' : ''}
+              >
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid gap-2">
+                    <Label>{cms.headerCtaText}</Label>
+                    <Input name="headerCtaText" value={s?.headerCtaText ?? ''} />
+                  </div>
+                  <div class="grid gap-2">
+                    <Label>{cms.headerCtaUrl}</Label>
+                    <Input name="headerCtaUrl" value={s?.headerCtaUrl ?? ''} placeholder="/" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid gap-2">
+                    <Label>{cms.headerSecondaryText}</Label>
+                    <Input name="headerSecondaryText" value={s?.headerSecondaryText ?? ''} />
+                  </div>
+                  <div class="grid gap-2">
+                    <Label>{cms.headerSecondaryUrl}</Label>
+                    <Input name="headerSecondaryUrl" value={s?.headerSecondaryUrl ?? ''} placeholder="/" />
+                  </div>
+                </div>
+                <Switch id={`header-sticky-${l}`} label={cms.headerSticky} checked={s?.headerSticky ?? true} size="sm" />
+                <div class="flex justify-end">
+                  <Button type="submit">{cms.save}</Button>
+                </div>
+              </form>
+            );
+          })}
+        </CardContent>
+      </Card>
+    </TabsContent>
+
+    <!-- ─── Footer Settings (per locale) ─── -->
+    <TabsContent value="footer">
+      <Card>
+        <CardHeader>
+          <CardTitle>{cms.tabFooter}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div class="flex gap-1 mb-6 border-b pb-3" id="footer-locale-tabs">
+            {LOCALES.map((l) => (
+              <button
+                type="button"
+                class:list={[
+                  'footer-locale-btn px-3 py-1.5 text-sm font-medium rounded-md transition-colors',
+                  { 'bg-primary text-primary-foreground': l === locale },
+                  { 'hover:bg-muted text-muted-foreground': l !== locale },
+                ]}
+                data-locale-tab={l}
+              >
+                {LOCALE_LABELS[l]}
+              </button>
+            ))}
+          </div>
+          {LOCALES.map((l) => {
+            const s = allSettings[l];
+            return (
+              <form
+                class="grid gap-4 footer-settings-form"
+                data-form-locale={l}
+                style={l !== locale ? 'display:none' : ''}
+              >
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid gap-2">
+                    <Label>{cms.footerCopyrightText}</Label>
+                    <Input name="footerCopyrightText" value={s?.footerCopyrightText ?? ''} />
+                  </div>
+                  <div class="grid gap-2">
+                    <Label>{cms.footerCopyrightUrl}</Label>
+                    <Input name="footerCopyrightUrl" value={s?.footerCopyrightUrl ?? ''} placeholder="/" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid gap-2">
+                    <Label>{cms.footerSocialHeading}</Label>
+                    <Input name="footerSocialHeading" value={s?.footerSocialHeading ?? ''} />
+                  </div>
+                  <div class="grid gap-2">
+                    <Label>{cms.footerNavPrimaryHeading}</Label>
+                    <Input name="footerNavPrimaryHeading" value={s?.footerNavPrimaryHeading ?? ''} />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div class="grid gap-2">
+                    <Label>{cms.footerNavSecondaryHeading}</Label>
+                    <Input name="footerNavSecondaryHeading" value={s?.footerNavSecondaryHeading ?? ''} />
+                  </div>
+                  <div class="grid gap-2">
+                    <Label>{cms.footerLegalHeading}</Label>
+                    <Input name="footerLegalHeading" value={s?.footerLegalHeading ?? ''} />
+                  </div>
+                </div>
+                <div class="flex justify-end">
+                  <Button type="submit">{cms.save}</Button>
+                </div>
+              </form>
+            );
+          })}
         </CardContent>
       </Card>
     </TabsContent>
@@ -660,6 +794,76 @@ const cms = t.admin.cms.site;
       const { error } = await actions.updateOpeningHours({ items });
       if (!error) toast.success(tSaved);
       else toast.error(error.message ?? tError);
+    });
+
+    // ─── Header/Footer locale tab helpers ───
+    function bindLocaleTabs(
+      btnSelector: string,
+      formSelector: string,
+    ) {
+      const btns = document.querySelectorAll<HTMLButtonElement>(btnSelector);
+      const forms = document.querySelectorAll<HTMLFormElement>(formSelector);
+      btns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.localeTab;
+          btns.forEach((b) => {
+            if (b.dataset.localeTab === target) {
+              b.classList.add('bg-primary', 'text-primary-foreground');
+              b.classList.remove('hover:bg-muted', 'text-muted-foreground');
+            } else {
+              b.classList.remove('bg-primary', 'text-primary-foreground');
+              b.classList.add('hover:bg-muted', 'text-muted-foreground');
+            }
+          });
+          forms.forEach((f) => {
+            f.style.display = f.dataset.formLocale === target ? '' : 'none';
+          });
+        });
+      });
+    }
+
+    bindLocaleTabs('.header-locale-btn', '.header-settings-form');
+    bindLocaleTabs('.footer-locale-btn', '.footer-settings-form');
+
+    // ─── Header Settings (upsert per locale) ───
+    document.querySelectorAll<HTMLFormElement>('.header-settings-form').forEach((form) => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formLocale = form.dataset.formLocale!;
+        const fd = new FormData(form);
+        const stickyEl = form.querySelector<HTMLElement>(`[id^="header-sticky-"]`);
+        const headerSticky = stickyEl?.getAttribute('aria-checked') === 'true';
+        const { error } = await actions.upsertSiteSettings({
+          locale: formLocale,
+          headerCtaText: (fd.get('headerCtaText') as string) || null,
+          headerCtaUrl: (fd.get('headerCtaUrl') as string) || null,
+          headerSecondaryText: (fd.get('headerSecondaryText') as string) || null,
+          headerSecondaryUrl: (fd.get('headerSecondaryUrl') as string) || null,
+          headerSticky,
+        });
+        if (!error) toast.success(tSaved);
+        else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Footer Settings (upsert per locale) ───
+    document.querySelectorAll<HTMLFormElement>('.footer-settings-form').forEach((form) => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formLocale = form.dataset.formLocale!;
+        const fd = new FormData(form);
+        const { error } = await actions.upsertSiteSettings({
+          locale: formLocale,
+          footerCopyrightText: (fd.get('footerCopyrightText') as string) || null,
+          footerCopyrightUrl: (fd.get('footerCopyrightUrl') as string) || null,
+          footerSocialHeading: (fd.get('footerSocialHeading') as string) || null,
+          footerNavPrimaryHeading: (fd.get('footerNavPrimaryHeading') as string) || null,
+          footerNavSecondaryHeading: (fd.get('footerNavSecondaryHeading') as string) || null,
+          footerLegalHeading: (fd.get('footerLegalHeading') as string) || null,
+        });
+        if (!error) toast.success(tSaved);
+        else toast.error(error.message ?? tError);
+      });
     });
   }
 

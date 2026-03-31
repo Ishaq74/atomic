@@ -8,6 +8,9 @@ export interface NavMenu {
   id: string;
   name: string;
   description: string | null;
+  isVisible: boolean;
+  displayLabel: string | null;
+  showHeading: boolean;
 }
 
 export interface NavTreeItem {
@@ -41,6 +44,9 @@ export const getMenu = cached(
     .limit(1);
 
   if (!menu) return [];
+
+  // If menu is hidden, return empty tree
+  if (!menu.isVisible) return [];
 
   // Fetch all items for this menu + locale (flat)
   const items = await db
@@ -133,5 +139,21 @@ export const getMenusList = cached(
   async (): Promise<NavMenu[]> => {
     const db = getDrizzle();
     return db.select().from(navigationMenus).orderBy(asc(navigationMenus.name)).limit(100);
+  },
+);
+
+/**
+ * Get a single menu's metadata by name (for BaseLayout heading logic).
+ */
+export const getMenuMeta = cached(
+  (menuName: string) => `nav:meta:${menuName}`,
+  async (menuName: string): Promise<NavMenu | null> => {
+    const db = getDrizzle();
+    const [row] = await db
+      .select()
+      .from(navigationMenus)
+      .where(eq(navigationMenus.name, menuName))
+      .limit(1);
+    return row ?? null;
   },
 );

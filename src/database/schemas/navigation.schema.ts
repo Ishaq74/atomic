@@ -21,6 +21,9 @@ export const navigationMenus = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     description: text("description"),
+    isVisible: boolean("is_visible").default(true).notNull(),
+    displayLabel: text("display_label"),
+    showHeading: boolean("show_heading").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

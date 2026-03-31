@@ -6,7 +6,7 @@ import Header, { type NavLink } from "@organisms/Header/Header.astro";
 import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
 import { Toaster } from "@atoms/toast";
 import { getSiteSettings, getSocialLinks, getActiveThemeCss } from "@database/loaders/site.loader";
-import { getMenu, type NavTreeItem } from "@database/loaders/navigation.loader";
+import { getMenu, getMenuMeta, type NavTreeItem } from "@database/loaders/navigation.loader";
 
 interface Props {
   title?: string;
@@ -24,7 +24,7 @@ const session = Astro.locals.session;
 const isImpersonating = !!session?.impersonatedBy;
 
 // ─── Load CMS data from database ────────────────────────────────────────────
-const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, themeCss] = await Promise.all([
+const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, themeCss, footerPrimaryMeta, footerSecondaryMeta, footerLegalMeta] = await Promise.all([
   getSiteSettings(locale),
   getSocialLinks(),
   getMenu("header", locale),
@@ -32,6 +32,9 @@ const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, foote
   getMenu("footer_secondary", locale),
   getMenu("footer_legal", locale),
   getActiveThemeCss(),
+  getMenuMeta("footer_primary"),
+  getMenuMeta("footer_secondary"),
+  getMenuMeta("footer_legal"),
 ]);
 
 const siteName = siteData?.siteName ?? "";
@@ -68,6 +71,18 @@ const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
   href: s.url,
   icon: s.icon ?? `mdi:${s.platform}`,
 }));
+
+// Compute footer headings: showHeading=false → undefined (hides heading),
+// otherwise cascade: site_settings per-locale > menu displayLabel > i18n default
+const navPrimaryHeading = footerPrimaryMeta?.showHeading !== false
+  ? (siteData?.footerNavPrimaryHeading || footerPrimaryMeta?.displayLabel || t.footer.navPrimary)
+  : undefined;
+const navSecondaryHeading = footerSecondaryMeta?.showHeading !== false
+  ? (siteData?.footerNavSecondaryHeading || footerSecondaryMeta?.displayLabel || t.footer.navSecondary)
+  : undefined;
+const legalHeading = footerLegalMeta?.showHeading !== false
+  ? (siteData?.footerLegalHeading || footerLegalMeta?.displayLabel || t.footer.legalHeading)
+  : undefined;
 ---
 
 <html lang={locale} dir={direction}>
@@ -103,8 +118,10 @@ const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
         logoLightUrl={siteData?.logoLight}
         logoDarkUrl={siteData?.logoDark}
         links={links}
-        ctaText={t.cta.getStarted}
-        ctaHref="#get-started"
+        ctaText={siteData?.headerCtaText || t.cta.getStarted}
+        ctaHref={siteData?.headerCtaUrl || "#get-started"}
+        secondaryText={siteData?.headerSecondaryText || undefined}
+        secondaryHref={siteData?.headerSecondaryUrl || undefined}
         user={user}
         authTranslations={authT}
         locale={locale}
@@ -117,11 +134,12 @@ const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
         navLinksSecondary={footerNavLinksSecondary}
         legalLinks={footerLegalLinks}
         socialLinks={footerSocialLinks}
-        copyrightText={t.footer.copyright}
-        socialHeading={t.footer.socialHeading}
-        navPrimaryHeading={t.footer.navPrimary}
-        navSecondaryHeading={t.footer.navSecondary}
-        legalHeading={t.footer.legalHeading}
+        copyrightText={siteData?.footerCopyrightText || t.footer.copyright}
+        copyrightHref={siteData?.footerCopyrightUrl || undefined}
+        socialHeading={siteData?.footerSocialHeading || t.footer.socialHeading}
+        navPrimaryHeading={navPrimaryHeading}
+        navSecondaryHeading={navSecondaryHeading}
+        legalHeading={legalHeading}
     />
     <Toaster position="bottom-right" />
     <script>

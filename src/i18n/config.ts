@@ -396,6 +396,8 @@ export interface AuthTranslations {
         tabSocial: string;
         tabContact: string;
         tabHours: string;
+        tabHeader: string;
+        tabFooter: string;
         siteName: string;
         siteDescription: string;
         siteSlogan: string;
@@ -437,6 +439,17 @@ export interface AuthTranslations {
         morningClose: string;
         afternoonOpen: string;
         afternoonClose: string;
+        headerCtaText: string;
+        headerCtaUrl: string;
+        headerSecondaryText: string;
+        headerSecondaryUrl: string;
+        headerSticky: string;
+        footerCopyrightText: string;
+        footerCopyrightUrl: string;
+        footerSocialHeading: string;
+        footerNavPrimaryHeading: string;
+        footerNavSecondaryHeading: string;
+        footerLegalHeading: string;
       };
       navigation: {
         title: string;
@@ -477,6 +490,9 @@ export interface AuthTranslations {
         items: string;
         moveUp: string;
         moveDown: string;
+        menuVisible: string;
+        displayLabelField: string;
+        showHeadingField: string;
       };
       pages: {
         title: string;

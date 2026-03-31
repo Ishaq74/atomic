@@ -71,6 +71,9 @@ export const updateNavigationMenu = defineAction({
       .max(500, "La description ne peut pas dépasser 500 caractères.")
       .nullable()
       .optional(),
+    isVisible: z.boolean().optional(),
+    displayLabel: z.string().trim().max(200).nullable().optional(),
+    showHeading: z.boolean().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);

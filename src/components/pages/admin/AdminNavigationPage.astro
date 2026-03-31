@@ -52,6 +52,7 @@ const childItems = items.filter((i) => !!i.parentId);
   data-t-confirm-delete={cms.confirmDelete}
   data-t-confirm-delete-menu={cms.confirmDeleteMenu}
   data-t-save-all={cms.saveAll}
+  data-t-menu-visible={cms.menuVisible}
   class="grid gap-6"
 >
   <!-- ═══════════════════════════════════════════════════════
@@ -122,6 +123,14 @@ const childItems = items.filter((i) => !!i.parentId);
                     )}
                   </div>
                 </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <Switch
+                    id={`menu-visible-${m.id}`}
+                    label={cms.menuVisible}
+                    checked={m.isVisible}
+                    size="sm"
+                  />
+                </div>
                 <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                   <button
                     type="button"
@@ -130,6 +139,8 @@ const childItems = items.filter((i) => !!i.parentId);
                     data-menu-id={m.id}
                     data-menu-name={m.name}
                     data-menu-description={m.description ?? ''}
+                    data-menu-display-label={m.displayLabel ?? ''}
+                    data-menu-show-heading={String(m.showHeading)}
                   >
                     <svg class="size-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
                   </button>
@@ -152,7 +163,7 @@ const childItems = items.filter((i) => !!i.parentId);
 
       <!-- Edit menu inline form (hidden by default) -->
       <div id="edit-menu-form" class="hidden mt-4 rounded-lg border border-dashed border-primary/40 bg-primary/5 p-4">
-        <div class="grid gap-3 sm:grid-cols-3 sm:items-end">
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:items-end">
           <div class="grid gap-1.5">
             <Label for="edit-menu-name">{cms.menuName}</Label>
             <Input id="edit-menu-name" />
@@ -161,9 +172,16 @@ const childItems = items.filter((i) => !!i.parentId);
             <Label for="edit-menu-desc">{cms.menuDescription}</Label>
             <Input id="edit-menu-desc" />
           </div>
-          <div class="flex gap-2">
-            <Button id="edit-menu-submit" size="sm">{cms.save}</Button>
-            <Button id="edit-menu-cancel" size="sm" variant="outline">{cms.cancel}</Button>
+          <div class="grid gap-1.5">
+            <Label for="edit-menu-display-label">{cms.displayLabelField}</Label>
+            <Input id="edit-menu-display-label" placeholder={cms.displayLabelField} />
+          </div>
+          <div class="flex flex-col gap-3">
+            <Switch id="edit-menu-show-heading" label={cms.showHeadingField} checked={true} size="sm" />
+            <div class="flex gap-2">
+              <Button id="edit-menu-submit" size="sm">{cms.save}</Button>
+              <Button id="edit-menu-cancel" size="sm" variant="outline">{cms.cancel}</Button>
+            </div>
           </div>
         </div>
         <input type="hidden" id="edit-menu-id" />
@@ -459,7 +477,15 @@ const childItems = items.filter((i) => !!i.parentId);
         editForm.classList.remove('hidden');
         (document.getElementById('edit-menu-name') as HTMLInputElement).value = btn.dataset.menuName ?? '';
         (document.getElementById('edit-menu-desc') as HTMLInputElement).value = btn.dataset.menuDescription ?? '';
+        (document.getElementById('edit-menu-display-label') as HTMLInputElement).value = btn.dataset.menuDisplayLabel ?? '';
         (document.getElementById('edit-menu-id') as HTMLInputElement).value = btn.dataset.menuId ?? '';
+        // Sync showHeading switch state
+        const showHeadingEl = document.getElementById('edit-menu-show-heading');
+        if (showHeadingEl) {
+          const isChecked = btn.dataset.menuShowHeading === 'true';
+          showHeadingEl.setAttribute('aria-checked', String(isChecked));
+          showHeadingEl.setAttribute('data-state', isChecked ? 'checked' : 'unchecked');
+        }
       });
     });
     editCancel?.addEventListener('click', () => {
@@ -469,8 +495,11 @@ const childItems = items.filter((i) => !!i.parentId);
       const id = (document.getElementById('edit-menu-id') as HTMLInputElement).value;
       const name = (document.getElementById('edit-menu-name') as HTMLInputElement).value.trim();
       const desc = (document.getElementById('edit-menu-desc') as HTMLInputElement).value.trim();
+      const displayLabel = (document.getElementById('edit-menu-display-label') as HTMLInputElement).value.trim();
+      const showHeadingEl = document.getElementById('edit-menu-show-heading');
+      const showHeading = showHeadingEl?.getAttribute('aria-checked') === 'true';
       if (!id || !name) return;
-      const { error } = await actions.updateNavigationMenu({ id, name, description: desc || null });
+      const { error } = await actions.updateNavigationMenu({ id, name, description: desc || null, displayLabel: displayLabel || null, showHeading });
       if (!error) { toast.success(tMenuSaved); location.reload(); }
       else toast.error(error.message ?? tError);
     });
@@ -484,6 +513,21 @@ const childItems = items.filter((i) => !!i.parentId);
         const { error } = await actions.deleteNavigationMenu({ id });
         if (!error) { toast.success(tMenuDeleted); location.reload(); }
         else toast.error(error.message ?? tError);
+      });
+    });
+
+    // ─── Menu Visibility Toggle ───
+    document.querySelectorAll<HTMLElement>('.menu-row').forEach((row) => {
+      const menuId = row.dataset.menuId;
+      if (!menuId) return;
+      const switchEl = row.querySelector<HTMLElement>(`[id="menu-visible-${menuId}"]`);
+      if (!switchEl) return;
+      switchEl.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const isVisible = switchEl.getAttribute('aria-checked') === 'true';
+        const { error } = await actions.updateNavigationMenu({ id: menuId, isVisible });
+        if (error) toast.error(error.message ?? tError);
+        else toast.success(tMenuSaved);
       });
     });
 

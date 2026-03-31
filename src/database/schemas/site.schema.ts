@@ -28,6 +28,19 @@ export const siteSettings = pgTable(
     logoDark: text("logo_dark"),
     favicon: text("favicon"),
     ogImage: text("og_image"),
+    // ── Header layout ──
+    headerCtaText: text("header_cta_text"),
+    headerCtaUrl: text("header_cta_url"),
+    headerSecondaryText: text("header_secondary_text"),
+    headerSecondaryUrl: text("header_secondary_url"),
+    headerSticky: boolean("header_sticky").default(true).notNull(),
+    // ── Footer layout ──
+    footerCopyrightText: text("footer_copyright_text"),
+    footerCopyrightUrl: text("footer_copyright_url"),
+    footerSocialHeading: text("footer_social_heading"),
+    footerNavPrimaryHeading: text("footer_nav_primary_heading"),
+    footerNavSecondaryHeading: text("footer_nav_secondary_heading"),
+    footerLegalHeading: text("footer_legal_heading"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

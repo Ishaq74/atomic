@@ -147,6 +147,7 @@ const {
     <div class="flex items-center gap-1 @2xl:hidden">
       <LanguageSwitcher />
       <ThemeSwitcher />
+      {links.length > 0 && (
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" class="[&_svg]:size-8" aria-label="Open menu">
@@ -243,6 +244,7 @@ const {
           <IconX class="size-7" slot="icon" />
         </SheetContent>
       </Sheet>
+      )}
     </div>
   </div>
 </nav>
