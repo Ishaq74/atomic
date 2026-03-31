@@ -450,6 +450,7 @@ export interface AuthTranslations {
         urlField: string;
         parentField: string;
         iconField: string;
+        showIconField: string;
         selectIcon: string;
         searchIcon: string;
         clearIcon: string;
@@ -457,11 +458,25 @@ export interface AuthTranslations {
         rootItem: string;
         sortOrderField: string;
         isActiveField: string;
+        saveAll: string;
         saved: string;
         deleted: string;
         save: string;
         cancel: string;
         confirmDelete: string;
+        createMenu: string;
+        menuName: string;
+        menuDescription: string;
+        editMenu: string;
+        deleteMenu: string;
+        menuSaved: string;
+        menuDeleted: string;
+        confirmDeleteMenu: string;
+        noMenus: string;
+        manageMenus: string;
+        items: string;
+        moveUp: string;
+        moveDown: string;
       };
       pages: {
         title: string;

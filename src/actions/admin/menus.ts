@@ -6,6 +6,9 @@ import { navigationMenus } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
 import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
 
+/** Core menus required by BaseLayout — cannot be deleted or renamed. */
+export const PROTECTED_MENU_NAMES = ["header", "footer_primary", "footer_secondary", "footer_legal"] as const;
+
 export const createNavigationMenu = defineAction({
   input: z.object({
     name: z
@@ -76,6 +79,22 @@ export const updateNavigationMenu = defineAction({
     const { id, ...data } = input;
     const db = getDrizzle();
 
+    // Prevent renaming core menus
+    if (data.name !== undefined) {
+      const [target] = await db
+        .select({ name: navigationMenus.name })
+        .from(navigationMenus)
+        .where(eq(navigationMenus.id, id))
+        .limit(1);
+
+      if (target && PROTECTED_MENU_NAMES.includes(target.name as typeof PROTECTED_MENU_NAMES[number]) && data.name !== target.name) {
+        throw new ActionError({
+          code: "FORBIDDEN",
+          message: "Le nom d'un menu système ne peut pas être modifié.",
+        });
+      }
+    }
+
     let updated;
     try {
       [updated] = await db
@@ -120,6 +139,28 @@ export const deleteNavigationMenu = defineAction({
     adminRateLimit(context, user.id, "menus");
 
     const db = getDrizzle();
+
+    // Prevent deletion of core menus
+    const [target] = await db
+      .select({ name: navigationMenus.name })
+      .from(navigationMenus)
+      .where(eq(navigationMenus.id, input.id))
+      .limit(1);
+
+    if (!target) {
+      throw new ActionError({
+        code: "NOT_FOUND",
+        message: "Menu de navigation introuvable.",
+      });
+    }
+
+    if (PROTECTED_MENU_NAMES.includes(target.name as typeof PROTECTED_MENU_NAMES[number])) {
+      throw new ActionError({
+        code: "FORBIDDEN",
+        message: "Ce menu système ne peut pas être supprimé.",
+      });
+    }
+
     const [deleted] = await db
       .delete(navigationMenus)
       .where(eq(navigationMenus.id, input.id))

@@ -15,6 +15,7 @@ export interface NavTreeItem {
   label: string;
   url: string | null;
   icon: string | null;
+  showIcon: boolean;
   openInNewTab: boolean;
   children: NavTreeItem[];
 }
@@ -64,7 +65,7 @@ const MAX_NAV_DEPTH = 10;
 
 /** Build a hierarchical tree from a flat list of navigation items. Exported for testing. */
 export function buildNavTree(
-  items: { id: string; parentId: string | null; label: string; url: string | null; icon: string | null; openInNewTab: boolean }[],
+  items: { id: string; parentId: string | null; label: string; url: string | null; icon: string | null; showIcon: boolean; openInNewTab: boolean }[],
 ): NavTreeItem[] {
   const itemMap = new Map<string, NavTreeItem>();
   const roots: NavTreeItem[] = [];
@@ -75,6 +76,7 @@ export function buildNavTree(
       label: item.label,
       url: item.url,
       icon: item.icon,
+      showIcon: item.showIcon,
       openInNewTab: item.openInNewTab,
       children: [],
     });

@@ -69,6 +69,13 @@
       "when": 1774905185104,
       "tag": "0009_crazy_pride",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774959736696,
+      "tag": "0010_cultured_amphibian",
+      "breakpoints": true
     }
   ]
 }

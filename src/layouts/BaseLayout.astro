@@ -43,6 +43,7 @@ function toNavLinks(tree: NavTreeItem[]): NavLink[] {
   return tree.map((item) => ({
     label: item.label,
     href: item.url ?? undefined,
+    icon: item.showIcon && item.icon ? item.icon : undefined,
     children: item.children.length > 0 ? toNavLinks(item.children) : undefined,
   }));
 }
@@ -54,6 +55,7 @@ function toFooterLinks(tree: NavTreeItem[]): FooterLink[] {
   return tree.map((item) => ({
     label: item.label,
     href: item.url ?? "#",
+    icon: item.showIcon && item.icon ? item.icon : undefined,
   }));
 }
 

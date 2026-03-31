@@ -87,6 +87,16 @@ function deleteChain(rows: any[]) {
   };
 }
 
+function selectChain(rows: any[]) {
+  return {
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue(rows),
+      }),
+    }),
+  };
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -139,6 +149,7 @@ describe('createNavigationMenu', () => {
 describe('updateNavigationMenu', () => {
   it('updates an existing menu', async () => {
     const updated = { id: 'm1', name: 'updated', description: 'desc' };
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'custom' }]));
     mockUpdate.mockReturnValue(updateChain([updated]));
 
     const result = await updateMenu.handler(
@@ -149,6 +160,7 @@ describe('updateNavigationMenu', () => {
   });
 
   it('throws NOT_FOUND when menu does not exist', async () => {
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'custom' }]));
     mockUpdate.mockReturnValue(updateChain([])); // not found
 
     await expect(
@@ -159,6 +171,7 @@ describe('updateNavigationMenu', () => {
   it('throws CONFLICT when another menu uses the name', async () => {
     const dbError = new Error('duplicate key') as any;
     dbError.code = '23505';
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'custom' }]));
     mockUpdate.mockReturnValue({
       set: vi.fn().mockReturnValue({
         where: vi.fn().mockReturnValue({
@@ -172,8 +185,16 @@ describe('updateNavigationMenu', () => {
     ).rejects.toThrow('utilise déjà');
   });
 
-  it('does not check conflict when name not provided', async () => {
-    const updated = { id: 'm1', name: 'old', description: 'new-desc' };
+  it('throws FORBIDDEN when renaming a protected menu', async () => {
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'header' }]));
+
+    await expect(
+      updateMenu.handler({ id: 'm1', name: 'new-name' }, adminCtx()),
+    ).rejects.toThrow('système');
+  });
+
+  it('allows updating description of a protected menu', async () => {
+    const updated = { id: 'm1', name: 'header', description: 'new-desc' };
     mockUpdate.mockReturnValue(updateChain([updated]));
 
     const result = await updateMenu.handler(
@@ -188,18 +209,27 @@ describe('updateNavigationMenu', () => {
 
 describe('deleteNavigationMenu', () => {
   it('deletes an existing menu', async () => {
-    mockDelete.mockReturnValue(deleteChain([{ id: 'm1', name: 'main' }]));
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'custom' }]));
+    mockDelete.mockReturnValue(deleteChain([{ id: 'm1', name: 'custom' }]));
 
     const result = await deleteMenu.handler({ id: 'm1' }, adminCtx());
     expect(result).toEqual({ success: true });
   });
 
   it('throws NOT_FOUND when menu does not exist', async () => {
-    mockDelete.mockReturnValue(deleteChain([]));
+    mockSelect.mockReturnValueOnce(selectChain([]));
 
     await expect(
       deleteMenu.handler({ id: 'nope' }, adminCtx()),
     ).rejects.toThrow('introuvable');
+  });
+
+  it('throws FORBIDDEN when deleting a protected menu', async () => {
+    mockSelect.mockReturnValueOnce(selectChain([{ name: 'header' }]));
+
+    await expect(
+      deleteMenu.handler({ id: 'm1' }, adminCtx()),
+    ).rejects.toThrow('système');
   });
 
   it('requires admin role', async () => {

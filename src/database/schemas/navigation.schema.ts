@@ -47,6 +47,7 @@ export const navigationItems = pgTable(
     label: text("label").notNull(),
     url: text("url"),
     icon: text("icon"),
+    showIcon: boolean("show_icon").default(false).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     isActive: boolean("is_active").default(true).notNull(),
     openInNewTab: boolean("open_in_new_tab").default(false).notNull(),

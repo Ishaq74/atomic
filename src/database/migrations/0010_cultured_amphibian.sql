@@ -1,0 +1,1 @@
+ALTER TABLE "navigation_items" ADD COLUMN "show_icon" boolean DEFAULT false NOT NULL;

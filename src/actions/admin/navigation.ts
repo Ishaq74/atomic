@@ -77,6 +77,7 @@ const navItemBase = z.object({
     .max(50, "L'icône ne peut pas dépasser 50 caractères.")
     .nullable()
     .optional(),
+  showIcon: z.boolean().optional(),
   sortOrder: z
     .number()
     .int("L'ordre doit être un nombre entier.")

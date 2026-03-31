@@ -10,6 +10,7 @@ import { Separator } from "@atoms/separator";
 export interface FooterLink {
   label: string;
   href: string;
+  icon?: string | null;
 }
 
 export interface SocialLink {
@@ -98,8 +99,9 @@ const {
               <li>
                 <a
                   href={link.href}
-                  class="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                  class="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                 >
+                  {link.icon && <Icon name={link.icon} class="size-3.5 shrink-0" />}
                   {link.label}
                 </a>
               </li>
@@ -118,8 +120,9 @@ const {
               <li>
                 <a
                   href={link.href}
-                  class="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                  class="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                 >
+                  {link.icon && <Icon name={link.icon} class="size-3.5 shrink-0" />}
                   {link.label}
                 </a>
               </li>
@@ -138,8 +141,9 @@ const {
               <li>
                 <a
                   href={link.href}
-                  class="text-muted-foreground hover:text-foreground text-sm transition-colors"
+                  class="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm transition-colors"
                 >
+                  {link.icon && <Icon name={link.icon} class="size-3.5 shrink-0" />}
                   {link.label}
                 </a>
               </li>

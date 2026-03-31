@@ -150,8 +150,8 @@ describe('updateNavigationMenu', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('updates a menu', async () => {
-    // No name conflict
-    mockSelect.mockReturnValueOnce(chainable([]));
+    // Protected check returns non-protected menu
+    mockSelect.mockReturnValueOnce(chainable([{ name: 'custom' }]));
     // Update returns updated
     const updated = { id: 'menu-1', name: 'footer', description: null };
     mockUpdate.mockReturnValueOnce({
@@ -168,8 +168,8 @@ describe('updateNavigationMenu', () => {
   });
 
   it('throws NOT_FOUND when menu does not exist', async () => {
-    // No name conflict
-    mockSelect.mockReturnValueOnce(chainable([]));
+    // Protected check returns non-protected
+    mockSelect.mockReturnValueOnce(chainable([{ name: 'custom' }]));
     // Update returns empty
     mockUpdate.mockReturnValueOnce({
       set: () => ({
@@ -181,15 +181,25 @@ describe('updateNavigationMenu', () => {
       updateNavigationMenu.handler({ id: 'nope', name: 'x' }, adminCtx()),
     ).rejects.toThrow('introuvable');
   });
+
+  it('throws FORBIDDEN when renaming a protected menu', async () => {
+    mockSelect.mockReturnValueOnce(chainable([{ name: 'header' }]));
+
+    await expect(
+      updateNavigationMenu.handler({ id: 'menu-1', name: 'new-name' }, adminCtx()),
+    ).rejects.toThrow('système');
+  });
 });
 
 describe('deleteNavigationMenu', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('deletes a menu', async () => {
+    // Protected check returns non-protected menu
+    mockSelect.mockReturnValueOnce(chainable([{ name: 'custom' }]));
     mockDelete.mockReturnValueOnce({
       where: () => ({
-        returning: () => Promise.resolve([{ id: 'menu-1', name: 'main' }]),
+        returning: () => Promise.resolve([{ id: 'menu-1', name: 'custom' }]),
       }),
     });
 
@@ -198,14 +208,18 @@ describe('deleteNavigationMenu', () => {
   });
 
   it('throws NOT_FOUND when menu does not exist', async () => {
-    mockDelete.mockReturnValueOnce({
-      where: () => ({
-        returning: () => Promise.resolve([]),
-      }),
-    });
+    mockSelect.mockReturnValueOnce(chainable([]));
 
     await expect(
       deleteNavigationMenu.handler({ id: 'nope' }, adminCtx()),
     ).rejects.toThrow('introuvable');
+  });
+
+  it('throws FORBIDDEN when deleting a protected menu', async () => {
+    mockSelect.mockReturnValueOnce(chainable([{ name: 'footer_primary' }]));
+
+    await expect(
+      deleteNavigationMenu.handler({ id: 'menu-1' }, adminCtx()),
+    ).rejects.toThrow('système');
   });
 });
