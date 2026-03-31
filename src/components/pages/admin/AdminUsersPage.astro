@@ -102,9 +102,15 @@ function initials(name?: string) {
               data-user-id={u.id}
             >
               <TableCell>
-                <div class="flex flex-col">
-                  <span class="font-medium">{u.name}</span>
-                  <span class="text-xs text-muted-foreground">@{u.username ?? '—'}</span>
+                <div class="flex items-center gap-3">
+                  <Avatar size="sm">
+                    {u.image && safeUrl(u.image) && <AvatarImage src={safeUrl(u.image)!} alt={u.name ?? ''} />}
+                    <AvatarFallback>{initials(u.name)}</AvatarFallback>
+                  </Avatar>
+                  <div class="flex flex-col">
+                    <span class="font-medium">{u.name}</span>
+                    {u.username && <span class="text-xs text-muted-foreground">@{u.username}</span>}
+                  </div>
                 </div>
               </TableCell>
               <TableCell class="text-sm">{u.email}</TableCell>
@@ -196,7 +202,7 @@ function initials(name?: string) {
               </div>
             </div>
             <div class="flex items-center justify-between text-xs text-muted-foreground mb-3">
-              <span>@{u.username ?? '—'}</span>
+              {u.username ? <span>@{u.username}</span> : <span />}
               <span>{formatShortDate(u.createdAt)}</span>
             </div>
             {u.id !== user.id && (

@@ -13,9 +13,10 @@ if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 
 const PER_PAGE = 25;
-const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
-const { rows: adminAuditLogs, total } = await fetchAdminAuditLogs(Astro.request.headers, page, PER_PAGE);
+const requestedPage = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const { rows: adminAuditLogs, total } = await fetchAdminAuditLogs(Astro.request.headers, requestedPage, PER_PAGE);
 const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
+const page = Math.min(requestedPage, totalPages);
 ---
 
 <BaseLayout title={authT.meta.admin.title} description={authT.meta.admin.description}>

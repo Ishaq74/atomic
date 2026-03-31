@@ -5,7 +5,7 @@ import type { Locale } from '@i18n/config';
 import Header, { type NavLink } from "@organisms/Header/Header.astro";
 import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
 import { Toaster } from "@atoms/toast";
-import { getSiteSettings, getSocialLinks, getActiveTheme } from "@database/loaders/site.loader";
+import { getSiteSettings, getSocialLinks, getActiveThemeCss } from "@database/loaders/site.loader";
 import { getMenu, type NavTreeItem } from "@database/loaders/navigation.loader";
 
 interface Props {
@@ -24,14 +24,14 @@ const session = Astro.locals.session;
 const isImpersonating = !!session?.impersonatedBy;
 
 // ─── Load CMS data from database ────────────────────────────────────────────
-const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, activeTheme] = await Promise.all([
+const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, themeCss] = await Promise.all([
   getSiteSettings(locale),
   getSocialLinks(),
   getMenu("header", locale),
   getMenu("footer_primary", locale),
   getMenu("footer_secondary", locale),
   getMenu("footer_legal", locale),
-  getActiveTheme(),
+  getActiveThemeCss(),
 ]);
 
 const siteName = siteData?.siteName ?? "";
@@ -66,35 +66,9 @@ const footerSocialLinks: SocialLink[] = dbSocialLinks.map((s) => ({
   href: s.url,
   icon: s.icon ?? `mdi:${s.platform}`,
 }));
-
-// Type-specific CSS validators matching the Zod schemas in theme.ts
-const safeColor = (v: string | null | undefined) =>
-  v && /^oklch\(\s*\d+(?:\.\d+)?%?\s+\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\s*\)$/.test(v) ? v : null;
-const safeLength = (v: string | null | undefined) =>
-  v && /^\d+(?:\.\d+)?(rem|px|em|%)$/.test(v) ? v : null;
-const safeFont = (v: string | null | undefined) =>
-  v && /^[a-zA-Z0-9\s,'\-]+$/.test(v) ? v : null;
-
-// Build theme CSS custom properties from active DB theme
-const themeVars = activeTheme
-  ? [
-      safeColor(activeTheme.primaryColor) && `--cms-primary: ${safeColor(activeTheme.primaryColor)}`,
-      safeColor(activeTheme.secondaryColor) && `--cms-secondary: ${safeColor(activeTheme.secondaryColor)}`,
-      safeColor(activeTheme.accentColor) && `--cms-accent: ${safeColor(activeTheme.accentColor)}`,
-      safeColor(activeTheme.backgroundColor) && `--cms-background: ${safeColor(activeTheme.backgroundColor)}`,
-      safeColor(activeTheme.foregroundColor) && `--cms-foreground: ${safeColor(activeTheme.foregroundColor)}`,
-      safeColor(activeTheme.mutedColor) && `--cms-muted: ${safeColor(activeTheme.mutedColor)}`,
-      safeColor(activeTheme.mutedForegroundColor) && `--cms-muted-foreground: ${safeColor(activeTheme.mutedForegroundColor)}`,
-      safeLength(activeTheme.borderRadius) && `--cms-radius: ${safeLength(activeTheme.borderRadius)}`,
-      safeFont(activeTheme.fontHeading) && `--cms-font-heading: ${safeFont(activeTheme.fontHeading)}`,
-      safeFont(activeTheme.fontBody) && `--cms-font-body: ${safeFont(activeTheme.fontBody)}`,
-    ]
-      .filter(Boolean)
-      .join("; ")
-  : "";
 ---
 
-<html lang={locale} dir={direction} style={themeVars}>
+<html lang={locale} dir={direction}>
 <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href={siteData?.favicon ?? "/favicon.svg"} />
@@ -103,6 +77,7 @@ const themeVars = activeTheme
     <title>{metaTitle}</title>
     <meta name="description" content={metaDesc} />
     {siteData?.ogImage && <meta property="og:image" content={siteData.ogImage} />}
+    {themeCss && <style set:html={themeCss} />}
 </head>
 
 <body class="flex min-h-screen flex-col">

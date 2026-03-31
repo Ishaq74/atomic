@@ -239,7 +239,7 @@ const uniqueActions = [...new Set(adminAuditLogs.map((l: any) => l.action))].sor
                     </div>
                   </TableCell>
                   <TableCell class="text-sm text-muted-foreground">{org.slug}</TableCell>
-                  <TableCell class="text-sm">{org.members?.length ?? '—'}</TableCell>
+                  <TableCell class="text-sm">{org.memberCount}</TableCell>
                   <TableCell class="text-sm text-muted-foreground">
                     {formatShortDate(org.createdAt)}
                   </TableCell>

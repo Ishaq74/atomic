@@ -144,13 +144,26 @@ describe('deletePage', () => {
 describe('createTheme', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('creates a theme with isActive=false', async () => {
-    const theme = { id: 't1', name: 'Dark', isActive: false };
+  it('auto-activates if no active theme exists', async () => {
+    // select().from().where().limit() → no active theme
+    mockSelect.mockReturnValueOnce(selectChain([]));
+    const theme = { id: 't1', name: 'Dark', isActive: true };
     mockInsert.mockReturnValueOnce({
       values: () => ({ returning: () => Promise.resolve([theme]) }),
     });
     const result = await createTheme.handler({ name: 'Dark' }, adminCtx());
-    expect(result).toEqual(theme);
+    expect(result.isActive).toBe(true);
+  });
+
+  it('creates inactive theme when an active theme already exists', async () => {
+    // select().from().where().limit() → one active theme
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'existing' }]));
+    const theme = { id: 't2', name: 'Alt', isActive: false };
+    mockInsert.mockReturnValueOnce({
+      values: () => ({ returning: () => Promise.resolve([theme]) }),
+    });
+    const result = await createTheme.handler({ name: 'Alt' }, adminCtx());
+    expect(result.isActive).toBe(false);
   });
 });
 

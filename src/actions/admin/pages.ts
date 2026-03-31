@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { pages } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
@@ -98,22 +98,27 @@ export const updatePage = defineAction({
     ogImage: z.url("L'URL de l'image OG est invalide.").nullable().optional(),
     template: z.string().max(50, "Le template ne peut pas dépasser 50 caractères.").optional(),
     sortOrder: z.number().int("L'ordre doit être un nombre entier.").min(0, "L'ordre doit être positif.").max(10000, "L'ordre ne peut pas dépasser 10 000.").optional(),
+    expectedUpdatedAt: z.string().datetime().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);
     adminRateLimit(context, user.id, "pages");
 
-    const { id, ...data } = input;
+    const { id, expectedUpdatedAt, ...data } = input;
     if (data.slug) assertSlugNotReserved(data.slug);
 
     const db = getDrizzle();
+
+    const whereClause = expectedUpdatedAt
+      ? and(eq(pages.id, id), eq(pages.updatedAt, new Date(expectedUpdatedAt)))
+      : eq(pages.id, id);
 
     let updated;
     try {
       [updated] = await db
         .update(pages)
         .set(data)
-        .where(eq(pages.id, id))
+        .where(whereClause)
         .returning();
     } catch (err: unknown) {
       if (typeof err === "object" && err !== null && "code" in err && (err as { code: string }).code === "23505") {
@@ -126,6 +131,15 @@ export const updatePage = defineAction({
     }
 
     if (!updated) {
+      if (expectedUpdatedAt) {
+        const [exists] = await db.select({ id: pages.id }).from(pages).where(eq(pages.id, id)).limit(1);
+        if (exists) {
+          throw new ActionError({
+            code: "CONFLICT",
+            message: "La page a été modifiée par un autre utilisateur. Rechargez et réessayez.",
+          });
+        }
+      }
       throw new ActionError({
         code: "NOT_FOUND",
         message: "Page introuvable.",

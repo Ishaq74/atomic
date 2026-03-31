@@ -106,3 +106,17 @@ export function maskApiKey(key: string): string {
   if (key.length <= 8) return '***';
   return key.substring(0, 4) + '...' + key.substring(key.length - 4);
 }
+
+/** Lightweight SMTP config check for health probes (no network call). */
+export function checkSmtpConfig(): { ok: boolean; provider: string; error?: string } {
+  const provider = ACTIVE_PROVIDER;
+  try {
+    getSmtpFrom();
+    if (provider === 'NODEMAILER') getNodemailerConfig();
+    else if (provider === 'BREVO') getBrevoConfig();
+    else if (provider === 'RESEND') getResendConfig();
+    return { ok: true, provider };
+  } catch (err) {
+    return { ok: false, provider, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+}

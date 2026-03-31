@@ -118,7 +118,8 @@ export const openingHours = pgTable(
 );
 
 // ─── Theme Settings ──────────────────────────────────────────────────────────
-// Design tokens: colors, typography, border-radius. One active theme at a time.
+// Design tokens: full OKLCH token maps for light/dark, plus typography & radius.
+// Legacy per-column colors kept for backward compatibility.
 export const themeSettings = pgTable(
   "theme_settings",
   {
@@ -127,6 +128,10 @@ export const themeSettings = pgTable(
       .$defaultFn(() => crypto.randomUUID()),
     name: text("name").notNull(),
     isActive: boolean("is_active").default(false).notNull(),
+    // Full token maps stored as JSON — the primary source of truth
+    lightTokens: text("light_tokens"),
+    darkTokens: text("dark_tokens"),
+    // Legacy columns (kept for backward compat until fully migrated)
     primaryColor: text("primary_color"),
     secondaryColor: text("secondary_color"),
     accentColor: text("accent_color"),

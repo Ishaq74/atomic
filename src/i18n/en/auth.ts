@@ -128,9 +128,11 @@ export default {
       },
     },
     organizations: {
+      searchPlaceholder: 'Search by name or slug…',
       columns: {
         name: 'Name',
         slug: 'Slug',
+        owner: 'Owner',
         members: 'Members',
         created: 'Created',
         actions: 'Actions',
@@ -139,6 +141,14 @@ export default {
       confirmDelete: 'Are you sure you want to delete this organization?',
       deleted: 'Organization deleted.',
       noResults: 'No organizations found.',
+      sort: {
+        label: 'Sort',
+        nameAsc: 'Name A→Z',
+        nameDesc: 'Name Z→A',
+        newest: 'Newest first',
+        oldest: 'Oldest first',
+        mostMembers: 'Most members',
+      },
     },
     auditLog: {
       columns: {
@@ -282,6 +292,11 @@ export default {
         save: 'Save',
         preview: 'Preview',
         activate: 'Activate',
+        lightMode: 'Light mode',
+        darkMode: 'Dark mode',
+        resetDefaults: 'Reset defaults',
+        wcagContrast: 'WCAG Contrast',
+        typographyLayout: 'Typography & Layout',
       },
       common: {
         actions: 'Actions',

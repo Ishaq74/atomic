@@ -5,14 +5,15 @@ import { getDrizzle } from "@database/drizzle";
 import { themeSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
 import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { THEME_TOKEN_KEYS, isValidOklch, type ThemeTokenMap } from "@/lib/theme-tokens";
 
-const oklchRegex = /^oklch\(\s*[\d.]+%?\s+[\d.]+\s+[\d.]+\s*\)$/;
+const oklchRegex = /^oklch\(\s*[\d.]+%?\s+[\d.]+\s+[\d.]+(?:\s*\/\s*[\d.]+%?)?\s*\)$/;
 const colorField = (label: string) =>
   z
     .string()
     .regex(oklchRegex, `La couleur « ${label} » doit être au format OKLCH (ex: oklch(0.65 0.15 250)).`)
     .refine((v) => {
-      const m = v.match(/^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)\s*\)$/);
+      const m = v.match(/^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)/);
       if (!m) return false;
       const l = parseFloat(m[1]);
       const isPct = m[2] === '%';
@@ -24,6 +25,27 @@ const colorField = (label: string) =>
     .nullable()
     .optional();
 
+/** Zod schema for a token map: Record<ThemeTokenKey, oklch(...)>. */
+const tokenMapSchema = z
+  .string()
+  .max(10_000, "Le JSON des tokens ne peut pas dépasser 10 000 caractères.")
+  .refine((val) => {
+    try {
+      const parsed = JSON.parse(val);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return false;
+      const validKeys = new Set<string>(THEME_TOKEN_KEYS);
+      for (const [key, value] of Object.entries(parsed)) {
+        if (!validKeys.has(key)) return false;
+        if (typeof value !== 'string' || !isValidOklch(value)) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Le JSON des tokens est invalide. Chaque valeur doit être au format OKLCH.")
+  .nullable()
+  .optional();
+
 export const createTheme = defineAction({
   input: z.object({
     name: z.string().min(1, "Le nom du thème est requis.").max(50),
@@ -33,9 +55,17 @@ export const createTheme = defineAction({
     adminRateLimit(context, user.id, "theme");
     const db = getDrizzle();
 
+    // Auto-activate if no active theme exists yet
+    const [activeRow] = await db
+      .select({ id: themeSettings.id })
+      .from(themeSettings)
+      .where(eq(themeSettings.isActive, true))
+      .limit(1);
+    const shouldActivate = !activeRow;
+
     const [created] = await db
       .insert(themeSettings)
-      .values({ name: input.name, isActive: false })
+      .values({ name: input.name, isActive: shouldActivate })
       .returning();
 
     auditAdmin(context, user.id, "THEME_CREATE", {
@@ -45,6 +75,8 @@ export const createTheme = defineAction({
     });
 
     invalidateCache("site:theme");
+    invalidateCache("site:theme:css");
+    invalidateCache("site:themes");
     return created;
   },
 });
@@ -58,6 +90,10 @@ export const updateTheme = defineAction({
       .max(50, "Le nom du thème ne peut pas dépasser 50 caractères.")
       .optional(),
     isActive: z.boolean().optional(),
+    // Full token maps (new — primary source of truth)
+    lightTokens: tokenMapSchema,
+    darkTokens: tokenMapSchema,
+    // Legacy individual colors (kept for backward compat)
     primaryColor: colorField("primaire"),
     secondaryColor: colorField("secondaire"),
     accentColor: colorField("accent"),
@@ -139,6 +175,8 @@ export const updateTheme = defineAction({
     });
 
     invalidateCache("site:theme");
+    invalidateCache("site:theme:css");
+    invalidateCache("site:themes");
     return updated;
   },
 });
@@ -181,6 +219,8 @@ export const deleteTheme = defineAction({
     });
 
     invalidateCache("site:theme");
+    invalidateCache("site:theme:css");
+    invalidateCache("site:themes");
     return { success: true as const };
   },
 });

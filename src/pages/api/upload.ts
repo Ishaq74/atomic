@@ -8,7 +8,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 
 export const prerender = false;
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
   // ─── Auth obligatoire ──────────────────────────────────────────────
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
@@ -71,7 +71,7 @@ export const POST: APIRoute = async ({ request }) => {
       resource: 'file',
       resourceId: result.url,
       metadata: { type, originalName: file.name, size: file.size },
-      ipAddress: extractIp(request.headers),
+      ipAddress: extractIp(request.headers, clientAddress),
       userAgent: request.headers.get('user-agent'),
     });
 

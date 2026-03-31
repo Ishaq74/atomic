@@ -128,9 +128,11 @@ export default {
       },
     },
     organizations: {
+      searchPlaceholder: 'Rechercher par nom ou slug…',
       columns: {
         name: 'Nom',
         slug: 'Slug',
+        owner: 'Propriétaire',
         members: 'Membres',
         created: 'Créée le',
         actions: 'Actions',
@@ -139,6 +141,14 @@ export default {
       confirmDelete: 'Êtes-vous sûr de vouloir supprimer cette organisation ?',
       deleted: 'Organisation supprimée.',
       noResults: 'Aucune organisation trouvée.',
+      sort: {
+        label: 'Trier',
+        nameAsc: 'Nom A→Z',
+        nameDesc: 'Nom Z→A',
+        newest: 'Plus récente',
+        oldest: 'Plus ancienne',
+        mostMembers: 'Plus de membres',
+      },
     },
     auditLog: {
       columns: {
@@ -282,6 +292,11 @@ export default {
         save: 'Enregistrer',
         preview: 'Aperçu',
         activate: 'Activer',
+        lightMode: 'Mode clair',
+        darkMode: 'Mode sombre',
+        resetDefaults: 'Réinitialiser les défauts',
+        wcagContrast: 'Contraste WCAG',
+        typographyLayout: 'Typographie & Mise en page',
       },
       common: {
         actions: 'Actions',

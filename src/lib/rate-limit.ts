@@ -1,32 +1,20 @@
 /**
- * Simple in-memory fixed-window rate limiter for non-auth endpoints.
- * Suitable for single-node SSR (Astro + Node adapter).
+ * Fixed-window rate limiter with pluggable store backend.
  *
- * Limitation: state is process-local. In a multi-instance deployment each
- * node tracks limits independently, effectively multiplying the allowed
- * throughput by the number of instances.
- *
- * Migration path: replace the in-memory `store` with a Redis-backed counter
- * (e.g. via ioredis) when scaling to multiple nodes behind a load balancer.
- * See: https://redis.io/commands/incr — "Pattern: Rate limiter".
- *
- * ⚠️  PRODUCTION NOTE: If running more than one Node process (cluster, k8s
- * replicas, etc.), switch to a shared store (Redis / Valkey). Otherwise the
- * effective limit is `max × number_of_instances`.
+ * Default: in-memory store (single-node).
+ * Redis: swap the store via `setStores()` for multi-instance deployments.
+ * See src/lib/store.ts for the store abstraction.
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+import { getRateLimitStore } from './store';
 
-const store = new Map<string, RateLimitEntry>();
 const MAX_ENTRIES = 10_000;
 
 // Cleanup stale entries every 5 minutes
 const cleanupInterval = setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of store) {
+  const store = getRateLimitStore();
+  for (const [key, entry] of store.entries()) {
     if (now >= entry.resetAt) store.delete(key);
   }
 }, 5 * 60 * 1000);
@@ -54,12 +42,13 @@ export function checkRateLimit(
 ): RateLimitResult {
   const now = Date.now();
   const windowMs = opts.window * 1000;
+  const store = getRateLimitStore();
   const entry = store.get(key);
 
   if (!entry || now >= entry.resetAt) {
     if (store.size >= MAX_ENTRIES) {
       // Purge expired entries first
-      for (const [k, v] of store) { if (now >= v.resetAt) store.delete(k); }
+      for (const [k, v] of store.entries()) { if (now >= v.resetAt) store.delete(k); }
       // If still at capacity after purge, reject (fail-closed) to prevent store-flooding attacks
       if (store.size >= MAX_ENTRIES) {
         return { allowed: false, remaining: 0, resetAt: now + windowMs };
@@ -81,5 +70,5 @@ export function checkRateLimit(
 
 /** Clear all rate limit entries — exposed for testing only. */
 export function resetRateLimiter(): void {
-  store.clear();
+  getRateLimitStore().clear();
 }

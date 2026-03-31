@@ -20,8 +20,8 @@ const contactSchema = z.object({
   locale: z.enum(LOCALES).default('fr'),
 });
 
-export const POST: APIRoute = async ({ request }) => {
-  const ip = extractIp(request.headers);
+export const POST: APIRoute = async ({ request, clientAddress }) => {
+  const ip = extractIp(request.headers, clientAddress);
 
   // Rate-limit on IP if available, fallback to a global bucket (tighter limit)
   // so the endpoint still works when TRUST_PROXY is not set.

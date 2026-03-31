@@ -60,7 +60,7 @@ export const GET: APIRoute = async (context) => {
     resource: 'audit_export',
     resourceId: null,
     metadata: { action: filters.action ?? null, userId: filters.userId ?? null, from: from ?? null, to: to ?? null, rowCount: rows.length },
-    ipAddress: extractIp(context.request.headers),
+    ipAddress: extractIp(context.request.headers, context.clientAddress),
     userAgent: context.request.headers.get('user-agent'),
   });
 

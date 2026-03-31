@@ -51,6 +51,7 @@ export type AuditAction =
   | "PAGE_UPDATE"
   | "PAGE_DELETE"
   | "PAGE_PUBLISH"
+  | "PAGE_PREVIEW"
   | "PAGE_SECTION_CREATE"
   | "PAGE_SECTION_UPDATE"
   | "PAGE_SECTION_DELETE"
@@ -107,18 +108,21 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
  * these headers so clients cannot spoof their IP.  If deployed without a trusted
  * proxy, set TRUST_PROXY=false so these headers are ignored.
  */
-export function extractIp(headers: Headers): string | null {
+export function extractIp(headers: Headers, clientAddress?: string | null): string | null {
   const trustProxy = process.env.TRUST_PROXY === 'true';
-  if (!trustProxy) return null;
 
-  const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) {
-    const ip = forwarded.split(",")[0].trim();
-    if (isValidIp(ip)) return ip;
-    return null;
+  if (trustProxy) {
+    const forwarded = headers.get("x-forwarded-for");
+    if (forwarded) {
+      const ip = forwarded.split(",")[0].trim();
+      if (isValidIp(ip)) return ip;
+    }
+    const realIp = headers.get("x-real-ip");
+    if (realIp && isValidIp(realIp)) return realIp;
   }
-  const realIp = headers.get("x-real-ip");
-  if (realIp && isValidIp(realIp)) return realIp;
+
+  // Fallback: use Astro's clientAddress (from the underlying socket)
+  if (clientAddress && isValidIp(clientAddress)) return clientAddress;
   return null;
 }
 

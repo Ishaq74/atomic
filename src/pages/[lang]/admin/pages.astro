@@ -35,8 +35,10 @@ if (editId) {
 
 // ─── List mode: paginated pages ───
 const PER_PAGE = 20;
-const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
-const offset = (page - 1) * PER_PAGE;
+const MAX_PAGE = 200;
+const MAX_OFFSET = 10_000;
+const page = Math.max(1, Math.min(Number(Astro.url.searchParams.get('page')) || 1, MAX_PAGE));
+const offset = Math.min((page - 1) * PER_PAGE, MAX_OFFSET);
 
 const [allPages, [total]] = await Promise.all([
   db
@@ -49,6 +51,13 @@ const [allPages, [total]] = await Promise.all([
   db.select({ value: count() }).from(pages).where(eq(pages.locale, locale)),
 ]);
 const totalPages = Math.max(1, Math.ceil((total?.value ?? 0) / PER_PAGE));
+
+// Clamp page to actual totalPages
+if (page > totalPages && totalPages > 0) {
+  const url = new URL(Astro.url);
+  url.searchParams.set('page', String(totalPages));
+  return Astro.redirect(url.pathname + url.search);
+}
 ---
 
 <BaseLayout title={editPage ? `${authT.admin.cms.pages.editPage} — ${editPage.title}` : authT.admin.cms.pages.title} description={authT.admin.cms.pages.description}>

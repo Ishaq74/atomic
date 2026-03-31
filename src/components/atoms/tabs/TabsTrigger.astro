@@ -23,6 +23,7 @@ const { value, defaultActive = false, class: className, ...rest } = Astro.props;
 ---
 
 <button
+  type="button"
   class={tabsTrigger({ class: className })}
   data-tabs-trigger
   data-value={value}

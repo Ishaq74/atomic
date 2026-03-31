@@ -62,6 +62,13 @@
       "when": 1774207043639,
       "tag": "0008_tidy_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774905185104,
+      "tag": "0009_crazy_pride",
+      "breakpoints": true
     }
   ]
 }

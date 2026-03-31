@@ -1,15 +1,17 @@
-/** In-memory TTL cache for DB loaders (site settings, nav, theme, etc.). */
+/**
+ * TTL cache for DB loaders with pluggable store backend.
+ *
+ * Default: in-memory store (single-node).
+ * Redis: swap the store via `setStores()` for multi-instance deployments.
+ * See src/lib/store.ts for the store abstraction.
+ */
 
-interface CacheEntry {
-  data: unknown;
-  expiresAt: number;
-}
-
-const store = new Map<string, CacheEntry>();
-const inflight = new Map<string, Promise<unknown>>();
+import { getCacheStore, type CacheEntry } from '@/lib/store';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ENTRIES = 500;
+
+const inflight = new Map<string, Promise<unknown>>();
 
 // ─── Cache statistics (debug / monitoring) ────────────────────────────────────
 let hits = 0;
@@ -17,14 +19,17 @@ let misses = 0;
 
 /** Return cache hit/miss statistics. */
 export function getCacheStats() {
+  const store = getCacheStore();
   return { hits, misses, size: store.size, inflight: inflight.size };
 }
 
 // Cleanup expired entries every 2 minutes
 let cleanupInterval: ReturnType<typeof setInterval> | null = setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of store) {
-    if (now >= entry.expiresAt) store.delete(key);
+  const store = getCacheStore();
+  for (const key of store.keys()) {
+    const entry = store.get(key);
+    if (entry && now >= entry.expiresAt) store.delete(key);
   }
 }, 2 * 60 * 1000);
 cleanupInterval.unref();
@@ -35,7 +40,7 @@ export function shutdownCache(): void {
     clearInterval(cleanupInterval);
     cleanupInterval = null;
   }
-  store.clear();
+  getCacheStore().clear();
   inflight.clear();
 }
 
@@ -56,13 +61,13 @@ export function cached<Args extends unknown[], R>(
 ): (...args: Args) => Promise<R> {
   return (...args: Args): Promise<R> => {
     const key = keyFn(...args);
+    const store = getCacheStore();
     const entry = store.get(key);
 
     if (entry && Date.now() < entry.expiresAt) {
       hits++;
       entry.expiresAt = Date.now() + ttlMs; // Sliding TTL — refresh on hit
-      store.delete(key);
-      store.set(key, entry); // Move to end → LRU
+      store.touch(key, entry); // Move to end → LRU
       return Promise.resolve(entry.data as R);
     }
 
@@ -72,12 +77,13 @@ export function cached<Args extends unknown[], R>(
 
     misses++;
     const promise = fn(...args).then((data) => {
+      const s = getCacheStore();
       // Evict oldest entries if over limit
-      if (store.size >= MAX_ENTRIES) {
-        const firstKey = store.keys().next().value;
-        if (firstKey !== undefined) store.delete(firstKey);
+      if (s.size >= MAX_ENTRIES) {
+        const firstKey = s.firstKey();
+        if (firstKey !== undefined) s.delete(firstKey);
       }
-      store.set(key, { data, expiresAt: Date.now() + ttlMs });
+      s.set(key, { data, expiresAt: Date.now() + ttlMs });
       inflight.delete(key);
       return data;
     }).catch((err) => {
@@ -97,6 +103,7 @@ export function cached<Args extends unknown[], R>(
  * - With `prefix` → removes keys starting with that prefix
  */
 export function invalidateCache(prefix?: string): void {
+  const store = getCacheStore();
   if (!prefix) {
     store.clear();
     return;

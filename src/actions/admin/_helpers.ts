@@ -71,7 +71,7 @@ export function auditAdmin(
     resource: opts?.resource ?? null,
     resourceId: opts?.resourceId ?? null,
     metadata: opts?.metadata ?? null,
-    ipAddress: extractIp(context.request.headers),
+    ipAddress: extractIp(context.request.headers, context.clientAddress),
     userAgent: context.request.headers.get("user-agent"),
   });
 }

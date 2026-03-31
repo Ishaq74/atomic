@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { pageSections, pages } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
@@ -136,23 +136,38 @@ export const updateSection = defineAction({
       .min(0, "L'ordre doit être positif.")
       .optional(),
     isVisible: z.boolean().optional(),
+    expectedUpdatedAt: z.string().datetime().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);
     adminRateLimit(context, user.id, "sections");
 
-    const { id, ...data } = input;
+    const { id, expectedUpdatedAt, ...data } = input;
     if (data.content) {
       data.content = sanitizeSectionContent(data.content);
     }
     const db = getDrizzle();
+
+    const whereClause = expectedUpdatedAt
+      ? and(eq(pageSections.id, id), eq(pageSections.updatedAt, new Date(expectedUpdatedAt)))
+      : eq(pageSections.id, id);
+
     const [updated] = await db
       .update(pageSections)
       .set(data)
-      .where(eq(pageSections.id, id))
+      .where(whereClause)
       .returning();
 
     if (!updated) {
+      if (expectedUpdatedAt) {
+        const [exists] = await db.select({ id: pageSections.id }).from(pageSections).where(eq(pageSections.id, id)).limit(1);
+        if (exists) {
+          throw new ActionError({
+            code: "CONFLICT",
+            message: "La section a été modifiée par un autre utilisateur. Rechargez et réessayez.",
+          });
+        }
+      }
       throw new ActionError({
         code: "NOT_FOUND",
         message: "Section introuvable.",

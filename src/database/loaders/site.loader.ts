@@ -8,6 +8,7 @@ import {
   openingHours,
   themeSettings,
 } from "@database/schemas";
+import { parseTokenMap, generateThemeCss, DEFAULT_LIGHT_TOKENS, DEFAULT_DARK_TOKENS } from "@/lib/theme-tokens";
 import { isValidLocale } from "@i18n/utils";
 
 export const getSiteSettings = cached(
@@ -78,3 +79,33 @@ export const getAllThemes = cached(
     return db.select().from(themeSettings).orderBy(asc(themeSettings.name)).limit(100);
   },
 );
+
+/** Returns injectable CSS for the active theme, or empty string if no theme / using defaults. */
+export const getActiveThemeCss = cached(
+  () => "site:theme:css",
+  async () => {
+    const theme = await getActiveTheme();
+    if (!theme) return '';
+
+    const light = parseTokenMap(theme.lightTokens) ?? buildLegacyTokenMap(theme, 'light');
+    const dark = parseTokenMap(theme.darkTokens) ?? buildLegacyTokenMap(theme, 'dark');
+
+    return generateThemeCss(light, dark, theme.borderRadius);
+  },
+);
+
+/** Build a token map from legacy individual columns (backward compat). */
+function buildLegacyTokenMap(
+  theme: NonNullable<Awaited<ReturnType<typeof getActiveTheme>>>,
+  _mode: 'light' | 'dark',
+) {
+  const base = _mode === 'light' ? { ...DEFAULT_LIGHT_TOKENS } : { ...DEFAULT_DARK_TOKENS };
+  if (theme.primaryColor) base['primary'] = theme.primaryColor;
+  if (theme.secondaryColor) base['secondary'] = theme.secondaryColor;
+  if (theme.accentColor) base['accent'] = theme.accentColor;
+  if (theme.backgroundColor) base['background'] = theme.backgroundColor;
+  if (theme.foregroundColor) base['foreground'] = theme.foregroundColor;
+  if (theme.mutedColor) base['muted'] = theme.mutedColor;
+  if (theme.mutedForegroundColor) base['muted-foreground'] = theme.mutedForegroundColor;
+  return base;
+}

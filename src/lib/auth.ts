@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { getLazyDrizzle, schema } from "@database/drizzle";
+import { getLazyDrizzle, getDrizzle, schema } from "@database/drizzle";
+import { session as sessionTable } from "@database/schemas";
+import { eq } from "drizzle-orm";
 import { username, admin, organization, testUtils } from "better-auth/plugins";
 
 const isTest = process.env.NODE_ENV === 'test';
@@ -187,6 +189,18 @@ export const auth = betterAuth({
           userAgent: ua,
         }),
       );
+
+      // Revoke all sessions for the target user after ban or role change
+      const SESSION_REVOKE_PATHS = new Set(['/admin/ban-user', '/admin/set-role']);
+      if (SESSION_REVOKE_PATHS.has(ctx.path) && body.userId) {
+        ctx.context.runInBackground(
+          getDrizzle()
+            .delete(sessionTable)
+            .where(eq(sessionTable.userId, body.userId))
+            .then(() => { /* sessions revoked */ })
+            .catch((err) => console.error('[AUTH] Failed to revoke sessions after', ctx.path, err)),
+        );
+      }
     }),
   },
   plugins: [

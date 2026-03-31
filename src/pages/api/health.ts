@@ -1,7 +1,9 @@
 import type { APIRoute } from "astro";
 import { timingSafeEqual } from "node:crypto";
+import { access, constants } from "node:fs/promises";
 import { checkConnection } from "@database/drizzle";
 import { getCacheStats } from "@database/cache";
+import { checkSmtpConfig } from "@/smtp/env";
 
 export const prerender = false;
 
@@ -29,17 +31,24 @@ export const GET: APIRoute = async ({ request }) => {
     });
   }
   try {
-    const db = await checkConnection();
+    const [db, smtp, uploadsOk] = await Promise.all([
+      checkConnection(),
+      Promise.resolve(checkSmtpConfig()),
+      access('public/uploads', constants.W_OK).then(() => true, () => false),
+    ]);
     const uptime = Math.floor((Date.now() - startedAt) / 1000);
     const cache = getCacheStats();
 
-    const status = db.ok ? 200 : 503;
+    const allOk = db.ok && smtp.ok && uploadsOk;
+    const status = allOk ? 200 : 503;
     const body = {
-      status: db.ok ? "ok" : "degraded",
+      status: allOk ? "ok" : "degraded",
       version: "0.0.1",
       uptime,
       timestamp: new Date().toISOString(),
       db: { ok: db.ok },
+      smtp: { ok: smtp.ok, provider: smtp.provider },
+      disk: { uploadsWritable: uploadsOk },
       cache: { size: cache.size, hits: cache.hits, misses: cache.misses },
     };
 
@@ -58,6 +67,8 @@ export const GET: APIRoute = async ({ request }) => {
       uptime: Math.floor((Date.now() - startedAt) / 1000),
       timestamp: new Date().toISOString(),
       db: { ok: false },
+      smtp: { ok: false, provider: 'unknown' },
+      disk: { uploadsWritable: false },
     }), {
       status: 503,
       headers: {

@@ -7,7 +7,7 @@ import { logAuditEvent, extractIp } from '@/lib/audit';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, clientAddress }) => {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
     return Response.json({ error: 'Non authentifié' }, { status: 401 });
@@ -117,7 +117,7 @@ export const GET: APIRoute = async ({ request }) => {
     resource: 'data_export',
     resourceId: userId,
     metadata: { type: 'rgpd_export' },
-    ipAddress: extractIp(request.headers),
+    ipAddress: extractIp(request.headers, clientAddress),
     userAgent: request.headers.get('user-agent'),
   });
 

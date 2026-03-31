@@ -128,9 +128,11 @@ export default {
       },
     },
     organizations: {
+      searchPlaceholder: 'البحث بالاسم أو المعرّف…',
       columns: {
         name: 'الاسم',
         slug: 'المعرّف',
+        owner: 'المالك',
         members: 'الأعضاء',
         created: 'تاريخ الإنشاء',
         actions: 'الإجراءات',
@@ -139,6 +141,14 @@ export default {
       confirmDelete: 'هل أنت متأكد من حذف هذه المؤسسة؟',
       deleted: 'تم حذف المؤسسة.',
       noResults: 'لم يتم العثور على مؤسسات.',
+      sort: {
+        label: 'ترتيب',
+        nameAsc: 'الاسم أ→ي',
+        nameDesc: 'الاسم ي→أ',
+        newest: 'الأحدث أولاً',
+        oldest: 'الأقدم أولاً',
+        mostMembers: 'الأكثر أعضاء',
+      },
     },
     auditLog: {
       columns: {
@@ -282,6 +292,11 @@ export default {
         save: 'حفظ',
         preview: 'معاينة',
         activate: 'تفعيل',
+        lightMode: 'الوضع الفاتح',
+        darkMode: 'الوضع الداكن',
+        resetDefaults: 'إعادة تعيين الافتراضيات',
+        wcagContrast: 'تباين WCAG',
+        typographyLayout: 'الخطوط والتخطيط',
       },
       common: {
         actions: 'الإجراءات',

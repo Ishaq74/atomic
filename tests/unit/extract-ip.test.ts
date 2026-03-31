@@ -71,4 +71,48 @@ describe('extractIp', () => {
     const headers = new Headers({ 'x-real-ip': 'DROP TABLE users;--' });
     expect(extractIp(headers)).toBeNull();
   });
+
+  it('uses clientAddress fallback when no proxy headers', () => {
+    const headers = new Headers();
+    expect(extractIp(headers, '127.0.0.1')).toBe('127.0.0.1');
+  });
+
+  it('uses clientAddress fallback with IPv6', () => {
+    const headers = new Headers();
+    expect(extractIp(headers, '::1')).toBe('::1');
+  });
+
+  it('prefers proxy header over clientAddress', () => {
+    const headers = new Headers({ 'x-forwarded-for': '1.2.3.4' });
+    expect(extractIp(headers, '127.0.0.1')).toBe('1.2.3.4');
+  });
+
+  it('ignores invalid clientAddress', () => {
+    const headers = new Headers();
+    expect(extractIp(headers, 'not-an-ip')).toBeNull();
+  });
+
+  it('returns null when clientAddress is undefined', () => {
+    const headers = new Headers();
+    expect(extractIp(headers, undefined)).toBeNull();
+  });
+});
+
+describe('extractIp without TRUST_PROXY', () => {
+  const originalTrustProxy = process.env.TRUST_PROXY;
+  beforeAll(() => { delete process.env.TRUST_PROXY; });
+  afterAll(() => {
+    if (originalTrustProxy === undefined) delete process.env.TRUST_PROXY;
+    else process.env.TRUST_PROXY = originalTrustProxy;
+  });
+
+  it('ignores proxy headers when TRUST_PROXY is not set', () => {
+    const headers = new Headers({ 'x-forwarded-for': '1.2.3.4' });
+    expect(extractIp(headers)).toBeNull();
+  });
+
+  it('still uses clientAddress fallback without TRUST_PROXY', () => {
+    const headers = new Headers({ 'x-forwarded-for': '1.2.3.4' });
+    expect(extractIp(headers, '192.168.0.1')).toBe('192.168.0.1');
+  });
 });

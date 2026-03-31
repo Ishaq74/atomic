@@ -349,9 +349,11 @@ export interface AuthTranslations {
       };
     };
     organizations: {
+      searchPlaceholder: string;
       columns: {
         name: string;
         slug: string;
+        owner: string;
         members: string;
         created: string;
         actions: string;
@@ -360,6 +362,14 @@ export interface AuthTranslations {
       confirmDelete: string;
       deleted: string;
       noResults: string;
+      sort: {
+        label: string;
+        nameAsc: string;
+        nameDesc: string;
+        newest: string;
+        oldest: string;
+        mostMembers: string;
+      };
     };
     auditLog: {
       columns: {
@@ -503,6 +513,11 @@ export interface AuthTranslations {
         save: string;
         preview: string;
         activate: string;
+        lightMode: string;
+        darkMode: string;
+        resetDefaults: string;
+        wcagContrast: string;
+        typographyLayout: string;
       };
       common: {
         actions: string;
