@@ -6,7 +6,7 @@
  * See src/lib/store.ts for the store abstraction.
  */
 
-import { getCacheStore, type CacheEntry } from '@/lib/store';
+import { getCacheStore } from '@/lib/store';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_ENTRIES = 500;

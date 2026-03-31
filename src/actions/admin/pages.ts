@@ -98,7 +98,7 @@ export const updatePage = defineAction({
     ogImage: z.url("L'URL de l'image OG est invalide.").nullable().optional(),
     template: z.string().max(50, "Le template ne peut pas dépasser 50 caractères.").optional(),
     sortOrder: z.number().int("L'ordre doit être un nombre entier.").min(0, "L'ordre doit être positif.").max(10000, "L'ordre ne peut pas dépasser 10 000.").optional(),
-    expectedUpdatedAt: z.string().datetime().optional(),
+    expectedUpdatedAt: z.string().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);

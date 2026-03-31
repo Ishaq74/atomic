@@ -3,7 +3,7 @@ import type { HTMLAttributes } from "astro/types";
 import { tv } from "tailwind-variants";
 
 export const avatarFallback = tv({
-  base: "absolute inset-0.5 flex items-center justify-center rounded-full font-medium",
+  base: "flex h-full w-full items-center justify-center rounded-full font-medium bg-muted text-foreground",
 });
 
 interface Props extends HTMLAttributes<"div"> {

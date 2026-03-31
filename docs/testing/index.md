@@ -2,7 +2,8 @@
 
 > **Projet** : Atomic  
 > **Stack** : Astro 6 + better-auth + Drizzle/PostgreSQL + Vitest + Playwright + Pa11y + Lighthouse  
-> **Couverture globale** : **457 tests** · **104 audits a11y/perf** · **36 fichiers de test** · **4 générateurs de rapports** · **~90 % des modules couverts**
+> **Couverture globale** : **728 tests** · **102 audits e2e** · **52 URLs a11y** · **61 fichiers de test** · **5 générateurs de rapports**  
+> **Dernière mise à jour** : 31/03/2026
 
 ---
 
@@ -26,12 +27,21 @@
 
 | Type | Fichiers | Tests/Audits | Status |
 | :-- | :-- | :-- | :-- |
-| Unit | 27 | 358 | ✅ 358/358 |
-| Integration | 9 | 99 | ✅ 99/99 |
-| E2E (Playwright) | 3 | 34 (×2 browsers = 68) | ✅ 68/68 |
+| Unit | 48 | 619 | ✅ 619/619 |
+| Integration | 10 | 109 | ✅ 109/109 |
+| E2E (Playwright) | 3 | 34 (×3 browsers = 102) | ✅ 87 pass, 10 skip (WebKit auth), 5 flaky |
 | A11y — Pa11y-ci (WCAG AAA) | 1 config | 52 URLs | ✅ 52/52 |
-| A11y — Lighthouse CI | 3 configs | 52 URLs | ⚠️ (≤6 perf < 0.9) |
-| **Total** | **36** (+11 support) | **457 tests + 104 audits** | |
+| A11y — Lighthouse CI | 3 configs | 52 URLs | ⚠️ Instable (NO_NAVSTART Chrome) |
+| **Total** | **61** (+11 support) | **728 tests + 52 a11y audits + 102 e2e** | |
+
+### Coverage v8 (seuils vitest.config.ts)
+
+| Métrique | Résultat | Seuil | Status |
+| :-- | --: | --: | :-- |
+| Statements | 90.22% | 80% | ✅ |
+| Branches | 80.70% | 75% | ✅ |
+| Functions | 85.03% | 75% | ✅ |
+| Lines | 90.76% | 80% | ✅ |
 
 ### Fichiers support
 
@@ -50,24 +60,17 @@
 | `.pa11yci.cjs` | Configuration Pa11y-ci (52 URLs, WCAG AAA, axe) |
 | `lighthouserc.cjs` | Configuration Lighthouse CI (28 URLs publiques, ≥0.9 gates) |
 
-### Par module source — Couverture fonctionnelle
+### Par module source — Couverture v8
 
-| Module | Fichiers source | Fonctions exportées | Testées | Non testées | Couverture |
-| :-- | :-- | --: | --: | --: | --: |
-| `src/lib/` | 5 | 6 | 6 | 0 | **100 %** |
-| `src/i18n/` | 2 | 14 | 14 | 0 | **100 %** |
-| `src/database/` | 18 | ~24 | 18 | ~6 | **75 %** |
-| `src/actions/admin/` | 9 | 19 | 4 ¹ | 15 | **21 %** |
-| `src/pages/api/` | 3 | 3 | 2 | 1 | **67 %** |
-| `src/media/` | 3 | 4 | 3 | 1 | **75 %** |
-| `src/smtp/` | 3 | 10 | 8 | 2 | **80 %** |
-| `src/middleware.ts` | 1 | 1 | 1 | 0 | **100 %** |
-| `src/components/pages/` | 24 | — | 10 ² | 14 | **42 %** |
-| `src/layouts/` | 1 | — | 1 ² | 0 | **100 %** |
-| **TOTAL** | **69** | **~81** | **~65** | **~16** | **~90 %** |
-
-> ¹ Couverture indirecte via tests de schémas, seeds et types audit  
-> ² Couverture indirecte via E2E Playwright
+| Module | Stmts | Branches | Funcs | Lines | Détail |
+| :-- | --: | --: | --: | --: | :-- |
+| `src/actions/admin/` | 90.56% | 75.81% | 86.11% | 91.26% | 10 actions, 70+ tests unitaires |
+| `src/lib/` | 92.15% | 89.88% | 90.00% | 94.11% | audit, rate-limit, sanitize, store, theme-tokens |
+| `src/i18n/` | 100% | 100% | 100% | 100% | config + utils |
+| `src/database/` | 89.69% | 79.06% | 95.00% | 89.41% | cache, env, schemas |
+| `src/database/loaders/` | 88.67% | 86.36% | 66.66% | 87.23% | navigation.loader |
+| `src/database/schemas/` | 77.52% | 100% | 67.21% | 75.00% | déclaratif Drizzle |
+| `src/media/` | 92.22% | 80.95% | 100% | 94.04% | upload, delete, list |
 
 ---
 
@@ -122,18 +125,18 @@
 
 ### `src/actions/admin/` — Actions CMS
 
-| Action | Fichier source | Type | Test | Status |
-| :-- | :-- | :-- | :-- | :-- |
-| `updateSiteSettings` | `src/actions/admin/site.ts` | Side-effect (DB) | E2E admin site page | ⚠️ E2E |
-| `createSocialLink` / `update` / `delete` / `reorder` | `src/actions/admin/social.ts` | Side-effect (DB) | — | ❌ Non testé |
-| `updateContactInfo` | `src/actions/admin/contact.ts` | Side-effect (DB) | — | ❌ Non testé |
-| `updateOpeningHours` | `src/actions/admin/hours.ts` | Side-effect (DB) | — | ❌ Non testé |
-| `createNavigationItem` / `update` / `delete` / `reorder` | `src/actions/admin/navigation.ts` | Side-effect (DB) | E2E admin nav page | ⚠️ E2E |
-| `createTheme` / `update` / `delete` | `src/actions/admin/theme.ts` | Side-effect (DB) | E2E admin theme page | ⚠️ E2E |
-| `createPage` / `update` / `delete` / `publish` | `src/actions/admin/pages.ts` | Side-effect (DB) | — | ❌ Non testé |
-| `createSection` / `update` / `delete` / `reorder` | `src/actions/admin/sections.ts` | Side-effect (DB) | — | ❌ Non testé |
-| CMS audit actions (12 types) | `src/lib/audit.ts` | Types | `tests/unit/cms-audit.test.ts` | ✅ 1 test |
-| CMS i18n keys (4 namespaces) | `src/i18n/*/auth.ts` | Traductions | `tests/unit/cms-i18n.test.ts` | ✅ 16 tests |
+| Action | Fichier source | Test unitaire | Status |
+| :-- | :-- | :-- | :-- |
+| `upsertSiteSettings` / `updateSiteSettings` | `site.ts` | `tests/unit/admin-site.test.ts` (6) | ✅ |
+| `createSocialLink` / `update` / `delete` / `reorder` | `social.ts` | `tests/unit/admin-social.test.ts` (9) | ✅ |
+| `updateContactInfo` | `contact.ts` | `tests/unit/admin-contact.test.ts` (10) | ✅ |
+| `updateOpeningHours` | `hours.ts` | `tests/unit/admin-hours.test.ts` (13) | ✅ |
+| `createNavigationItem` / `update` / `delete` / `reorder` | `navigation.ts` | `tests/unit/admin-navigation-items.test.ts` (11) | ✅ |
+| `createTheme` / `update` / `delete` | `theme.ts` | `tests/unit/admin-theme.test.ts` (10) | ✅ |
+| `createPage` / `update` / `delete` / `publish` | `pages.ts` | `tests/unit/admin-pages.test.ts` (14) | ✅ |
+| `createSection` / `update` / `delete` / `reorder` | `sections.ts` | `tests/unit/admin-sections.test.ts` (15) | ✅ |
+| `createMenu` / `updateMenu` / `deleteMenu` | `menus.ts` | ⚠️ E2E only | ⚠️ |
+| `assertAdmin` / `adminRateLimit` / `auditAdmin` | `_helpers.ts` | Couvert via toutes les actions ci-dessus | ✅ |
 
 ### `src/smtp/` — Email
 
@@ -219,14 +222,250 @@
 ## Score global
 
 ```text
- Fonctions testées directement :  32 / 55   = 58 %
- Fonctions testées indirectement : 5 / 55   =  9 %
- Fonctions NON testées :          18 / 55   = 33 %
-                                              ─────
- Couverture fonctionnelle estimée :           ~67 %
+ Vitest (unit + intégration) :  728 tests          ✅ 100% pass
+ Coverage v8 :                  90%+ stmts/lines    ✅ Tous seuils dépassés
+ Playwright E2E :               87 pass / 10 skip   ✅ 0 failures
+ Pa11y WCAG AAA :               52/52 URLs           ✅ 0 violations
+ Lighthouse CI :                ⚠️ Instable Windows (NO_NAVSTART Chrome trace)
 ```
 
-> **Chemins critiques couverts** : auth (sign-up/sign-in/sign-out), admin (RBAC, ban, role, impersonation), RGPD (export, suppression user), audit (hooks + insert), upload (validation, sécurité), i18n (URLs, slugs, translations).
+> **Chemins critiques couverts** : auth (sign-up/sign-in/sign-out), admin CRUD complet (10 actions × handler + Zod validation), RGPD (export, suppression user), audit (hooks + insert), upload (validation, sécurité), i18n (URLs, slugs, translations), accessibilité (WCAG AAA 52 URLs).
+
+---
+
+## Commandes — Référence rapide
+
+### Pipeline complète (avec DB + serveur)
+
+```bash
+pnpm qa                       # Tout d'un coup : check → build → lint → test+coverage → e2e → a11y
+```
+
+### Pipeline hors-ligne (sans DB)
+
+```bash
+pnpm qa:offline               # check → build → lint → test+coverage + rapport
+```
+
+### Étapes individuelles
+
+| Commande | Description | Pré-requis |
+| :-- | :-- | :-- |
+| `pnpm check` | Type-check Astro (astro check) | — |
+| `pnpm build` | Build production SSR | — |
+| `pnpm lint` | ESLint src/**/*.{js,ts,astro} | — |
+| `pnpm test` | Vitest run (728 tests) | — |
+| `pnpm test -- --coverage` | + coverage v8 | — |
+| `pnpm test:watch` | Vitest en mode watch | — |
+| `pnpm test:report` | Génère `tests/reports/vitest-report.txt` | Après `pnpm test` |
+| `pnpm test:e2e` | Playwright (3 browsers, auto-preview) | DB + build |
+| `pnpm test:e2e:ui` | Playwright UI mode | DB + build |
+| `pnpm test:e2e:report` | Génère `tests/reports/playwright-report.txt` | Après `pnpm test:e2e` |
+| `pnpm a11y` | **Orchestrateur complet** : build → preview → setup → pa11y → lighthouse → teardown | DB |
+| `pnpm a11y:pa11y-only` | Pa11y uniquement (via orchestrateur) | DB |
+| `pnpm a11y:lighthouse-only` | Lighthouse uniquement (via orchestrateur) | DB |
+| `pnpm a11y:setup` | Seed users a11y + export cookies | DB + preview |
+| `pnpm a11y:teardown` | Supprime les users a11y | DB |
+| `pnpm a11y:pa11y` | Pa11y-ci brut (52 URLs) | Preview + cookies |
+| `pnpm a11y:lighthouse` | LHCI autorun (pages publiques) | Preview |
+| `pnpm a11y:lighthouse:authed` | LHCI pages auth/admin | Preview + cookies |
+| `pnpm a11y:lighthouse:rename` | Renomme rapports LHCI | Après LHCI |
+| `pnpm a11y:report` | Génère rapport texte Lighthouse | Après LHCI |
+
+### Base de données
+
+| Commande | Description |
+| :-- | :-- |
+| `pnpm db:check` | Vérifier connexion + lister tables/contraintes |
+| `pnpm db:migrate` | Appliquer les migrations Drizzle |
+| `pnpm db:generate` | Générer une nouvelle migration |
+| `pnpm db:infra` | Appliquer indexes + triggers SQL |
+| `pnpm db:seed` | Insérer les données de base |
+| `pnpm db:reset` | Reset complet de la DB |
+| `pnpm db:sync` | Sync schéma → DB (dev) |
+| `pnpm db:compare` | Comparer schéma TS vs DB |
+| `pnpm db:cleanup-audit` | Purger les anciens logs d'audit |
+
+### SMTP
+
+| Commande | Description |
+| :-- | :-- |
+| `pnpm smtp:check` | Vérifier la config SMTP |
+| `pnpm logs:rotate` | Rotation des dead-letter logs |
+
+---
+
+## Rapports — Où trouver quoi
+
+| Rapport | Emplacement | Généré par |
+| :-- | :-- | :-- |
+| Vitest JSON | `tests/reports/vitest-results.json` | `pnpm test` (auto) |
+| Vitest texte | `tests/reports/vitest-report.txt` | `pnpm test:report` |
+| Coverage JSON | `tests/reports/coverage/coverage-summary.json` | `pnpm test -- --coverage` |
+| Playwright JSON | `tests/reports/playwright-results.json` | `pnpm test:e2e` (auto) |
+| Playwright HTML | `tests/reports/playwright/` | `pnpm test:e2e` (auto) |
+| Playwright texte | `tests/reports/playwright-report.txt` | `pnpm test:e2e:report` |
+| Pa11y JSON | `tests/reports/pa11y-results.json` | `pnpm a11y` |
+| Pa11y texte | `tests/reports/pa11y-report.txt` | `pnpm a11y` |
+| Lighthouse HTML+JSON | `.lighthouseci/` → `tests/reports/lighthouse/` | `pnpm a11y` |
+| Lighthouse texte | `tests/reports/lighthouse-report.txt` | `pnpm a11y:report` |
+
+> **Tous les artifacts `tests/reports/*/` sont dans .gitignore**. Seuls les fichiers de config (*.cjs) et les tests sont commités.
+
+### Flux des rapports — Comment ça marche
+
+Le pipeline de rapports fonctionne en **2 étapes** :
+
+1. **Étape auto** — Le runner de test génère un **JSON brut** automatiquement à chaque exécution.
+2. **Étape manuelle** — Un script générateur (`tests/helpers/*-report.cjs`) lit le JSON et produit un **rapport `.txt`** lisible.
+
+```md
+pnpm test              →  tests/reports/vitest-results.json     (auto)
+pnpm test:report       →  tests/reports/vitest-report.txt       (lit le JSON ci-dessus)
+
+pnpm test:e2e          →  tests/reports/playwright-results.json  (auto)
+                          tests/reports/playwright/               (HTML auto)
+pnpm test:e2e:report   →  tests/reports/playwright-report.txt    (lit le JSON ci-dessus)
+
+pnpm a11y              →  tests/reports/pa11y-results.json       (auto)
+                          tests/reports/pa11y-report.txt          (auto via orchestrateur)
+                          .lighthouseci/ → tests/reports/lighthouse/ (copie auto)
+pnpm a11y:report       →  tests/reports/lighthouse-report.txt    (lit les JSON LHCI)
+```
+
+### 3 scénarios d'utilisation
+
+| Scénario | Commande | Ce qui se passe |
+| :-- | :-- | :-- |
+| **QA offline** (sans DB) | `pnpm qa:offline` | check → build → lint → test+coverage → génère vitest-report.txt |
+| **QA complète** (avec DB) | `pnpm qa` | Tout qa:offline + e2e + e2e-report + a11y (pa11y + lighthouse) |
+| **Re-lire un rapport existant** | `pnpm test:report` / `pnpm test:e2e:report` / `pnpm a11y:report` | Re-génère le `.txt` à partir du dernier JSON sans relancer les tests |
+
+### Où atterrit chaque artifact
+
+```md
+tests/reports/
+├── vitest-results.json          ← JSON auto (pnpm test)
+├── vitest-report.txt            ← Texte (pnpm test:report)
+├── coverage/
+│   └── coverage-summary.json    ← JSON auto (pnpm test -- --coverage)
+├── playwright-results.json      ← JSON auto (pnpm test:e2e)
+├── playwright/                  ← HTML auto (pnpm test:e2e)
+├── playwright-report.txt        ← Texte (pnpm test:e2e:report)
+├── pa11y-results.json           ← JSON auto (pnpm a11y)
+├── pa11y-report.txt             ← Texte auto (pnpm a11y)
+└── lighthouse/                  ← Copie HTML+JSON (pnpm a11y)
+    └── lighthouse-report.txt    ← Texte (pnpm a11y:report)
+```
+
+> **En local** : tout est gitignored, les rapports restent sur votre machine.
+> **En CI** : les rapports sont uploadés comme **artifacts GitHub Actions** (rétention 30 jours) et résumés dans le job `ci-summary`.
+
+---
+
+## CI/CD — GitHub Actions
+
+### Workflow `ci.yml` — 5 jobs
+
+```md
+┌─────────────────────┐
+│   lint-and-check    │  ESLint + astro check + pnpm audit
+└──────┬──────────────┘
+       │
+   ┌───┴───┐
+   ▼       ▼
+┌──────┐ ┌───────────┐
+│ unit │ │ a11y-perf │  Pa11y + Lighthouse (parallèle)
+│tests │ └───────────┘
+└──┬───┘
+   │
+   ▼
+┌──────┐
+│ e2e  │  Playwright Chromium
+│tests │
+└──┬───┘
+   │
+   ▼
+┌────────┐
+│ deploy │  Build + artifact (main branch only)
+└────────┘
+       │
+       ▼
+┌────────────┐
+│ ci-summary │  Résumé dans PR / commit
+└────────────┘
+```
+
+### Workflow `codeql.yml` — SAST
+
+- **Trigger** : push/PR main + cron lundi 06:00 UTC
+- **Analyse** : JavaScript/TypeScript avec `security-extended`
+
+### Dependabot
+
+- **Fréquence** : hebdomadaire (lundi)
+- **Groupes** : astro, auth, database, testing, tailwind
+- **Limite** : 10 PRs max
+
+---
+
+## Arborescence des tests
+
+```md
+tests/
+├── unit/                          # 48 fichiers — 619 tests
+│   ├── admin-contact.test.ts      # updateContactInfo (10 : handler + Zod)
+│   ├── admin-hours.test.ts        # updateOpeningHours (13 : handler + Zod)
+│   ├── admin-navigation-items.test.ts  # CRUD navigation (11)
+│   ├── admin-pages.test.ts        # CRUD pages + publish (14)
+│   ├── admin-sections.test.ts     # CRUD sections + reorder (15)
+│   ├── admin-site.test.ts         # upsert/update site settings (6)
+│   ├── admin-social.test.ts       # CRUD social links (9)
+│   ├── admin-theme.test.ts        # CRUD thèmes + activation (10)
+│   ├── cache.test.ts              # Cache mémoire + stats + shutdown
+│   ├── navigation-loader.test.ts  # getMenu / getMenusList / getMenuMeta (7)
+│   ├── theme-tokens.test.ts       # OKLCH parser + CSS generation (33)
+│   ├── ... (37 autres fichiers)
+│
+├── integration/                   # 10 fichiers — 109 tests
+│   ├── auth.test.ts               # Sign-up/sign-in/sessions (22)
+│   ├── auth-advanced.test.ts      # Ban/unban, rôles, password (10)
+│   ├── auth-org.test.ts           # Organisations (10)
+│   ├── audit.test.ts              # Insertion audit_log (6)
+│   ├── middleware.test.ts         # Session injection (4)
+│   ├── ... (5 autres fichiers)
+│
+├── e2e/                           # 3 fichiers — 34 specs ×3 browsers = 102
+│   ├── app.spec.ts                # Homepage, i18n, security headers
+│   ├── auth.spec.ts               # Sign-up/sign-in, guards, session
+│   ├── cms-admin.spec.ts          # Admin pages (site, nav, theme)
+│   ├── global-setup.ts            # Seed admin user
+│   └── global-teardown.ts         # Cleanup
+│
+├── a11y/                          # Orchestration accessibilité
+│   ├── run.cjs                    # Orchestrateur complet (build → audit → teardown)
+│   ├── setup.ts                   # Seed users + cookies
+│   ├── lhci-authed.cjs            # Lighthouse pages authentifiées
+│   ├── lhci-rename.cjs            # Renommage rapports
+│   └── lhci-report.cjs            # Générateur rapport LHCI
+│
+├── helpers/                       # Générateurs de rapports
+│   ├── auth.ts                    # Helper auth partagé
+│   ├── vitest-report.cjs          # JSON → texte Vitest
+│   ├── playwright-report.cjs      # JSON → texte Playwright
+│   └── lighthouse-report.cjs      # JSON → texte Lighthouse
+│
+└── reports/                       # ⚠️ Gitignored — artifacts générés
+    ├── vitest-results.json
+    ├── vitest-report.txt
+    ├── coverage/
+    ├── playwright-results.json
+    ├── playwright/                # HTML report
+    ├── playwright-report.txt
+    ├── pa11y-results.json
+    ├── pa11y-report.txt
+    └── lighthouse/                # Copie des rapports LHCI
+```
 
 ---
 

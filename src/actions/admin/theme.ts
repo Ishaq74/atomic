@@ -5,7 +5,7 @@ import { getDrizzle } from "@database/drizzle";
 import { themeSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
 import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
-import { THEME_TOKEN_KEYS, isValidOklch, type ThemeTokenMap } from "@/lib/theme-tokens";
+import { THEME_TOKEN_KEYS, isValidOklch } from "@/lib/theme-tokens";
 
 const oklchRegex = /^oklch\(\s*[\d.]+%?\s+[\d.]+\s+[\d.]+(?:\s*\/\s*[\d.]+%?)?\s*\)$/;
 const colorField = (label: string) =>

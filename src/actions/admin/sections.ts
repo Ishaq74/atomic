@@ -136,7 +136,7 @@ export const updateSection = defineAction({
       .min(0, "L'ordre doit être positif.")
       .optional(),
     isVisible: z.boolean().optional(),
-    expectedUpdatedAt: z.string().datetime().optional(),
+    expectedUpdatedAt: z.string().optional(),
   }),
   handler: async (input, context) => {
     const user = assertAdmin(context);

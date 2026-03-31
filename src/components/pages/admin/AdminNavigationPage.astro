@@ -427,7 +427,6 @@ const childItems = items.filter((i) => !!i.parentId);
     if (!root) return;
     const menuId = root.dataset.selectedMenu!;
     const navLocale = root.dataset.selectedLocale!;
-    const pageLocale = root.dataset.locale!;
     const tSaved = root.dataset.tSaved ?? 'Saved.';
     const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
     const tMenuSaved = root.dataset.tMenuSaved ?? 'Menu saved.';
@@ -595,7 +594,6 @@ const childItems = items.filter((i) => !!i.parentId);
           const row = btn.closest('.nav-item-row') as HTMLElement;
           if (!row) return;
           const isUp = btn.classList.contains('nav-move-up');
-          const group = row.closest('.nav-item-group');
           // Find sibling rows at same level
           const parent = row.parentElement;
           if (!parent) return;

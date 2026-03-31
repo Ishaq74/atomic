@@ -42,7 +42,9 @@
     "a11y:report": "node tests/helpers/lighthouse-report.cjs",
     "a11y": "node tests/a11y/run.cjs",
     "a11y:pa11y-only": "node tests/a11y/run.cjs --pa11y",
-    "a11y:lighthouse-only": "node tests/a11y/run.cjs --lighthouse"
+    "a11y:lighthouse-only": "node tests/a11y/run.cjs --lighthouse",
+    "qa": "pnpm check && pnpm build && pnpm lint && pnpm test -- --coverage && pnpm test:report && pnpm test:e2e && pnpm test:e2e:report && pnpm a11y",
+    "qa:offline": "pnpm check && pnpm build && pnpm lint && pnpm test -- --coverage && pnpm test:report"
   },
   "dependencies": {
     "@astrojs/node": "10.0.4",

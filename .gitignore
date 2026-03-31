@@ -35,13 +35,21 @@ tests-results/
 test-results/
 playwright-report/
 tests/reports/*/
+tests/reports/*.txt
+tests/reports/*.json
 
 # coverage reports
 coverage/
 
+# stray CLI output files (never commit)
+*-output.txt
+*-result.txt
+*-results.txt
+
 # a11y audit artifacts
 .a11y-cookies.json
 .lighthouseci/
+.playwright-mcp/
 
 # operational logs / dead letters
 email-dead-letter-*.jsonl
