@@ -1,4 +1,4 @@
-import { updateSiteSettings } from "./admin/site";
+import { updateSiteSettings, upsertSiteSettings } from "./admin/site";
 import {
   createSocialLink,
   updateSocialLink,
@@ -35,6 +35,7 @@ import { createTheme, updateTheme, deleteTheme } from "./admin/theme";
 export const server = {
   // ─── Site ────────────────────────────────────────────────────────
   updateSiteSettings,
+  upsertSiteSettings,
 
   // ─── Réseaux sociaux ─────────────────────────────────────────────
   createSocialLink,

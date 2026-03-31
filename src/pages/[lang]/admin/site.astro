@@ -6,6 +6,7 @@ import {
   getContactInfo,
   getOpeningHours,
 } from '@database/loaders/site.loader';
+import { LOCALES, type Locale } from '@i18n/config';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import AuthLayout from '@organisms/AuthLayout/AuthLayout.astro';
 import AdminSidebar from '@organisms/AdminSidebar/AdminSidebar.astro';
@@ -17,12 +18,16 @@ const result = await requireAdmin(Astro);
 if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 
-const [settings, social, contact, hours] = await Promise.all([
-  getSiteSettings(locale),
+const [allSettingsArr, social, contact, hours] = await Promise.all([
+  Promise.all(LOCALES.map((l) => getSiteSettings(l))),
   getSocialLinks(),
   getContactInfo(),
   getOpeningHours(),
 ]);
+
+const allSettings = Object.fromEntries(
+  LOCALES.map((l, i) => [l, allSettingsArr[i]])
+) as Record<Locale, Awaited<ReturnType<typeof getSiteSettings>>>;
 ---
 
 <BaseLayout title={authT.admin.cms.site.title} description={authT.admin.cms.site.description}>
@@ -31,7 +36,7 @@ const [settings, social, contact, hours] = await Promise.all([
     <AdminSitePage
       t={authT}
       locale={locale}
-      settings={settings}
+      allSettings={allSettings}
       socialLinks={social}
       contactInfo={contact}
       openingHours={hours}

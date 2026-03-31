@@ -5,6 +5,65 @@ import { getDrizzle } from "@database/drizzle";
 import { siteSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
 import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { isValidLocale } from "@i18n/utils";
+
+const urlField = z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional();
+
+export const upsertSiteSettings = defineAction({
+  input: z.object({
+    locale: z.string().min(2).max(5),
+    siteName: z.string().trim().min(1, "Le nom du site est requis.").max(200),
+    siteDescription: z.string().trim().max(500).nullable().optional(),
+    siteSlogan: z.string().trim().max(200).nullable().optional(),
+    metaTitle: z.string().trim().max(70).nullable().optional(),
+    metaDescription: z.string().trim().max(160).nullable().optional(),
+    logoLight: urlField,
+    logoDark: urlField,
+    favicon: urlField,
+    ogImage: urlField,
+  }),
+  handler: async (input, context) => {
+    const user = assertAdmin(context);
+    adminRateLimit(context, user.id, "site");
+
+    if (!isValidLocale(input.locale)) {
+      throw new ActionError({ code: "BAD_REQUEST", message: "Locale invalide." });
+    }
+
+    const { locale, ...data } = input;
+    const db = getDrizzle();
+
+    // Check if row exists for this locale
+    const [existing] = await db
+      .select({ id: siteSettings.id })
+      .from(siteSettings)
+      .where(eq(siteSettings.locale, locale))
+      .limit(1);
+
+    let result;
+    if (existing) {
+      [result] = await db
+        .update(siteSettings)
+        .set(data)
+        .where(eq(siteSettings.id, existing.id))
+        .returning();
+    } else {
+      [result] = await db
+        .insert(siteSettings)
+        .values({ locale, ...data })
+        .returning();
+    }
+
+    auditAdmin(context, user.id, "SITE_SETTINGS_UPDATE", {
+      resource: "site_settings",
+      resourceId: result.id,
+      metadata: { locale },
+    });
+
+    invalidateCache(`site:settings:${locale}`);
+    return result;
+  },
+});
 
 export const updateSiteSettings = defineAction({
   input: z.object({

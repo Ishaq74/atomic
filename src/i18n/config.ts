@@ -411,6 +411,9 @@ export interface AuthTranslations {
         saved: string;
         save: string;
         platform: string;
+        selectPlatform: string;
+        otherPlatform: string;
+        customPlatformName: string;
         url: string;
         label: string;
         icon: string;
