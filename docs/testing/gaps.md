@@ -81,7 +81,7 @@ Les gaps ci-dessous sont de **priorité très basse** (P4) — ils ne bloquent r
 
 ## Gaps accessibilité & performance (Pa11y + Lighthouse)
 
-> Identifiés lors de la mise en place des audits a11y/perf. **Tous les gaps a11y ont été résolus** — Pa11y passe maintenant 40/40 URLs en WCAG AAA.
+> Identifiés lors de la mise en place des audits a11y/perf. **Tous les gaps a11y ont été résolus** — Pa11y passe maintenant 52/52 URLs en WCAG AAA.
 
 ### Pa11y-ci — WCAG AAA ✅
 
@@ -103,7 +103,7 @@ Tous les problèmes d'accessibilité ont été corrigés :
 
 ### Lighthouse CI — Performance
 
-**Scores a11y/best-practices/SEO** : ✅ ≥ 0.9 partout (32 pages auditées, 12 CMS admin à auditer)
+**Scores a11y/best-practices/SEO** : ✅ ≥ 0.9 partout (52 URLs auditées : 28 publiques + 8 authentifiées + 16 admin CMS)
 
 **Scores performance** : ≤7 URLs < 0.9
 

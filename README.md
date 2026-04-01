@@ -10,7 +10,7 @@ Application web SSR multi-langue avec authentification complète, gestion d'orga
 | **better-auth** | Authentification (email/password, admin, organisations) |
 | **Drizzle ORM** + **PostgreSQL 16** | Base de données |
 | **Tailwind CSS 4** + **Starwind** | Design system (47+ composants) |
-| **Vitest** + **Playwright** | Tests (510+ tests) |
+| **Vitest** + **Playwright** | Tests (741 Vitest + 34 scenarios E2E x 3 navigateurs) |
 | **GitHub Actions** | CI/CD |
 
 ## Prérequis
@@ -159,14 +159,14 @@ Basée sur **better-auth** avec les fonctionnalités :
 
 ## Tests
 
-**510+ tests** répartis en 3 suites :
+**741 tests Vitest** + **34 scénarios E2E** répartis en 3 suites :
 
 | Suite | Fichiers | Tests |
 | :-- | --: | --: |
-| Unit (Vitest) | 36 | 400+ |
-| Integration (Vitest) | 9 | 99 |
-| E2E (Playwright) | 6 | 68 |
-| **Total** | **51+** | **510+** |
+| Unit (Vitest) | 48 | 656 |
+| Integration (Vitest) | 11 | 85 |
+| E2E (Playwright) | 3 specs | 34 scenarios x 3 navigateurs = 102 exécutions |
+| **Total** | **62** | **741 Vitest + 102 exécutions E2E** |
 
 Voir `docs/testing/` pour la documentation complète.
 
@@ -176,8 +176,9 @@ Pipeline GitHub Actions sur chaque push/PR vers `main` :
 
 1. **Lint & Type Check** — ESLint + `astro check` + `pnpm audit`
 2. **Unit & Integration** — Vitest + coverage (PostgreSQL 16)
-3. **E2E** — Playwright (Chromium + WebKit)
+3. **E2E** — Playwright (Chromium + Firefox + WebKit)
 4. **Accessibility & Performance** — Pa11y (WCAG AAA) + Lighthouse CI
+5. **Build & Deploy** — artefact de build produit sur `main`
 
 ## Documentation
 

@@ -16,7 +16,7 @@
 | [integration.md](integration.md) | Tests d'intégration — better-auth testUtils, sessions, admin, orgs, audit, export |
 | [e2e.md](e2e.md) | Tests E2E Playwright — pages publiques, guards, auth flow, global-setup |
 | [a11y.md](a11y.md) | **Accessibilité & Performance** — Pa11y-ci (WCAG AAA) + Lighthouse CI |
-| [ci.md](ci.md) | Pipeline GitHub Actions — lint, unit, e2e, a11y-perf (4 jobs) |
+| [ci.md](ci.md) | Pipeline GitHub Actions — 4 jobs qualité + deploy + summary |
 | [gaps.md](gaps.md) | **Failles & manques** — tout ce qui reste à tester, par priorité |
 
 ---
@@ -27,12 +27,12 @@
 
 | Type | Fichiers | Tests/Audits | Status |
 | :-- | :-- | :-- | :-- |
-| Unit | 48 | 619 | ✅ 619/619 |
-| Integration | 10 | 109 | ✅ 109/109 |
-| E2E (Playwright) | 3 | 34 (×3 browsers = 102) | ✅ 87 pass, 10 skip (WebKit auth), 5 flaky |
+| Unit | 48 | 656 | ✅ 656/656 |
+| Integration | 11 | 85 | ✅ 85/85 |
+| E2E (Playwright) | 3 | 34 (×3 browsers = 102) | ✅ 0 skip déclarés ; Chromium + Firefox + WebKit |
 | A11y — Pa11y-ci (WCAG AAA) | 1 config | 52 URLs | ✅ 52/52 |
-| A11y — Lighthouse CI | 3 configs | 52 URLs | ⚠️ Instable (NO_NAVSTART Chrome) |
-| **Total** | **61** (+11 support) | **728 tests + 52 a11y audits + 102 e2e** | |
+| A11y — Lighthouse CI | 3 configs | 52 URLs | ✅ Configuration stabilisée (`maxWaitForLoad`, flags Chrome) |
+| **Total** | **62** (+11 support) | **741 tests + 52 a11y audits + 102 e2e** | |
 
 ### Coverage v8 (seuils vitest.config.ts)
 
@@ -222,11 +222,11 @@
 ## Score global
 
 ```text
- Vitest (unit + intégration) :  728 tests          ✅ 100% pass
+ Vitest (unit + intégration) :  741 tests          ✅ 100% pass
  Coverage v8 :                  90%+ stmts/lines    ✅ Tous seuils dépassés
- Playwright E2E :               87 pass / 10 skip   ✅ 0 failures
+ Playwright E2E :               34 scénarios / 102 exécutions   ✅ 0 skip déclarés
  Pa11y WCAG AAA :               52/52 URLs           ✅ 0 violations
- Lighthouse CI :                ⚠️ Instable Windows (NO_NAVSTART Chrome trace)
+ Lighthouse CI :                ✅ Configuration durcie pour CI (NO_NAVSTART corrigé)
 ```
 
 > **Chemins critiques couverts** : auth (sign-up/sign-in/sign-out), admin CRUD complet (10 actions × handler + Zod validation), RGPD (export, suppression user), audit (hooks + insert), upload (validation, sécurité), i18n (URLs, slugs, translations), accessibilité (WCAG AAA 52 URLs).
@@ -254,7 +254,7 @@ pnpm qa:offline               # check → build → lint → test+coverage + rap
 | `pnpm check` | Type-check Astro (astro check) | — |
 | `pnpm build` | Build production SSR | — |
 | `pnpm lint` | ESLint src/**/*.{js,ts,astro} | — |
-| `pnpm test` | Vitest run (728 tests) | — |
+| `pnpm test` | Vitest run (741 tests) | — |
 | `pnpm test -- --coverage` | + coverage v8 | — |
 | `pnpm test:watch` | Vitest en mode watch | — |
 | `pnpm test:report` | Génère `tests/reports/vitest-report.txt` | Après `pnpm test` |
@@ -359,13 +359,13 @@ tests/reports/
 ```
 
 > **En local** : tout est gitignored, les rapports restent sur votre machine.
-> **En CI** : les rapports sont uploadés comme **artifacts GitHub Actions** (rétention 30 jours) et résumés dans le job `ci-summary`.
+> **En CI** : les rapports sont uploadés comme **artifacts GitHub Actions** (rétention 7 jours) et résumés dans le job `ci-summary`.
 
 ---
 
 ## CI/CD — GitHub Actions
 
-### Workflow `ci.yml` — 5 jobs
+### Workflow `ci.yml` — 6 jobs
 
 ```md
 ┌─────────────────────┐
@@ -381,7 +381,7 @@ tests/reports/
    │
    ▼
 ┌──────┐
-│ e2e  │  Playwright Chromium
+│ e2e  │  Playwright Chromium + Firefox + WebKit
 │tests │
 └──┬───┘
    │
@@ -413,7 +413,7 @@ tests/reports/
 
 ```md
 tests/
-├── unit/                          # 48 fichiers — 619 tests
+├── unit/                          # 48 fichiers — 656 tests
 │   ├── admin-contact.test.ts      # updateContactInfo (10 : handler + Zod)
 │   ├── admin-hours.test.ts        # updateOpeningHours (13 : handler + Zod)
 │   ├── admin-navigation-items.test.ts  # CRUD navigation (11)
@@ -427,7 +427,7 @@ tests/
 │   ├── theme-tokens.test.ts       # OKLCH parser + CSS generation (33)
 │   ├── ... (37 autres fichiers)
 │
-├── integration/                   # 10 fichiers — 109 tests
+├── integration/                   # 11 fichiers — 85 tests
 │   ├── auth.test.ts               # Sign-up/sign-in/sessions (22)
 │   ├── auth-advanced.test.ts      # Ban/unban, rôles, password (10)
 │   ├── auth-org.test.ts           # Organisations (10)

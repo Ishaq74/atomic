@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { eq, desc } from 'drizzle-orm';
 import { getDrizzle } from '@database/drizzle';
 import { auditLog } from '@database/schemas';

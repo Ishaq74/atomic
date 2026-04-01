@@ -24,7 +24,7 @@
 
 - **Astro build** : `pnpm build` doit avoir été fait avant de lancer les E2E
 - **PostgreSQL** : base migrée avec un user seed vérifié
-- **Playwright** : `npx playwright install --with-deps chromium`
+- **Playwright** : `npx playwright install --with-deps chromium firefox webkit`
 
 ### Seed User
 
@@ -176,7 +176,9 @@ Flow authentifié :           2 (dashboard, profil)
 Pages publiques :            5
 Pages admin CMS :            3 (site, navigation, theme)
 Security headers :           4
-Total tests E2E :            34
+Scénarios Playwright :       34
+Navigateurs :                Chromium + Firefox + WebKit
+Exécutions totales :         102
 Fichiers :                   3 (+2 setup/teardown)
 Temps d'exécution :          ~45–90 s
 ```

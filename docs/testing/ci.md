@@ -15,20 +15,22 @@ push/PR → main
     │       Security Audit + ESLint + astro check     │
     │                                                 │
     ├── [2] unit-tests ──────────────────────────────┐│
-    │       Vitest (266 tests)                       ││
+    │       Vitest (741 tests)                       ││
     │       PostgreSQL 16 service container          ││
     │       Migrations + tests + coverage            ││
     │                                                ├┤
     ├── [3] e2e-tests (needs: 1 + 2) ───────────────┘│
-    │       Playwright (30 tests)                     │
+    │       Playwright (34 scénarios x 3 browsers)    │
     │       PostgreSQL 16 service container           │
-    │       Build + preview + chromium                │
+    │       Build + preview + 3 navigateurs           │
     │                                                 │
     └── [4] a11y-perf (needs: 1) ────────────────────┘
             Pa11y-ci (WCAG AAA, 52 URLs)
             Lighthouse CI (52 URLs, ≥0.9 gates)
             PostgreSQL 16 service container
             Build + preview + chromium
+
+  Puis : `deploy` (push sur `main` uniquement) + `ci-summary`.
 ```
 
 ### Variable globale
@@ -55,7 +57,7 @@ env:
 | pnpm | `pnpm/action-setup@v4` (v10) | Installe pnpm |
 | Node | `actions/setup-node@v5` (v22) | Installe Node avec cache pnpm |
 | Install | `pnpm install --frozen-lockfile` | Installe les dépendances |
-| Security Audit | `pnpm audit --prod --audit-level=high` | 0 vulnérabilités high/critical |
+| Security Audit | `pnpm audit --prod --audit-level=moderate` | 0 vulnérabilités moderate/high/critical |
 | ESLint | `pnpm lint` | 0 erreurs / 0 warnings |
 | Astro Check | `npx astro check` | 0 erreurs / 0 warnings / 0 hints |
 
@@ -113,7 +115,7 @@ env:
 | pnpm + Node | Setup toolchain | pnpm 10, Node 22 |
 | Install | `pnpm install --frozen-lockfile` | Dépendances |
 | Migrations | `pnpm db:migrate` | Applique les migrations sur la DB de test |
-| Vitest | `pnpm test -- --coverage` | **266 tests** (217 unit + 49 integration) + coverage |
+| Vitest | `pnpm test -- --coverage` | **741 tests** (656 unit + 85 integration) + coverage |
 | Generate Report | `pnpm test:report` | Génère `tests/reports/vitest-report.txt` depuis le JSON |
 | Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/vitest-*` (7 jours) |
 
@@ -121,8 +123,8 @@ env:
 
 ### Ce qui est testé
 
-- 217 tests unitaires (fonctions pures, mocks, pas de DB)
-- 49 tests d'intégration (auth, audit, export, middleware, org, DB health)
+- 656 tests unitaires (fonctions pures, mocks, pas de DB)
+- 85 tests d'intégration (auth, audit, export, middleware, org, DB health, CMS, navigation, contact)
 - `NODE_ENV=test` → aucun email SMTP envoyé
 
 ---
@@ -152,7 +154,7 @@ env:
   DB_ENV: LOCAL
   NODE_ENV: test
   BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-  BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
+  BETTER_AUTH_URL: http://localhost:4321
   SITE_URL: ${{ vars.SITE_URL }}
   SMTP_PROVIDER: NODEMAILER
   SMTP_FROM_EMAIL: ci@test.local
@@ -166,10 +168,10 @@ env:
 | Checkout | `actions/checkout@v5` | Clone le repo |
 | pnpm + Node | Setup toolchain | pnpm 10, Node 22 |
 | Install | `pnpm install --frozen-lockfile` | Dépendances |
-| Playwright | `npx playwright install --with-deps chromium` | Installe Chromium + dépendances système |
+| Playwright | `npx playwright install --with-deps chromium firefox webkit` | Installe les 3 navigateurs déclarés dans `playwright.config.ts` |
 | Migrations | `pnpm db:migrate` | Migrations sur `atomic_e2e` |
 | Build | `pnpm build` | Build Astro SSR complet |
-| E2E | `pnpm test:e2e` | **30 tests** Playwright (Chromium) |
+| E2E | `pnpm test:e2e` | **34 scénarios** Playwright sur Chromium + Firefox + WebKit |
 | Generate Report | `pnpm test:e2e:report` | Génère `tests/reports/playwright-report.txt` depuis le JSON |
 | Artifact | `actions/upload-artifact@v5` | Upload `tests/reports/playwright/` (7 jours) |
 
@@ -178,7 +180,7 @@ env:
 ### Retries & Workers
 
 - **Workers** : 1 en CI (séquentiel pour stabilité)
-- **Retries** : 2 en CI (0 en local)
+- **Retries** : 2 en CI (1 en local)
 - **Artifact** : rapport HTML uploadé même si le job échoue (`if: ${{ !cancelled() }}`)
 
 ---
@@ -267,12 +269,12 @@ env:
 
 | Métrique | Valeur |
 | :-- | :-- |
-| Jobs | 4 (lint, unit, e2e, a11y-perf) |
-| Tests Vitest | 157 (108 unit + 49 integ) |
-| Tests Playwright | 22 |
-| URLs Pa11y | 40 (WCAG AAA) |
-| URLs Lighthouse | 38 (26 public + 8 authed + 4 admin) |
-| **Total tests CI** | **179** + 78 audits a11y/perf |
+| Jobs | 6 (4 qualité + deploy + summary) |
+| Tests Vitest | 741 (656 unit + 85 integ) |
+| Tests Playwright | 34 scénarios × 3 navigateurs = 102 exécutions |
+| URLs Pa11y | 52 (WCAG AAA) |
+| URLs Lighthouse | 52 (28 public + 8 authed + 16 admin) |
+| **Total validations CI** | **741 tests Vitest + 102 exécutions E2E + 104 audits a11y/perf** |
 | PostgreSQL | v16 (3 DBs : `atomic_test` ×2 + `atomic_e2e`) |
 | Node | v22 |
 | pnpm | v10 |
@@ -293,7 +295,7 @@ env:
 
 | Variable | Valeur | Usage |
 | :-- | :-- | :-- |
-| `BETTER_AUTH_URL` | `http://localhost:4321` | Jobs 2, 3 |
+| `BETTER_AUTH_URL` | `http://localhost:4321` | Job 2 uniquement |
 | `SITE_URL` | `http://localhost:4321` | Jobs 1, 2, 3, 4 |
 
 ### Valeurs non sensibles (hardcodées dans ci.yml)
@@ -304,7 +306,7 @@ env:
 | `NODE_ENV` | `test` | Non |
 | `SMTP_PROVIDER` / `SMTP_FROM_EMAIL` / `SMTP_HOST` | Hardcodés | Non (SMTP ignoré en mode test) |
 
-> **1 secret GitHub** (`BETTER_AUTH_SECRET`) et **2 variables** (`BETTER_AUTH_URL`, `SITE_URL`) sont nécessaires. Les configurer dans Settings → Secrets/Variables → Actions.
+> **1 secret GitHub** (`BETTER_AUTH_SECRET`) et **2 variables** (`BETTER_AUTH_URL`, `SITE_URL`) sont nécessaires. Les jobs preview (`e2e-tests`, `a11y-perf`) forcent néanmoins `BETTER_AUTH_URL=http://localhost:4321` pour rester cohérents avec le serveur lancé dans la CI.
 
 ---
 

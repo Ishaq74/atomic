@@ -8,87 +8,26 @@
 
 ```text
 tests/
-├── unit/                              # Tests unitaires (Vitest)
-│   ├── rate-limit.test.ts             #   8 tests — checkRateLimit() + LRU eviction
-│   ├── i18n-utils.test.ts             #   6 tests — toLocale, isRTL, getDirection
-│   ├── extract-ip.test.ts             #  12 tests — extractIp()
-│   ├── upload.test.ts                 #  18 tests — processUpload, deleteUpload, constantes
-│   ├── mask-utils.test.ts             #  10 tests — maskUrl, dbNameFromUrl, maskApiKey
-│   ├── i18n-urls.test.ts              #  32 tests — getAuthUrl, resolveAuthSlug, getPageUrl
-│   ├── i18n-translations.test.ts      #  16 tests — 4 loaders × 4 locales
-│   ├── send-email.test.ts             #  14 tests — routage providers + retry/backoff
-│   ├── smtp-env.test.ts               #  20 tests — getSmtpFrom, getNodemailerConfig, providers
-│   ├── audit-fallback.test.ts         #   1 test  — JSONL fallback quand DB down
-│   ├── schema-validation.test.ts      #  12 tests — 8 table exports + 4 colonnes critiques
-│   ├── cli-utils.test.ts              #  12 tests — formatPgError + ANSI colors
-│   ├── cms-schemas.test.ts            #  80 tests — 7 tables CMS + colonnes détaillées
-│   ├── cms-seeds.test.ts              #  11 tests — 7 fichiers seed × complétude
-│   ├── cms-i18n.test.ts               #  16 tests — clés CMS ×4 locales (site, navigation, theme, common)
-│   ├── cms-audit.test.ts              #   1 test  — AuditAction CMS
-│   ├── navigation-tree.test.ts        #  10 tests — buildNavTree, cycle detection
-│   ├── cache.test.ts                  #  10 tests — invalidateCache, TTL, LRU
-│   ├── sanitize.test.ts               #  21 tests — sanitizeHtml, limits
-│   ├── db-env.test.ts                 #  16 tests — getDbUrl, getConnectionLabel, pool config
-│   ├── admin-helpers.test.ts          #   5 tests — assertAdmin, adminRateLimit
-│   └── auth-guards.test.ts            #   5 tests — requireAuth, requireAdmin
-│                                      # ─────────
-│                                      # 336 tests unitaires
-├── integration/                       # Tests d'intégration (Vitest + PostgreSQL)
-│   ├── auth.test.ts                   #  13 tests — session, admin, org, impersonation, RGPD
-│   ├── auth-flow.test.ts              #   5 tests — sign-up → sign-in → sign-out
-│   ├── audit.test.ts                  #   8 tests — logAuditEvent + hooks
-│   ├── export.test.ts                 #   3 tests — /api/export-data
-│   ├── auth-advanced.test.ts          #  10 tests — password, email, profile
-│   ├── auth-org.test.ts               #   5 tests — org CRUD, invitations, membres
-│   ├── middleware.test.ts             #   4 tests — getSession headers
-│   ├── cms-admin.test.ts              #  14 tests — CRUD admin CMS (loaders, actions, schemas)
-│   └── db-health.test.ts             #   3 tests — checkConnection, singleton, raw query
-│                                      # ─────────
-│                                      #  65 tests d'intégration
-├── e2e/                               # Tests E2E (Playwright)
-│   ├── global-setup.ts                #  Setup : seed user vérifié + role admin
-│   ├── global-teardown.ts             #  Teardown : cleanup user
-│   ├── app.spec.ts                    #  14 tests — homepage, i18n, guest guards, security headers
-│   ├── auth.spec.ts                   #  12 tests — sign-up/in, dashboard, profil, pages publiques
-│   └── cms-admin.spec.ts              #   8 tests — pages admin CMS (site, navigation, theme)
-│                                      # ─────────
-│                                      #  34 tests E2E (×2 browsers = 68)
-├── a11y/                              # Accessibilité & Performance
-│   ├── setup.ts                       #  Seed 2 users (normal + admin) + export cookies
-│   ├── run.cjs                        #  Orchestrateur : build → server → audits → teardown
-│   ├── lhci-authed.cjs                #  LHCI pour pages authentifiées/admin (configs temporaires)
-│   ├── lhci-rename.cjs               #  Renomme rapports LHCI en noms lisibles
-│   └── lhci-report.cjs               #  Analyse des rapports (scores + CWV + contrast)
-│                                      # ─────────
-│                                      #  52 URLs Pa11y + 52 URLs Lighthouse
-└── helpers/
-    ├── auth.ts                        #  getTestHelpers(), ré-exporte auth
-    ├── vitest-report.cjs              #  Génère vitest-report.txt depuis JSON
-    ├── playwright-report.cjs          #  Génère playwright-report.txt depuis JSON
-    └── lighthouse-report.cjs          #  Génère lighthouse-report.txt (scores, CWV, audits)
+├── unit/                              # 48 fichiers — 656 tests Vitest
+├── integration/                       # 11 fichiers — 85 tests Vitest + PostgreSQL
+├── e2e/                               # 3 specs + 2 hooks — 34 scénarios Playwright
+├── a11y/                              # 5 scripts — seed, orchestration, LHCI helpers
+└── helpers/                           # auth helper + générateurs de rapports
 
 Rapports (gitignored) :
-├── tests/reports/
-│   ├── vitest-results.json            # Sortie JSON Vitest
-│   ├── vitest-report.txt              # Rapport texte Vitest
-│   ├── playwright-results.json         # Sortie JSON Playwright
-│   ├── playwright-report.txt          # Rapport texte Playwright
-│   ├── playwright/                    # Rapport HTML Playwright
-│   ├── pa11y-results.json             # Sortie JSON Pa11y
-│   ├── pa11y-report.txt               # Rapport texte Pa11y
-│   ├── lighthouse-report.txt          # Rapport texte Lighthouse (scores + CWV)
-│   └── lighthouse/                    # Rapports JSON/HTML Lighthouse
-
+└── tests/reports/                     # JSON + TXT + HTML pour Vitest, Playwright, Pa11y, Lighthouse
 
 Configs racine :
-├── .pa11yci.cjs                       # Pa11y-ci (WCAG AAA, axe, 52 URLs)
-├── lighthouserc.cjs                   # Lighthouse CI (28 URLs publiques, ≥0.9 gates)
+├── .pa11yci.cjs                       # Pa11y-ci (52 URLs, WCAG AAA)
+├── lighthouserc.cjs                   # Lighthouse CI (28 URLs publiques, gates ≥0.9)
 ├── vitest.config.ts                   # Vitest (unit + integration)
-└── playwright.config.ts               # Playwright (E2E, chromium + webkit)
+└── playwright.config.ts               # Playwright (Chromium + Firefox + WebKit)
 
-TOTAL : 435 tests (336 Vitest unit + 65 Vitest integration + 34 Playwright E2E)
-        104 audits a11y/perf (52 Pa11y + 52 Lighthouse)
-        34 fichiers de test + 6 fichiers a11y
+TOTAL VALIDÉ :
+- 62 fichiers de test (`48 unit + 11 integration + 3 e2e`)
+- 741 tests Vitest (`656 unit + 85 integration`)
+- 34 scénarios E2E (`102 exécutions` sur 3 navigateurs)
+- 104 audits a11y/perf (`52 Pa11y + 52 Lighthouse`)
 ```
 
 ---
@@ -132,8 +71,10 @@ export default defineConfig({
 | `include` | `tests/unit/**/*.test.ts`, `tests/integration/**/*.test.ts` | Sépare unit & integration dans le même runner |
 | `environment` | `node` | Pas de JSDOM — tests backend purs |
 | `env.NODE_ENV` | `'test'` | Désactive l'envoi d'emails SMTP (dynamic import skip) |
-| `testTimeout` | `15_000` | 15s max par test (tests DB peuvent être lents) || `reporters` | `['default', 'json']` | Sortie console + JSON pour génération de rapports |
-| `outputFile.json` | `tests/reports/vitest-results.json` | Fichier JSON utilisé par `vitest-report.cjs` || `alias` | 6 alias | Mêmes alias que `tsconfig.json` — nécessaire pour Vitest |
+| `testTimeout` | `15_000` | 15s max par test (tests DB peuvent être lents) |
+| `reporters` | `['default', 'json']` | Sortie console + JSON pour génération de rapports |
+| `outputFile.json` | `tests/reports/vitest-results.json` | Fichier JSON utilisé par `vitest-report.cjs` |
+| `alias` | 6 alias | Mêmes alias que `tsconfig.json` — nécessaire pour Vitest |
 
 ### Alias résolution
 
@@ -161,7 +102,7 @@ export default defineConfig({
   testDir: 'tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 1 : undefined,
   reporter: [
     ['html', { outputFolder: 'tests/reports/playwright' }],
@@ -173,6 +114,7 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox',  use: { ...devices['Desktop Firefox'] } },
     { name: 'webkit',   use: { ...devices['Desktop Safari'] } },
   ],
   webServer: {
@@ -193,7 +135,7 @@ export default defineConfig({
 | `globalTeardown` | `global-teardown.ts` | Supprime le user après les tests |
 | `fullyParallel` | `true` | Tests parallèles en local |
 | `workers` | `1` en CI | Séquentiel en CI pour stabilité |
-| `retries` | `2` en CI, `0` en local | Retries en CI uniquement |
+| `retries` | `2` en CI, `1` en local | Un retry local reste activé pour absorber les faux positifs transitoires |
 | `webServer.command` | `pnpm preview` | Lance le serveur SSR Astro |
 | `webServer.env` | `{ NODE_ENV: 'test' }` | **Critique** — désactive SMTP dans le serveur |
 | `reuseExistingServer` | `true` en local | Réutilise un serveur déjà lancé |

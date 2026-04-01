@@ -12,11 +12,27 @@ export interface DbActorContext {
 // ─── Pool singleton ──────────────────────────────────────────────────
 let instance: { pool: Pool; db: DrizzleDB; isHealthy: boolean } | null = null;
 
+function buildPgStartupOptions(statementTimeout?: number, idleInTransactionTimeout?: number): string | undefined {
+  const options: string[] = [];
+
+  if (statementTimeout) {
+    options.push(`-c statement_timeout=${Number(statementTimeout)}`);
+  }
+
+  if (idleInTransactionTimeout) {
+    options.push(`-c idle_in_transaction_session_timeout=${Number(idleInTransactionTimeout)}`);
+  }
+
+  return options.length > 0 ? options.join(' ') : undefined;
+}
+
 function createPool(): { pool: Pool; db: DrizzleDB; isHealthy: boolean } {
   const url = getDbUrl();
   const poolConfig = getPoolConfig();
 
-  // Extract non-standard pool options before passing to pg
+  // Extract non-standard pool options before passing to pg.
+  // Session timeouts are applied at connection startup to avoid racing the
+  // first query with an async client.query() inside Pool.on('connect').
   const { statement_timeout, idle_in_transaction_session_timeout, ...pgPoolConfig } = poolConfig;
 
   const p = new Pool({
@@ -24,20 +40,8 @@ function createPool(): { pool: Pool; db: DrizzleDB; isHealthy: boolean } {
     ssl: url.includes('sslmode=require')
       ? { rejectUnauthorized: true, ...(process.env.DATABASE_CA_CERT ? { ca: process.env.DATABASE_CA_CERT } : {}) }
       : undefined,
+    options: buildPgStartupOptions(statement_timeout, idle_in_transaction_session_timeout),
     ...pgPoolConfig,
-  });
-
-  // Apply per-connection session settings (statement_timeout, idle_in_transaction)
-  // These are not pg Pool options — they must be SET on each new connection.
-  p.on('connect', (client) => {
-    const stmts: string[] = [];
-    if (statement_timeout) stmts.push(`SET statement_timeout = ${Number(statement_timeout)}`);
-    if (idle_in_transaction_session_timeout) stmts.push(`SET idle_in_transaction_session_timeout = ${Number(idle_in_transaction_session_timeout)}`);
-    if (stmts.length) {
-      client.query(stmts.join('; ')).catch((err) => {
-        console.error('[DB] Failed to set session parameters:', err);
-      });
-    }
   });
 
   const entry = { pool: p, db: drizzle(p, { schema }), isHealthy: true };

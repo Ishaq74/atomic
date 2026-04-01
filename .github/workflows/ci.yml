@@ -127,7 +127,7 @@ jobs:
       DB_ENV: LOCAL
       NODE_ENV: test
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
+      BETTER_AUTH_URL: http://localhost:4321
       SITE_URL: ${{ vars.SITE_URL }}
       SMTP_PROVIDER: NODEMAILER
       SMTP_FROM_EMAIL: ci@test.local
@@ -147,7 +147,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Run Migrations
         run: pnpm db:migrate
@@ -196,7 +196,7 @@ jobs:
       DB_ENV: LOCAL
       NODE_ENV: test
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
-      BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
+      BETTER_AUTH_URL: http://localhost:4321
       SITE_URL: ${{ vars.SITE_URL }}
       SMTP_PROVIDER: NODEMAILER
       SMTP_FROM_EMAIL: ci@test.local

@@ -11,9 +11,37 @@ import { SEED_EMAIL, SEED_PASSWORD, SEED_NAME } from './global-setup';
  * that requireEmailVerification blocks unverified accounts.
  */
 
-const FRESH_EMAIL = `e2e-${Date.now()}@test.com`;
 const FRESH_PASSWORD = 'E2eTest1234!';
 const FRESH_NAME = 'E2E Tester';
+
+function createFreshEmail(): string {
+  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@test.com`;
+}
+
+async function fillOptionalUsername(page: import('@playwright/test').Page) {
+  const usernameField = page.locator('input[name="username"]');
+  if (await usernameField.isVisible({ timeout: 500 }).catch(() => false)) {
+    await usernameField.fill(`e2etester${Date.now()}`);
+  }
+}
+
+async function signUp(page: import('@playwright/test').Page, email: string) {
+  const response = await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
+  expect(response?.status()).toBe(200);
+
+  await page.locator('input[name="name"]').fill(FRESH_NAME);
+  await page.locator('input[name="email"]').fill(email);
+  await page.locator('input[name="password"]').fill(FRESH_PASSWORD);
+  await fillOptionalUsername(page);
+
+  const submitBtn = page.locator('button[type="submit"], form button').first();
+  await Promise.all([
+    page.waitForURL(/connexion|sign-in/, { timeout: 30000 }),
+    submitBtn.click(),
+  ]);
+  await page.waitForLoadState('networkidle');
+  await expect(page).toHaveURL(/connexion|sign-in/);
+}
 
 /** Sign in as seed user — reliable across browsers (Chromium, Firefox, WebKit). */
 async function signIn(page: import('@playwright/test').Page) {
@@ -32,33 +60,14 @@ async function signIn(page: import('@playwright/test').Page) {
 
 test.describe('Sign-up flow', () => {
   test('sign-up form submits and redirects to sign-in page', async ({ page }) => {
-    await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
-    const response = await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
-    expect(response?.status()).toBe(200);
-
-    await page.locator('input[name="name"]').fill(FRESH_NAME);
-    await page.locator('input[name="email"]').fill(FRESH_EMAIL);
-    await page.locator('input[name="password"]').fill(FRESH_PASSWORD);
-
-    // Some forms have a username field
-    const usernameField = page.locator('input[name="username"]');
-    if (await usernameField.isVisible({ timeout: 500 }).catch(() => false)) {
-      await usernameField.fill(`e2etester${Date.now()}`);
-    }
-
-    const submitBtn = page.locator('button[type="submit"], form button').first();
-    await Promise.all([
-      page.waitForURL(/connexion|sign-in/, { timeout: 30000 }),
-      submitBtn.click(),
-    ]);
-    await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL(/connexion|sign-in/);
+    await signUp(page, createFreshEmail());
   });
 
   test('sign-in form rejects unverified email', async ({ page }) => {
-    await page.goto('/fr/auth/connexion', { waitUntil: 'networkidle' });
+    const freshEmail = createFreshEmail();
+    await signUp(page, freshEmail);
 
-    await page.locator('input[name="email"]').fill(FRESH_EMAIL);
+    await page.locator('input[name="email"]').fill(freshEmail);
     await page.locator('input[name="password"]').fill(FRESH_PASSWORD);
     await page.locator('button[type="submit"], form button').first().click();
 
@@ -95,20 +104,20 @@ test.describe('Authenticated flow', () => {
 
 test.describe('Auth guards', () => {
   test('organisations page redirects to sign-in', async ({ page }) => {
-    const response = await page.goto('/fr/auth/organisations');
+    const response = await page.goto('/fr/auth/organisations', { waitUntil: 'networkidle' });
     // After redirect chain, final page should be 200
     expect(response?.ok()).toBeTruthy();
     await expect(page).toHaveURL(/connexion|sign-in/);
   });
 
   test('verify-email page is accessible without auth', async ({ page }) => {
-    const response = await page.goto('/fr/auth/verifier-email');
+    const response = await page.goto('/fr/auth/verifier-email', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page).not.toHaveURL(/connexion|sign-in/);
   });
 
   test('reset-password page is accessible without auth', async ({ page }) => {
-    const response = await page.goto('/fr/auth/reinitialiser-mot-de-passe');
+    const response = await page.goto('/fr/auth/reinitialiser-mot-de-passe', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page).not.toHaveURL(/connexion|sign-in/);
   });
@@ -118,31 +127,31 @@ test.describe('Auth guards', () => {
 
 test.describe('Public pages', () => {
   test('about page loads', async ({ page }) => {
-    const response = await page.goto('/fr/a-propos');
+    const response = await page.goto('/fr/a-propos', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.locator('main, [role="main"], article').first()).toBeVisible();
   });
 
   test('contact page loads', async ({ page }) => {
-    const response = await page.goto('/fr/contact');
+    const response = await page.goto('/fr/contact', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.locator('main, [role="main"], article').first()).toBeVisible();
   });
 
   test('legal page loads', async ({ page }) => {
-    const response = await page.goto('/fr/mentions-legales');
+    const response = await page.goto('/fr/mentions-legales', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.locator('main, [role="main"], article').first()).toBeVisible();
   });
 
   test('forgot password page loads', async ({ page }) => {
-    const response = await page.goto('/fr/auth/mot-de-passe-oublie');
+    const response = await page.goto('/fr/auth/mot-de-passe-oublie', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.locator('input[name="email"], input[type="email"]').first()).toBeVisible();
   });
 
   test('Spanish locale loads correctly', async ({ page }) => {
-    const response = await page.goto('/es/');
+    const response = await page.goto('/es/', { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   });

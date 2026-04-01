@@ -37,6 +37,7 @@ playwright-report/
 tests/reports/*/
 tests/reports/*.txt
 tests/reports/*.json
+tmp*
 
 # coverage reports
 coverage/
