@@ -2,7 +2,6 @@ import {
   type Locale,
   type CommonTranslations,
   type HomeTranslations,
-  type LegalTranslations,
   type AboutTranslations,
   type ContactTranslations,
   type AuthTranslations,
@@ -34,18 +33,6 @@ export async function getCommonTranslations(locale: Locale): Promise<CommonTrans
 
 export async function getHomeTranslations(locale: Locale): Promise<HomeTranslations> {
   const mod = await homeModules[locale]();
-  return mod.default;
-}
-
-const legalModules: Record<Locale, () => Promise<{ default: LegalTranslations }>> = {
-  fr: () => import('./fr/legal'),
-  en: () => import('./en/legal'),
-  es: () => import('./es/legal'),
-  ar: () => import('./ar/legal'),
-};
-
-export async function getLegalTranslations(locale: Locale): Promise<LegalTranslations> {
-  const mod = await legalModules[locale]();
   return mod.default;
 }
 

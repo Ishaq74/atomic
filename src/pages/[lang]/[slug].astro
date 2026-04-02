@@ -1,6 +1,7 @@
 ---
 import type { PageId } from '@i18n/config';
-import { toLocale, getCommonTranslations, getAboutTranslations, getContactTranslations, getLegalTranslations } from '@i18n/utils';
+import { toLocale, getCommonTranslations, getAboutTranslations, getContactTranslations } from '@i18n/utils';
+import { getPage } from '@database/loaders/page.loader';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import AboutPage from '@pages/AboutPage/AboutPage.astro';
 import ContactPage from '@pages/ContactPage/ContactPage.astro';
@@ -20,23 +21,30 @@ const pageId = (Object.entries(commonT.pageRoutes) as [PageId, string][])
 
 if (!pageId) return Astro.redirect(`/${locale}/`);
 
+// Legal pages are CMS-driven — load from the database
+const isLegal = pageId === 'legal';
+const legalData = isLegal ? await getPage(locale, slug) : null;
+if (isLegal && !legalData) return Astro.redirect(`/${locale}/`);
+
 const translations = {
   about: () => getAboutTranslations(locale),
   contact: () => getContactTranslations(locale),
-  legal: () => getLegalTranslations(locale),
 } as const;
 
-const t = await translations[pageId]();
+const t = !isLegal ? await translations[pageId as 'about' | 'contact']() : null;
 
 const pages = {
   about: AboutPage,
   contact: ContactPage,
-  legal: LegalPage,
 };
 
-const Page = pages[pageId];
+const Page = !isLegal ? pages[pageId as 'about' | 'contact'] : null;
 ---
 
-<BaseLayout>
-  <Page t={t as never} />
+<BaseLayout title={isLegal ? (legalData!.page.metaTitle ?? legalData!.page.title) : undefined}>
+  {isLegal && legalData ? (
+    <LegalPage data={legalData} />
+  ) : Page && t ? (
+    <Page t={t as never} />
+  ) : null}
 </BaseLayout>

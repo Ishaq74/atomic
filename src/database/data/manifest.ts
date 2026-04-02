@@ -27,4 +27,7 @@ export const seedManifest: SeedEntry[] = [
   { dataFile: '07-navigation.data.ts', schemaExport: 'navigationMenus', label: 'navigation menus' },
   { dataFile: '07b-navigation-items.data.ts', schemaExport: 'navigationItems', label: 'navigation items' },
   { dataFile: '08-theme.data.ts', schemaExport: 'themeSettings', label: 'theme settings' },
+  { dataFile: '09-legal-pages.data.ts', schemaExport: 'pages', label: 'legal pages' },
+  { dataFile: '09b-legal-sections.data.ts', schemaExport: 'pageSections', label: 'legal page sections' },
+  { dataFile: '10-consent-settings.data.ts', schemaExport: 'consentSettings', label: 'consent settings' },
 ];

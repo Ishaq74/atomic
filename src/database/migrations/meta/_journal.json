@@ -90,6 +90,13 @@
       "when": 1774963398814,
       "tag": "0012_special_daimon_hellstrom",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1775148140788,
+      "tag": "0013_productive_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

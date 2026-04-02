@@ -1,7 +1,15 @@
 import { auth } from "@/lib/auth";
+import { LOCALES } from "@/i18n/config";
 import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  // ─── Locale guard — reject invalid [lang] segments with 404 ─────
+  const pathSegments = new URL(context.request.url).pathname.split('/').filter(Boolean);
+  const maybeLang = pathSegments[0];
+  if (maybeLang && /^[a-z]{2}$/.test(maybeLang) && !(LOCALES as readonly string[]).includes(maybeLang)) {
+    return new Response('Not Found', { status: 404 });
+  }
+
   let timedOut = false;
   let isAuthed: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
 

@@ -46,6 +46,10 @@ async function main() {
       console.log(c.green(`  ✔ SMTP_PORT = ${cfg.port}`));
       break;
     }
+    default: {
+      const _exhaustive: never = provider;
+      throw new Error(`Fournisseur SMTP inconnu : ${_exhaustive}`);
+    }
   }
 
   // ─── 3. Connectivity test ──────────────────────────────────────────
@@ -70,6 +74,10 @@ async function main() {
         await nm.verify();
         console.log(c.green(`  ✔ Serveur SMTP accessible`));
         break;
+      }
+      default: {
+        const _exhaustive: never = provider;
+        throw new Error(`Fournisseur SMTP inconnu : ${_exhaustive}`);
       }
     }
   } catch (err: unknown) {

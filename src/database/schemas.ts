@@ -9,3 +9,4 @@ export * from "./schemas/audit-log.schema";
 export * from "./schemas/site.schema";
 export * from "./schemas/navigation.schema";
 export * from "./schemas/page.schema";
+export * from "./schemas/consent.schema";

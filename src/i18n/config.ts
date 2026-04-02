@@ -105,26 +105,8 @@ export interface HomeTranslations {
   };
 }
 
-export interface LegalFaqItem {
-  question: string;
-  answer: string;
-}
-
-export interface LegalSection {
-  title: string;
-  intro?: string;
-  items: LegalFaqItem[];
-}
-
-export interface LegalTranslations {
-  meta: {
-    title: string;
-    description: string;
-  };
-  eyebrow: string;
-  heading: string;
-  sections: LegalSection[];
-}
+// Legal content is now CMS-driven (pages + pageSections tables).
+// Types LegalFaqItem, LegalSection, LegalTranslations removed.
 
 export interface AboutTranslations {
   meta: {

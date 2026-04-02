@@ -1,5 +1,5 @@
 ---
-import type { LegalTranslations } from '@i18n/config';
+import type { PageWithSections } from '@database/loaders/page.loader';
 import { Badge } from '@atoms/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
 import {
@@ -9,32 +9,46 @@ import {
   AccordionContent,
 } from '@atoms/accordion';
 
+interface FaqItem { question: string; answer: string; }
+interface FaqSection { title: string; intro?: string; items: FaqItem[]; }
+
 interface Props {
-  t: LegalTranslations;
+  data: PageWithSections;
 }
 
-const { t } = Astro.props;
+const { data } = Astro.props;
+const { page, sections } = data;
+
+// Parse FAQ sections from CMS JSON content
+const faqSections: FaqSection[] = sections
+  .filter((s) => s.type === 'faq')
+  .map((s) => {
+    try { return JSON.parse(s.content) as FaqSection; }
+    catch { return null; }
+  })
+  .filter((s): s is FaqSection => s !== null && Array.isArray(s.items));
+
 const firstTab = `section-0`;
 ---
 
 <section class="mx-auto w-full max-w-5xl px-4 py-16 md:py-24">
   <div class="mb-12">
-    <Badge variant="primary" size="sm">{t.eyebrow}</Badge>
+    <Badge variant="primary" size="sm">{page.metaTitle ?? page.title}</Badge>
     <h1 class="font-heading mt-3 text-3xl font-semibold tracking-tight md:text-4xl lg:text-5xl">
-      {t.heading}
+      {page.title}
     </h1>
   </div>
 
   <Tabs defaultValue={firstTab} class="min-h-96">
     <TabsList class="mb-8 flex w-full flex-wrap gap-2">
-      {t.sections.map((section, i) => (
+      {faqSections.map((section, i) => (
         <TabsTrigger value={`section-${i}`} defaultActive={i === 0}>
           {section.title}
         </TabsTrigger>
       ))}
     </TabsList>
 
-    {t.sections.map((section, i) => (
+    {faqSections.map((section, i) => (
       <TabsContent value={`section-${i}`} defaultActive={i === 0}>
         {section.intro && (
           <p class="text-muted-foreground mb-6 text-pretty leading-relaxed">

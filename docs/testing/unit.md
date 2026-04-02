@@ -206,18 +206,19 @@ Round-trip et cas `null` pour slug inconnu.
 
 ## `i18n-translations.test.ts` — Loaders de traductions (home, legal, about, contact)
 
-**Cibles** : `getHomeTranslations()`, `getLegalTranslations()`, `getAboutTranslations()`, `getContactTranslations()` ×4 locales
+**Cibles** : `getHomeTranslations()`, `getAboutTranslations()`, `getContactTranslations()` ×4 locales
+
+> Le contenu légal est désormais CMS-driven (tables `pages` + `page_sections`). Les tests `getLegalTranslations` ont été supprimés.
 
 | # | Describe | Test (×4 locales via `it.each`) | Clés validées | Status |
 | :-- | :-- | :-- | :-- | :-- |
 | 1-4 | `getHomeTranslations` | `loads %s translations with required keys` | `meta`, `hero`, `sections` | ✅ |
-| 5-8 | `getLegalTranslations` | `loads %s translations with required keys` | `meta`, `title`, `sections` | ✅ |
-| 9-12 | `getAboutTranslations` | `loads %s translations with required keys` | `meta`, `hero` | ✅ |
-| 13-16 | `getContactTranslations` | `loads %s translations with required keys` | `meta`, `hero`, `form` | ✅ |
+| 5-8 | `getAboutTranslations` | `loads %s translations with required keys` | `meta`, `hero` | ✅ |
+| 9-12 | `getContactTranslations` | `loads %s translations with required keys` | `meta`, `hero`, `form` | ✅ |
 
 ### Stratégie — i18n-translations
 
-- **`it.each(['fr', 'en', 'es', 'ar'])`** : chaque loader testé contre les 4 locales → 16 tests
+- **`it.each(['fr', 'en', 'es', 'ar'])`** : chaque loader testé contre les 4 locales → 12 tests
 - **Clés structurelles** : valide que chaque fichier de traduction contient les clés indispensables
 - **Protection contre les locales manquantes** : si un fichier est supprimé, le test échoue immédiatement
 

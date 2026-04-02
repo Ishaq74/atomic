@@ -48,6 +48,10 @@ function getOppositeSide(side: FloatingSide): FloatingSide {
       return "right";
     case "right":
       return "left";
+    default: {
+      const _exhaustive: never = side;
+      throw new Error(`Unknown side: ${_exhaustive}`);
+    }
   }
 }
 
@@ -59,6 +63,10 @@ function getOppositeAlign(align: FloatingAlign): FloatingAlign {
       return "start";
     case "center":
       return "center";
+    default: {
+      const _exhaustive: never = align;
+      throw new Error(`Unknown align: ${_exhaustive}`);
+    }
   }
 }
 

@@ -96,7 +96,6 @@
 | `getCommonTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-urls.test.ts` | ✅ 4 tests (×4 locales) |
 | `getAuthTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-urls.test.ts` | ✅ 4 tests (×4 locales) |
 | `getHomeTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-translations.test.ts` | ✅ 4 tests (×4 locales) |
-| `getLegalTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-translations.test.ts` | ✅ 4 tests (×4 locales) |
 | `getAboutTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-translations.test.ts` | ✅ 4 tests (×4 locales) |
 | `getContactTranslations(locale)` | `src/i18n/utils.ts` | Async import | `tests/unit/i18n-translations.test.ts` | ✅ 4 tests (×4 locales) |
 | `getAuthUrl(locale, pageId, t)` | `src/i18n/utils.ts` | Pure | `tests/unit/i18n-urls.test.ts` | ✅ 4 tests (×4 locales) |

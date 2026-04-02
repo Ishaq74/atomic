@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   getHomeTranslations,
-  getLegalTranslations,
   getAboutTranslations,
   getContactTranslations,
 } from '@i18n/utils';
@@ -23,23 +22,6 @@ describe('getHomeTranslations', () => {
     expect(t.pricing).toBeDefined();
     expect(t.pricing.plans.length).toBeGreaterThan(0);
     expect(t.ctaBanner).toBeDefined();
-  });
-});
-
-describe('getLegalTranslations', () => {
-  it.each(locales)('loads %s and has required keys', async (locale) => {
-    const t = await getLegalTranslations(locale);
-    expect(t.meta).toBeDefined();
-    expect(t.meta.title).toBeTypeOf('string');
-    expect(t.eyebrow).toBeTypeOf('string');
-    expect(t.heading).toBeTypeOf('string');
-    expect(t.sections).toBeInstanceOf(Array);
-    expect(t.sections.length).toBeGreaterThan(0);
-    t.sections.forEach((s) => {
-      expect(s.title).toBeTypeOf('string');
-      expect(s.items).toBeInstanceOf(Array);
-      expect(s.items.length).toBeGreaterThan(0);
-    });
   });
 });
 

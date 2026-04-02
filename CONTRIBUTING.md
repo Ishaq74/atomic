@@ -68,7 +68,8 @@ tests/
 
 - 4 locales: `fr` (default), `en`, `es`, `ar` (RTL)
 - All translation keys must exist in every locale — the CI cross-locale test enforces this
-- Translation files: `src/i18n/{locale}/common.ts`, `home.ts`, `about.ts`, `contact.ts`, `legal.ts`, `auth.ts`
+- Translation files: `src/i18n/{locale}/common.ts`, `home.ts`, `about.ts`, `contact.ts`, `auth.ts`
+- Legal content is CMS-driven (database tables `pages` + `page_sections`, template `legal`)
 - Use `satisfies` TypeScript pattern to ensure type safety
 
 ### Database

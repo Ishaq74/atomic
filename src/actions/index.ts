@@ -31,6 +31,7 @@ import {
   reorderSections,
 } from "./admin/sections";
 import { createTheme, updateTheme, deleteTheme } from "./admin/theme";
+import { updateConsentSettings } from "./admin/consent";
 
 export const server = {
   // ─── Site ────────────────────────────────────────────────────────
@@ -76,4 +77,7 @@ export const server = {
   createTheme,
   updateTheme,
   deleteTheme,
+
+  // ─── Consentement cookies ────────────────────────────────────────
+  updateConsentSettings,
 };

@@ -62,7 +62,6 @@ src/i18n/
 │   ├── common.ts          # Navigation, footer, CTA, a11y, meta
 │   ├── home.ts            # Page d'accueil (hero, logos, pillars, etc.)
 │   ├── auth.ts            # Pages auth (sign-in, sign-up, dashboard, etc.)
-│   ├── legal.ts           # Pages légales (mentions, CGV, politique)
 │   ├── about.ts           # Page à propos
 │   └── contact.ts         # Page contact
 ├── en/                    # Même structure
@@ -79,8 +78,9 @@ Les traductions sont typées via des interfaces définies dans `config.ts` :
 | `CommonTranslations` | `common.ts` | `meta`, `pageRoutes`, `nav`, `cta`, `footer`, `a11y` |
 | `HomeTranslations` | `home.ts` | `hero`, `logos`, `pillars`, `features`, `faq` |
 | `AuthTranslations` | `auth.ts` | `routes`, `signIn`, `signUp`, `dashboard`, `admin`, `org` |
-| `LegalTranslations` | `legal.ts` | `legalNotice`, `privacyPolicy`, `termsOfSale` |
 | `AboutTranslations` | `about.ts` | `hero`, `mission`, `team`, `values` |
+
+> **Note** : Le contenu légal (mentions, CGV, politique) est désormais géré via le CMS (tables `pages` + `page_sections`, template `legal`).
 | `ContactTranslations` | `contact.ts` | `hero`, `form`, `info`, `map` |
 
 ---
@@ -96,7 +96,6 @@ Les traductions sont typées via des interfaces définies dans `config.ts` :
 | `getCommonTranslations(locale)` | `Promise<CommonTranslations>` | Nav, footer, meta, routes |
 | `getHomeTranslations(locale)` | `Promise<HomeTranslations>` | Page d'accueil |
 | `getAuthTranslations(locale)` | `Promise<AuthTranslations>` | Pages auth + admin |
-| `getLegalTranslations(locale)` | `Promise<LegalTranslations>` | Pages légales |
 | `getAboutTranslations(locale)` | `Promise<AboutTranslations>` | Page à propos |
 | `getContactTranslations(locale)` | `Promise<ContactTranslations>` | Page contact |
 
@@ -183,7 +182,6 @@ L'arabe (`ar`) est une locale RTL. Le support est géré à plusieurs niveaux :
    ├── common.ts
    ├── home.ts
    ├── auth.ts
-   ├── legal.ts
    ├── about.ts
    └── contact.ts
    ```

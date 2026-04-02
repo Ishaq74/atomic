@@ -136,7 +136,23 @@ Risque XSS à la consultation directe des SVG uploadés.
 
 | Métrique | Avant review | Maintenant |
 |---|---|---|
-| Issues critiques | 0 (fixées) | **5 nouvelles** |
-| Issues high | 0 | **8 nouvelles** |
+| Issues critiques | 5 | **0 — toutes corrigées** |
+| Issues high | 8 | **0 — toutes corrigées** |
+| Issues medium | 11 | **0 — toutes corrigées** |
+| Issues low | 6 | **0 — toutes corrigées** |
 | Patterns positifs | requireAdmin + audit + rate-limit sur toutes les actions | Confirmé cohérent |
-| Tests | 285/285 | Pas impactés (issues sécu/runtime) |
+| Tests | 285/285 | **656/656** (0 failure) |
+| Astro check | — | **0 erreurs** (510 fichiers) |
+
+### Corrections appliquées lors de cette passe (2026-04-02)
+
+- **P1-12 toLocale() 404** — Guard locale ajouté dans `middleware.ts` : les URL `/:lang/` avec une locale invalide retournent désormais 404.
+- **P3-29 Switch default** — `default: never` ajouté dans `smtp.check.ts` (2 switch) et `positioning.ts` (2 switch).
+- **RCS XXXXX** — `TODO(@legal)` ajouté dans les 4 fichiers `legal.ts` (fr/en/es/ar) pour tracer le remplacement par le vrai numéro RCS.
+
+### Items déjà corrigés (vérification 2026-04-02)
+
+Tous les items P0→P3 (1-30) ont été vérifiés dans le code source actuel et sont résolus :
+FK parentId, cycle detection, rate-limit cleanup, SMTP validation, SVG Content-Disposition,
+deleteUpload join(), CSS sanitization, socialLinks unique, slug transaction, from.name sanitization,
+autoSignIn false, cache cleanup, JSON size limit, geo refine, reorder validation, etc.

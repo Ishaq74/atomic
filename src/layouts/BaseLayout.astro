@@ -5,7 +5,9 @@ import type { Locale } from '@i18n/config';
 import Header, { type NavLink } from "@organisms/Header/Header.astro";
 import Footer, { type FooterLink, type SocialLink } from "@organisms/Footer/Footer.astro";
 import { Toaster } from "@atoms/toast";
+import { CookieConsent } from "@organisms/CookieConsent";
 import { getSiteSettings, getSocialLinks, getActiveThemeCss } from "@database/loaders/site.loader";
+import { getConsentSettings } from "@database/loaders/consent.loader";
 import { getMenu, getMenuMeta, type NavTreeItem } from "@database/loaders/navigation.loader";
 
 interface Props {
@@ -24,7 +26,7 @@ const session = Astro.locals.session;
 const isImpersonating = !!session?.impersonatedBy;
 
 // ─── Load CMS data from database ────────────────────────────────────────────
-const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, themeCss, footerPrimaryMeta, footerSecondaryMeta, footerLegalMeta] = await Promise.all([
+const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, footerLegal, themeCss, footerPrimaryMeta, footerSecondaryMeta, footerLegalMeta, consentData] = await Promise.all([
   getSiteSettings(locale),
   getSocialLinks(),
   getMenu("header", locale),
@@ -35,6 +37,7 @@ const [siteData, dbSocialLinks, headerNav, footerPrimary, footerSecondary, foote
   getMenuMeta("footer_primary"),
   getMenuMeta("footer_secondary"),
   getMenuMeta("footer_legal"),
+  getConsentSettings(locale),
 ]);
 
 const siteName = siteData?.siteName ?? "";
@@ -143,6 +146,7 @@ const legalHeading = footerLegalMeta?.showHeading !== false
         legalHeading={legalHeading}
     />
     <Toaster position="bottom-right" />
+    {consentData?.isActive && <CookieConsent consent={consentData} />}
     <script>
       import { authClient } from '@/lib/auth-client';
       const btn = document.getElementById('stop-impersonation-btn');
