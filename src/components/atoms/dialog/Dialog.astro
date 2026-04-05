@@ -22,6 +22,7 @@ const { class: className, ...rest } = Astro.props;
     private backdrop: HTMLElement | null = null;
     private dialogWrapper: HTMLElement;
     private dialogId: string;
+    private previouslyFocusedElement: HTMLElement | null = null;
     /**
      * The duration of the animation in milliseconds. This is used to calculate the
      * duration of close animation before hiding the dialog and backdrop
@@ -119,6 +120,22 @@ const { class: className, ...rest } = Astro.props;
         // set the aria-labelledby attribute to the first heading element
         this.dialog?.setAttribute("aria-labelledby", firstHeading.id);
       }
+
+      // Link aria-describedby to description element
+      const description = this.dialog?.querySelector('[data-slot="dialog-description"]');
+      if (description) {
+        description.id = `starwind-dialog${dialogNumber}-desc`;
+        this.dialog?.setAttribute("aria-describedby", description.id);
+      }
+
+      // Set aria-expanded and aria-controls on triggers
+      this.triggers.forEach((trigger) => {
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.setAttribute("aria-haspopup", "dialog");
+      });
+
+      // Mark backdrop as aria-hidden
+      this.backdrop?.setAttribute("aria-hidden", "true");
     }
 
     /**
@@ -248,12 +265,18 @@ const { class: className, ...rest } = Astro.props;
       }
       this._isClosing = false;
 
+      // Save the element that had focus before opening
+      this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
+
       // Reset nested count when opening (in case it wasn't properly reset)
       this.nestedOpenCount = 0;
       this.updateNestedState();
 
       this.dialog.showModal();
       document.body.classList.add("overflow-hidden");
+
+      // Update triggers aria-expanded
+      this.triggers.forEach((t) => t.setAttribute("aria-expanded", "true"));
 
       // For nested dialogs, hide the backdrop and notify parent
       if (this.isNested && this.parentDialog) {
@@ -265,6 +288,15 @@ const { class: className, ...rest } = Astro.props;
       }
 
       this.dialog.dataset.state = "open";
+
+      // Focus the first focusable element inside the dialog (or the close button)
+      requestAnimationFrame(() => {
+        if (!this.dialog) return;
+        const focusTarget = this.dialog.querySelector<HTMLElement>(
+          '[autofocus], [data-dialog-close], button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        focusTarget?.focus();
+      });
     }
 
     private close(): void {
@@ -296,6 +328,16 @@ const { class: className, ...rest } = Astro.props;
         this.dialog?.close();
         this._isClosing = false;
         this._closeTimeout = null;
+
+        // Update triggers aria-expanded
+        this.triggers.forEach((t) => t.setAttribute("aria-expanded", "false"));
+
+        // Restore focus to the element that had focus before opening
+        if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
+          this.previouslyFocusedElement.focus();
+          this.previouslyFocusedElement = null;
+        }
+
         const stillOpen = document.querySelectorAll("dialog[open]").length;
         if (stillOpen === 0) {
           document.body.classList.remove("overflow-hidden");

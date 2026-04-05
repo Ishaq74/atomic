@@ -231,6 +231,7 @@ const { type = "single", defaultValue, class: className, ...rest } = Astro.props
 
       item.element.setAttribute("data-state", state);
       item.content.setAttribute("data-state", state);
+      item.content.setAttribute("aria-hidden", (!isOpen).toString());
       item.trigger.setAttribute("data-state", state);
       item.trigger.setAttribute("aria-expanded", isOpen.toString());
     }

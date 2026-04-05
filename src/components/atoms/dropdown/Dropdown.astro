@@ -111,8 +111,9 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
       this.trigger.id = `starwind-dropdown${dropdownIdx}-trigger`;
       this.content.id = `starwind-dropdown${dropdownIdx}-content`;
 
-      // Set up additional ARIA attributes
-      this.trigger.setAttribute("aria-controls", this.content.id);
+      // Set up ARIA attributes (aria-controls set dynamically in open/close)
+      this.trigger.setAttribute("aria-haspopup", "true");
+      this.trigger.setAttribute("aria-expanded", "false");
       this.content.setAttribute("aria-labelledby", this.trigger.id);
     }
 
@@ -376,6 +377,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
 
       this.isOpen = true;
       this.trigger.setAttribute("aria-expanded", "true");
+      this.trigger.setAttribute("aria-controls", this.content.id);
       this.content.style.removeProperty("display");
 
       // Portal sub-content to body before triggering animation
@@ -434,6 +436,7 @@ const { class: className, openOnHover = false, closeDelay = 200, ...rest } = Ast
       }, this.animationDuration);
 
       this.trigger.setAttribute("aria-expanded", "false");
+      this.trigger.removeAttribute("aria-controls");
 
       // Reset focus index when closing
       this.currentFocusIndex = -1;

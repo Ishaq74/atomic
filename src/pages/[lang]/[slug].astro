@@ -1,11 +1,13 @@
 ---
 import type { PageId } from '@i18n/config';
+import { LOCALES } from '@i18n/config';
 import { toLocale, getCommonTranslations, getAboutTranslations, getContactTranslations } from '@i18n/utils';
 import { getPage } from '@database/loaders/page.loader';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import AboutPage from '@pages/AboutPage/AboutPage.astro';
 import ContactPage from '@pages/ContactPage/ContactPage.astro';
 import LegalPage from '@pages/LegalPage.astro';
+import { getSiteSettings, getContactInfo } from '@database/loaders/site.loader';
 
 export const prerender = false;
 
@@ -39,11 +41,56 @@ const pages = {
 };
 
 const Page = !isLegal ? pages[pageId as 'about' | 'contact'] : null;
+
+// ─── Compute alternate URLs for hreflang ────────────────────────────────────
+const alternateUrls: Record<string, string> = {};
+await Promise.all(
+  LOCALES.map(async (loc) => {
+    const locT = await getCommonTranslations(loc);
+    const locSlug = locT.pageRoutes[pageId];
+    if (locSlug) {
+      alternateUrls[loc] = `/${loc}/${locSlug}`;
+    }
+  }),
+);
+
+const description = isLegal
+  ? (legalData!.page.metaDescription ?? undefined)
+  : undefined;
+
+// ─── Interpolate template variables in legal page meta fields ───────────────
+let interpolatedTitle: string | undefined;
+let interpolatedDescription: string | undefined;
+
+if (isLegal && legalData) {
+  const [siteData, contactData] = await Promise.all([
+    getSiteSettings(locale),
+    getContactInfo(),
+  ]);
+  const vars: Record<string, string> = {
+    siteName: siteData?.siteName ?? '',
+    email: contactData?.email ?? '',
+    phone: contactData?.phone ?? '',
+    address: contactData?.address ?? '',
+    city: contactData?.city ?? '',
+    postalCode: contactData?.postalCode ?? '',
+    country: contactData?.country ?? '',
+  };
+  const interpolate = (text: string) =>
+    text.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? '');
+
+  interpolatedTitle = interpolate(legalData.page.metaTitle ?? legalData.page.title);
+  interpolatedDescription = description ? interpolate(description) : undefined;
+}
 ---
 
-<BaseLayout title={isLegal ? (legalData!.page.metaTitle ?? legalData!.page.title) : undefined}>
+<BaseLayout
+  title={isLegal ? interpolatedTitle : undefined}
+  description={isLegal ? interpolatedDescription : undefined}
+  alternateUrls={alternateUrls}
+>
   {isLegal && legalData ? (
-    <LegalPage data={legalData} />
+    <LegalPage data={legalData} locale={locale} />
   ) : Page && t ? (
     <Page t={t as never} />
   ) : null}

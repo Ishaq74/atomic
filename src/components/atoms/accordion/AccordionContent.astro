@@ -23,6 +23,7 @@ const { class: className, ...rest } = Astro.props;
 <div
   class={accordionContent({ class: className })}
   data-state="closed"
+  aria-hidden="true"
   style="animation: none;"
   {...rest}
   data-slot="accordion-content"
@@ -31,3 +32,12 @@ const { class: className, ...rest } = Astro.props;
     <slot />
   </div>
 </div>
+
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="accordion-content"] {
+      animation-duration: 0ms !important;
+      transition-duration: 0ms !important;
+    }
+  }
+</style>

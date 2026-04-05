@@ -11,6 +11,7 @@ export interface Props extends HTMLAttributes<"div"> {
   orientation?: "horizontal" | "vertical";
   opts?: EmblaOptionsType;
   autoInit?: boolean;
+  "aria-label"?: string;
 }
 
 const {
@@ -18,6 +19,7 @@ const {
   orientation = "horizontal",
   opts = {},
   autoInit = true,
+  "aria-label": ariaLabel,
   ...rest
 } = Astro.props;
 ---
@@ -26,6 +28,7 @@ const {
   class={carousel({ class: className })}
   role="region"
   aria-roledescription="carousel"
+  aria-label={ariaLabel || "Carousel"}
   data-axis={orientation === "horizontal" ? "x" : "y"}
   data-opts={JSON.stringify(opts)}
   data-auto-init={autoInit}

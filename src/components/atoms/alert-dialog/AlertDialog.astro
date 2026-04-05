@@ -18,6 +18,7 @@ const { class: className, ...rest } = Astro.props;
     private actionButtons: HTMLButtonElement[] = [];
     private backdrop: HTMLElement | null = null;
     private dialogId: string;
+    private previouslyFocusedElement: HTMLElement | null = null;
     /**
      * The duration of the animation in milliseconds. This is used to calculate the
      * duration of close animation before hiding the dialog and backdrop
@@ -126,6 +127,22 @@ const { class: className, ...rest } = Astro.props;
         // set the aria-labelledby attribute to the first heading element
         this.dialog?.setAttribute("aria-labelledby", firstHeading.id);
       }
+
+      // Link aria-describedby to description element
+      const description = this.dialog?.querySelector('[data-slot="alert-dialog-description"]');
+      if (description) {
+        description.id = `starwind-alert-dialog${dialogNumber}-desc`;
+        this.dialog?.setAttribute("aria-describedby", description.id);
+      }
+
+      // Set aria-expanded on triggers
+      this.triggers.forEach((trigger) => {
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.setAttribute("aria-haspopup", "dialog");
+      });
+
+      // Mark backdrop as aria-hidden
+      this.backdrop?.setAttribute("aria-hidden", "true");
     }
 
     /**
@@ -225,11 +242,33 @@ const { class: className, ...rest } = Astro.props;
 
     private open(): void {
       if (!this.dialog || !this.backdrop) return;
+
+      // Save the element that had focus before opening
+      this.previouslyFocusedElement = document.activeElement as HTMLElement | null;
+
       this.dialog.showModal();
       document.body.classList.add("overflow-hidden");
       this.backdrop.classList.remove("hidden");
       this.backdrop.dataset.state = "open";
       this.dialog.dataset.state = "open";
+
+      // Update triggers aria-expanded
+      this.triggers.forEach((t) => t.setAttribute("aria-expanded", "true"));
+
+      // Focus the cancel/close button (least destructive action) per WAI-ARIA
+      requestAnimationFrame(() => {
+        if (!this.dialog) return;
+        const cancelBtn = this.dialog.querySelector<HTMLElement>('.starwind-alert-dialog-close');
+        if (cancelBtn) {
+          cancelBtn.focus();
+        } else {
+          // Fallback: focus first focusable element
+          const focusTarget = this.dialog.querySelector<HTMLElement>(
+            'button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          focusTarget?.focus();
+        }
+      });
     }
 
     private close(): void {
@@ -241,6 +280,16 @@ const { class: className, ...rest } = Astro.props;
       setTimeout(() => {
         this.backdrop?.classList.add("hidden");
         this.dialog?.close();
+
+        // Update triggers aria-expanded
+        this.triggers.forEach((t) => t.setAttribute("aria-expanded", "false"));
+
+        // Restore focus to the element that had focus before opening
+        if (this.previouslyFocusedElement && typeof this.previouslyFocusedElement.focus === 'function') {
+          this.previouslyFocusedElement.focus();
+          this.previouslyFocusedElement = null;
+        }
+
         const stillOpen = document.querySelectorAll("dialog[open]").length;
         if (stillOpen === 0) {
           document.body.classList.remove("overflow-hidden");

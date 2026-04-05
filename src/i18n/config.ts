@@ -504,6 +504,55 @@ export interface AuthTranslations {
         hidden: string;
         hide: string;
         show: string;
+        searchPlaceholder: string;
+        noResults: string;
+        filter: {
+          allStatuses: string;
+          allTemplates: string;
+          allLocales: string;
+        };
+        sort: {
+          newest: string;
+          oldest: string;
+          nameAsc: string;
+          nameDesc: string;
+        };
+        columns: {
+          title: string;
+          slug: string;
+          locale: string;
+          template: string;
+          sections: string;
+          status: string;
+          actions: string;
+        };
+        legal: {
+          tabTitle: string;
+          tabIntro: string;
+          question: string;
+          answer: string;
+          addItem: string;
+          removeItem: string;
+          addTab: string;
+          deleteTab: string;
+          noItems: string;
+          confirmDeleteTab: string;
+          confirmDeleteItem: string;
+          moveUp: string;
+          moveDown: string;
+          itemIndex: string;
+          variables: string;
+          variablesDescription: string;
+          variableInserted: string;
+          noFieldFocused: string;
+          varSiteName: string;
+          varEmail: string;
+          varPhone: string;
+          varAddress: string;
+          varCity: string;
+          varPostalCode: string;
+          varCountry: string;
+        };
       };
       theme: {
         title: string;

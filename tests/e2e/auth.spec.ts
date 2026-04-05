@@ -100,6 +100,56 @@ test.describe('Authenticated flow', () => {
   });
 });
 
+// ─── Enter key form submission ──────────────────────────────────────
+
+test.describe('Enter key submission', () => {
+  test('sign-in form submits on Enter key', async ({ page }) => {
+    await page.goto('/fr/auth/connexion', { waitUntil: 'networkidle' });
+    await page.locator('input[name="email"]').fill(SEED_EMAIL);
+    await page.locator('input[name="password"]').fill(SEED_PASSWORD);
+
+    // Press Enter instead of clicking the button
+    await Promise.all([
+      page.waitForURL(/tableau-de-bord|dashboard/, { timeout: 30000 }),
+      page.locator('input[name="password"]').press('Enter'),
+    ]);
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/tableau-de-bord|dashboard/);
+  });
+
+  test('sign-up form submits on Enter key', async ({ page }) => {
+    const freshEmail = createFreshEmail();
+    await page.goto('/fr/auth/inscription', { waitUntil: 'networkidle' });
+
+    await page.locator('input[name="name"]').fill(FRESH_NAME);
+    await fillOptionalUsername(page);
+    await page.locator('input[name="email"]').fill(freshEmail);
+    await page.locator('input[name="password"]').fill(FRESH_PASSWORD);
+
+    // Press Enter instead of clicking the button
+    await Promise.all([
+      page.waitForURL(/connexion|sign-in/, { timeout: 30000 }),
+      page.locator('input[name="password"]').press('Enter'),
+    ]);
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveURL(/connexion|sign-in/);
+  });
+
+  test('forgot-password form submits on Enter key', async ({ page }) => {
+    await page.goto('/fr/auth/mot-de-passe-oublie', { waitUntil: 'networkidle' });
+    await page.locator('input[name="email"], input[type="email"]').first().fill(SEED_EMAIL);
+
+    // Press Enter — should show success message (always shows success even if email unknown)
+    await page.locator('input[name="email"], input[type="email"]').first().press('Enter');
+    await page.waitForTimeout(3000);
+
+    // The success block should become visible or the form should be hidden
+    const successVisible = await page.locator('#forgot-password-success').isVisible().catch(() => false);
+    const formHidden = await page.locator('#forgot-password-form').isHidden().catch(() => false);
+    expect(successVisible || formHidden).toBeTruthy();
+  });
+});
+
 // ─── Auth guards (unauthenticated) ─────────────────────────────────
 
 test.describe('Auth guards', () => {

@@ -33,6 +33,8 @@ if (Astro.slots.has("default")) {
       class:list={["starwind-dropdown-trigger", className]}
       data-slot="dropdown-trigger"
       data-as-child
+      aria-haspopup="true"
+      aria-expanded="false"
     >
       <slot />
     </div>

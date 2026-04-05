@@ -246,8 +246,11 @@ const { class: className, name, defaultValue, required, ...rest } = Astro.props;
         } else {
           const isModifierKey = e.ctrlKey || e.altKey || e.metaKey;
 
-          // select should not be navigated using tab key so we prevent it
-          if (e.key === "Tab") e.preventDefault();
+          // select should close and return focus on Tab key
+          if (e.key === "Tab") {
+            this.returnFocusOnClose = false;
+            this.closeSelect();
+          }
 
           if (!isModifierKey && e.key.length === 1 && !this.searchInput) {
             this.handleTypeahead(e.key);

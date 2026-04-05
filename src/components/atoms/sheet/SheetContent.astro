@@ -87,6 +87,15 @@ export const sheetCloseButton = tv({
     <slot name="icon">
       <X class="size-5 transition-opacity" />
     </slot>
-    <span class="sr-only">Close</span>
   </button>
 </dialog>
+
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="dialog-backdrop"],
+    [data-slot="sheet-content"] {
+      animation-duration: 0ms !important;
+      transition-duration: 0ms !important;
+    }
+  }
+</style>

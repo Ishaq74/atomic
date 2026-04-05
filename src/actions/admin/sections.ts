@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { pageSections, pages } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
@@ -257,12 +257,13 @@ export const reorderSections = defineAction({
       }
 
       const cases = input.items
-        .map((item) => sql`WHEN ${pageSections.id} = ${item.id} THEN ${item.sortOrder}`)
-        .reduce((a, b) => sql`${a} ${b}`);
-      await tx
-        .update(pageSections)
-        .set({ sortOrder: sql`CASE ${cases} END` })
-        .where(inArray(pageSections.id, ids));
+        .map((item) => ({ id: item.id, sortOrder: item.sortOrder }));
+      for (const item of cases) {
+        await tx
+          .update(pageSections)
+          .set({ sortOrder: item.sortOrder })
+          .where(eq(pageSections.id, item.id));
+      }
     });
 
     auditAdmin(context, user.id, "PAGE_SECTION_REORDER", {

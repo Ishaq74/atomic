@@ -125,7 +125,7 @@ const cms = t.admin.cms.site;
                 </div>
                 <div class="grid gap-2">
                   <Label>{cms.siteDescription}</Label>
-                  <Textarea name="siteDescription" value={s?.siteDescription ?? ''} />
+                  <Textarea name="siteDescription" defaultValue={s?.siteDescription ?? ''} />
                 </div>
                 <div class="grid gap-2">
                   <Label>{cms.siteSlogan}</Label>

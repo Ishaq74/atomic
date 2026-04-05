@@ -13,9 +13,10 @@ import { getMenu, getMenuMeta, type NavTreeItem } from "@database/loaders/naviga
 interface Props {
   title?: string;
   description?: string;
+  alternateUrls?: Record<string, string>;
 }
 
-const { title: titleOverride, description: descriptionOverride } = Astro.props;
+const { title: titleOverride, description: descriptionOverride, alternateUrls } = Astro.props;
 const locale = toLocale(Astro.currentLocale) as Locale;
 const direction = getDirection(locale);
 const t = await getCommonTranslations(locale);
@@ -86,6 +87,8 @@ const navSecondaryHeading = footerSecondaryMeta?.showHeading !== false
 const legalHeading = footerLegalMeta?.showHeading !== false
   ? (siteData?.footerLegalHeading || footerLegalMeta?.displayLabel || t.footer.legalHeading)
   : undefined;
+
+const canonicalUrl = Astro.url.pathname;
 ---
 
 <html lang={locale} dir={direction}>
@@ -96,6 +99,17 @@ const legalHeading = footerLegalMeta?.showHeading !== false
     <meta name="viewport" content="width=device-width" />
     <title>{metaTitle}</title>
     <meta name="description" content={metaDesc} />
+    <link rel="canonical" href={canonicalUrl} />
+    {alternateUrls && Object.entries(alternateUrls).map(([lang, url]) => (
+      <link rel="alternate" hreflang={lang} href={url} />
+    ))}
+    {alternateUrls && <link rel="alternate" hreflang="x-default" href={alternateUrls['fr'] ?? canonicalUrl} />}
+    <meta property="og:title" content={metaTitle} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={locale} />
+    {siteName && <meta property="og:site_name" content={siteName} />}
     {siteData?.ogImage && <meta property="og:image" content={siteData.ogImage} />}
     {/* eslint-disable-next-line astro/no-set-html-directive -- theme CSS is generated server-side from validated OKLCH tokens */}
     {themeCss && <style set:html={themeCss} />}

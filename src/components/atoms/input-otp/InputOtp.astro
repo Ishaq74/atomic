@@ -52,6 +52,8 @@ const inputMode = isNumericOnly ? "numeric" : "text";
   data-disabled={disabled}
   data-pattern={patternStr}
   tabindex={disabled ? "-1" : "0"}
+  role="group"
+  aria-label={`OTP input, ${maxLength} digits`}
   {...rest}
   data-slot="input-otp"
 >

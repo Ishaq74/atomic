@@ -50,3 +50,13 @@ const { class: className, animationDuration = 200, ...rest } = Astro.props;
 >
   <slot />
 </dialog>
+
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    [data-slot="alert-dialog-backdrop"],
+    [data-slot="alert-dialog-content"] {
+      animation-duration: 0ms !important;
+      transition-duration: 0ms !important;
+    }
+  }
+</style>

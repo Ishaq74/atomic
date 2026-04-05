@@ -32,8 +32,8 @@ const { class: className, variant = "default", ...rest } = Astro.props;
   class={toastItem({ variant, class: className })}
   data-variant={variant}
   data-state="open"
-  role="dialog"
-  aria-modal="false"
+  role={variant === "error" || variant === "warning" ? "alert" : "status"}
+  aria-live={variant === "error" || variant === "warning" ? "assertive" : "polite"}
   {...rest}
   data-slot="toast"
 >
@@ -45,7 +45,7 @@ const { class: className, variant = "default", ...rest } = Astro.props;
   </div>
   <button
     type="button"
-    class="starwind-toast-close text-muted-foreground hover:text-foreground absolute top-2 right-2 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none"
+    class="starwind-toast-close text-muted-foreground hover:text-foreground absolute top-2 right-2 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-3 focus-visible:outline-none"
     data-slot="toast-close"
     aria-label="Close notification"
   >

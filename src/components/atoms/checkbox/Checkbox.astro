@@ -99,6 +99,14 @@ const { base, input, icon, label: labelClass } = checkbox({ size, variant });
 </div>
 
 <style>
+  @media (prefers-reduced-motion: reduce) {
+    .starwind-check-icon {
+      transition-duration: 0ms !important;
+    }
+  }
+</style>
+
+<style>
   .starwind-checkbox input[type="checkbox"]:checked {
     background-image: none;
   }
