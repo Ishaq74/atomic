@@ -21,8 +21,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
       '@iconify-json/openmoji':
-        specifier: ^1.2.23
-        version: 1.2.23
+        specifier: ^1.2.26
+        version: 1.2.26
       '@tabler/icons':
         specifier: ^3
         version: 3.40.0
@@ -925,8 +925,8 @@ packages:
   '@iconify-json/mdi@1.2.3':
     resolution: {integrity: sha512-O3cLwbDOK7NNDf2ihaQOH5F9JglnulNDFV7WprU2dSoZu3h3cWH//h74uQAB87brHmvFVxIOkuBX2sZSzYhScg==}
 
-  '@iconify-json/openmoji@1.2.23':
-    resolution: {integrity: sha512-ppgoydoehDJ08pEtuyYF+X1FXvbvAvOcFDI+Gtb+7o1SVxP7EbO2xMCDjY8aNW98a5PBs57PJuv1iopdV+75oA==}
+  '@iconify-json/openmoji@1.2.26':
+    resolution: {integrity: sha512-wyU2+m4fD9IojxOhioaH59yLDF2F5JkKBpUKzGXURpD78JCjkDqoHE3TQHT4rClkE5hHTrN7G37+JbJrut2kYw==}
 
   '@iconify/tools@4.2.0':
     resolution: {integrity: sha512-WRxPva/ipxYkqZd1+CkEAQmd86dQmrwH0vwK89gmp2Kh2WyyVw57XbPng0NehP3x4V1LzLsXUneP1uMfTMZmUA==}
@@ -5948,7 +5948,7 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/openmoji@1.2.23':
+  '@iconify-json/openmoji@1.2.26':
     dependencies:
       '@iconify/types': 2.0.0
 
