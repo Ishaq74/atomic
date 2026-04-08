@@ -62,7 +62,7 @@
     "drizzle-orm": "^0.45.2",
     "embla-carousel": "^8.6.0",
     "embla-carousel-autoplay": "^8.6.0",
-    "isomorphic-dompurify": "^3.3.0",
+    "isomorphic-dompurify": "^3.7.1",
     "motion": "^12.36.0",
     "nodemailer": "^8.0.4",
     "pg": "^8.20.0",
