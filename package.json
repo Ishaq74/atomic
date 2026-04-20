@@ -47,7 +47,7 @@
     "qa:offline": "pnpm check && pnpm build && pnpm lint && pnpm test -- --coverage && pnpm test:report"
   },
   "dependencies": {
-    "@astrojs/node": "10.0.4",
+    "@astrojs/node": "10.0.5",
     "@astrojs/sitemap": "3.7.2",
     "@iconify-json/circle-flags": "^1.2.10",
     "@iconify-json/mdi": "^1.2.3",
@@ -55,7 +55,7 @@
     "@tabler/icons": "^3",
     "@tailwindcss/forms": "^0.5",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "6.1.2",
+    "astro": "6.1.8",
     "astro-icon": "^1.1.5",
     "better-auth": "^1.5.6",
     "dotenv": "^17.3.1",
