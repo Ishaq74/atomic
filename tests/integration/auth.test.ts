@@ -165,11 +165,12 @@ describe('Auth — Organization', () => {
   let test: TestHelpers;
   let ownerUser: any;
   let savedOrg: any;
+  const orgSlug = `test-org-integration-${Date.now()}`;
 
   beforeAll(async () => {
     test = await getTestHelpers();
     const owner = test.createUser({
-      email: 'integration-org-owner@test.com',
+      email: `integration-org-owner-${Date.now()}@test.com`,
       name: 'Org Owner',
       emailVerified: true,
     });
@@ -191,12 +192,12 @@ describe('Auth — Organization', () => {
   it('user can create an organization', async () => {
     const headers = await test.getAuthHeaders({ userId: ownerUser.id });
     const org = await auth.api.createOrganization({
-      body: { name: 'Test Org Integration', slug: 'test-org-integration' },
+      body: { name: 'Test Org Integration', slug: orgSlug },
       headers,
     });
     expect(org).toBeDefined();
     expect(org.name).toBe('Test Org Integration');
-    expect(org.slug).toBe('test-org-integration');
+    expect(org.slug).toBe(orgSlug);
     savedOrg = org;
   });
 
@@ -204,7 +205,7 @@ describe('Auth — Organization', () => {
     const headers = await test.getAuthHeaders({ userId: ownerUser.id });
     const orgs = await auth.api.listOrganizations({ headers });
     expect(Array.isArray(orgs)).toBe(true);
-    const found = orgs.find((o: any) => o.slug === 'test-org-integration');
+    const found = orgs.find((o: any) => o.slug === orgSlug);
     expect(found).toBeDefined();
   });
 });

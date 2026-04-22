@@ -1,5 +1,10 @@
 import { toLocale, getAuthTranslations } from '@i18n/utils';
 import type { Locale } from '@i18n/config';
+import { auth } from '@/lib/auth';
+import type { statement } from '@/lib/permissions';
+
+type Statement = typeof statement;
+type Permissions = { [K in keyof Statement]?: Statement[K][number][] };
 
 interface AstroContext {
   params: Record<string, string | undefined>;
@@ -41,5 +46,31 @@ export async function requireAdmin(astro: AstroContext) {
   if (user.role !== 'admin') {
     return { redirect: astro.redirect(dashboardUrl(locale, authT)) };
   }
+  return { user, locale, authT };
+}
+
+/**
+ * Require specific CMS permissions (RBAC). Redirects if permission denied.
+ *
+ * @see src/lib/permissions.ts — définitions des statements et rôles
+ */
+export async function requirePermission(astro: AstroContext, permissions: Permissions) {
+  const { locale, authT } = await resolveLocale(astro);
+  const user = astro.locals.user;
+  if (!user || user.banned) {
+    return { redirect: astro.redirect(signInUrl(locale, authT)) };
+  }
+
+  const result = await auth.api.userHasPermission({
+    body: {
+      userId: user.id,
+      permissions: permissions as Record<string, string[]>,
+    },
+  });
+
+  if (!result.success) {
+    return { redirect: astro.redirect(dashboardUrl(locale, authT)) };
+  }
+
   return { user, locale, authT };
 }

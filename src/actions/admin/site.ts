@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { siteSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 import { isValidLocale } from "@i18n/utils";
 
 const urlField = z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional();
@@ -36,7 +36,7 @@ export const upsertSiteSettings = defineAction({
     footerLegalHeading: z.string().trim().max(100).nullable().optional(),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "site");
 
     if (!isValidLocale(input.locale)) {
@@ -89,13 +89,13 @@ export const updateSiteSettings = defineAction({
     siteSlogan: z.string().trim().max(200, "Le slogan ne peut pas dépasser 200 caractères.").nullable().optional(),
     metaTitle: z.string().trim().max(70, "Le meta title ne peut pas dépasser 70 caractères.").nullable().optional(),
     metaDescription: z.string().trim().max(160, "La meta description ne peut pas dépasser 160 caractères.").nullable().optional(),
-    logoLight: z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional(),
-    logoDark: z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional(),
-    favicon: z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional(),
-    ogImage: z.string().max(500).refine((v) => !v || /^(https?:\/\/|\/(?!\/))/.test(v), "L'URL doit commencer par http://, https:// ou /").nullable().optional(),
+    logoLight: urlField,
+    logoDark: urlField,
+    favicon: urlField,
+    ogImage: urlField,
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "site");
 
     const { id, ...data } = input;
@@ -119,7 +119,7 @@ export const updateSiteSettings = defineAction({
       metadata: { locale: updated.locale },
     });
 
-    invalidateCache("site:settings");
+    invalidateCache(`site:settings:${updated.locale}`);
     return updated;
   },
 });

@@ -56,16 +56,19 @@ export async function fetchAdminUsers(
     headers,
   });
   const rawUsers = result?.users ?? [];
-  const users: AdminUser[] = rawUsers.map((u) => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    image: (u as unknown as Record<string, unknown>).image as string | null ?? null,
-    username: (u as unknown as Record<string, unknown>).username as string | null ?? null,
-    role: u.role ?? null,
-    banned: u.banned ?? null,
-    createdAt: u.createdAt instanceof Date ? u.createdAt : new Date(u.createdAt),
-  }));
+  const users: AdminUser[] = rawUsers.map((u) => {
+    const raw = u as Record<string, unknown>;
+    return {
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      image: typeof raw.image === 'string' ? raw.image : null,
+      username: typeof raw.username === 'string' ? raw.username : null,
+      role: u.role ?? null,
+      banned: u.banned ?? null,
+      createdAt: u.createdAt instanceof Date ? u.createdAt : new Date(u.createdAt),
+    };
+  });
   const total = typeof (result as Record<string, unknown>)?.total === 'number'
     ? (result as Record<string, unknown>).total as number
     : users.length;

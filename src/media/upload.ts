@@ -73,7 +73,7 @@ export async function processUpload(
 
   // ─── Écriture sur disque ─────────────────────────────────────────
   const dir = join(process.cwd(), 'public', 'uploads', subDir);
-  await mkdir(dir, { recursive: true });
+  await mkdir(dir, { recursive: true, mode: 0o755 });
 
   const filePath = join(dir, filename);
   let buffer = Buffer.from(await file.arrayBuffer());
@@ -110,7 +110,7 @@ export async function processUpload(
     buffer = Buffer.from(sanitized, 'utf-8');
   }
 
-  await writeFile(filePath, buffer);
+  await writeFile(filePath, buffer, { mode: 0o644 });
 
   // Generate WebP variant for raster images (JPEG/PNG) for next-gen format serving
   const RASTER_TYPES = new Set(['image/jpeg', 'image/png']);

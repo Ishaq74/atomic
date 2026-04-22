@@ -14,9 +14,12 @@ interface Props {
   title?: string;
   description?: string;
   alternateUrls?: Record<string, string>;
+  ogImage?: string;
+  ogType?: string;
+  jsonLd?: string;
 }
 
-const { title: titleOverride, description: descriptionOverride, alternateUrls } = Astro.props;
+const { title: titleOverride, description: descriptionOverride, alternateUrls, ogImage: ogImageOverride, ogType, jsonLd } = Astro.props;
 const locale = toLocale(Astro.currentLocale) as Locale;
 const direction = getDirection(locale);
 const t = await getCommonTranslations(locale);
@@ -106,11 +109,16 @@ const canonicalUrl = Astro.url.pathname;
     {alternateUrls && <link rel="alternate" hreflang="x-default" href={alternateUrls['fr'] ?? canonicalUrl} />}
     <meta property="og:title" content={metaTitle} />
     <meta property="og:description" content={metaDesc} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType ?? "website"} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:locale" content={locale} />
     {siteName && <meta property="og:site_name" content={siteName} />}
-    {siteData?.ogImage && <meta property="og:image" content={siteData.ogImage} />}
+    {(ogImageOverride || siteData?.ogImage) && <meta property="og:image" content={ogImageOverride ?? siteData!.ogImage!} />}
+    <meta name="twitter:card" content={(ogImageOverride || siteData?.ogImage) ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={metaTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    {(ogImageOverride || siteData?.ogImage) && <meta name="twitter:image" content={ogImageOverride ?? siteData!.ogImage!} />}
+    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
     {/* eslint-disable-next-line astro/no-set-html-directive -- theme CSS is generated server-side from validated OKLCH tokens */}
     {themeCss && <style set:html={themeCss} />}
 </head>

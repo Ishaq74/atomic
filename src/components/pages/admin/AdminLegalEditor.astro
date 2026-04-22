@@ -58,7 +58,10 @@ const parsedSections = sections
   .filter((s) => s.type === 'faq')
   .map((s) => {
     let parsed: FaqSection = { title: '', items: [] };
-    try { parsed = JSON.parse(s.content) as FaqSection; } catch { /* keep default */ }
+    try {
+      const raw = s.content;
+      parsed = (typeof raw === 'string' ? JSON.parse(raw) : raw) as FaqSection;
+    } catch { /* keep default */ }
     return { id: s.id, isVisible: s.isVisible, sortOrder: s.sortOrder, data: parsed };
   });
 ---

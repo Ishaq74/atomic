@@ -36,8 +36,7 @@ export default defineConfig({
         'src/database/data/**',
         'src/database/commands/**',
         'src/database/drizzle.ts',
-        'src/database/loaders/site.loader.ts',
-        'src/database/loaders/page.loader.ts',
+
         'src/components/**/index.ts',
         'src/components/**/*Types.ts',
         'src/components/**/carousel-script.ts',

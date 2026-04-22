@@ -40,4 +40,22 @@ export default {
     switchLanguage: 'Changer de langue',
     skipToContent: 'Aller au contenu principal',
   },
+  errors: {
+    notFound: {
+      title: 'Page introuvable',
+      heading: 'Page introuvable',
+      message: 'La page que vous cherchez n\u2019existe pas ou a \u00e9t\u00e9 d\u00e9plac\u00e9e.',
+      back: 'Retour \u00e0 l\u2019accueil',
+    },
+    serverError: {
+      title: 'Erreur serveur',
+      heading: 'Erreur interne du serveur',
+      message: 'Quelque chose s\u2019est mal pass\u00e9. Veuillez r\u00e9essayer plus tard.',
+      back: 'Retour \u00e0 l\u2019accueil',
+    },
+  },
+  rss: {
+    title: 'Starwind Pro \u2014 Flux RSS',
+    description: 'Derniers contenus publi\u00e9s sur Starwind Pro',
+  },
 } satisfies CommonTranslations;

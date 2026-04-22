@@ -12,7 +12,13 @@ vi.mock('astro:actions', () => {
   return { ActionError };
 });
 
-import { assertAdmin, adminRateLimit } from '@/actions/admin/_helpers';
+const mockLogAudit = vi.fn();
+vi.mock('@/lib/audit', () => ({
+  logAuditEvent: (...args: any[]) => mockLogAudit(...args),
+  extractIp: vi.fn(() => '127.0.0.1'),
+}));
+
+import { assertAdmin, adminRateLimit, auditAdmin } from '@/actions/admin/_helpers';
 
 function fakeContext(user: any = null): any {
   return {
@@ -35,6 +41,10 @@ describe('assertAdmin', () => {
     const result = assertAdmin(fakeContext(admin));
     expect(result).toBe(admin);
   });
+
+  it('throws FORBIDDEN when admin is banned', () => {
+    expect(() => assertAdmin(fakeContext({ id: 'a2', role: 'admin', banned: true }))).toThrow('suspendu');
+  });
 });
 
 describe('adminRateLimit', () => {
@@ -52,5 +62,22 @@ describe('adminRateLimit', () => {
       adminRateLimit(ctx, 'u-rl', scope, { window: 60, max: 3 });
     }
     expect(() => adminRateLimit(ctx, 'u-rl', scope, { window: 60, max: 3 })).toThrow('requêtes');
+  });
+});
+
+describe('auditAdmin', () => {
+  it('does not throw when logAuditEvent rejects', async () => {
+    mockLogAudit.mockRejectedValueOnce(new Error('DB down'));
+
+    const ctx = {
+      request: { headers: new Headers() },
+      clientAddress: '10.0.0.1',
+    } as any;
+
+    // auditAdmin is fire-and-forget — must not throw
+    expect(() => auditAdmin(ctx, 'u1', 'PAGE_CREATE' as any)).not.toThrow();
+
+    // Give microtask queue time to settle — rejection must be swallowed
+    await new Promise((r) => setTimeout(r, 10));
   });
 });

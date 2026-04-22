@@ -40,4 +40,22 @@ export default {
     switchLanguage: 'Switch language',
     skipToContent: 'Skip to main content',
   },
+  errors: {
+    notFound: {
+      title: 'Page not found',
+      heading: 'Page Not Found',
+      message: 'The page you are looking for does not exist or has been moved.',
+      back: 'Back to home',
+    },
+    serverError: {
+      title: 'Server Error',
+      heading: 'Internal Server Error',
+      message: 'Something went wrong. Please try again later.',
+      back: 'Back to home',
+    },
+  },
+  rss: {
+    title: 'Starwind Pro \u2014 RSS Feed',
+    description: 'Latest content published on Starwind Pro',
+  },
 } satisfies CommonTranslations;

@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { openingHours } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 
 /** HH:MM field with range validation (00-23 : 00-59) */
 const timeField = (label: string) =>
@@ -50,7 +50,7 @@ export const updateOpeningHours = defineAction({
       .max(7, "Maximum 7 jours de la semaine."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "hours");
 
     const db = getDrizzle();

@@ -40,4 +40,22 @@ export default {
     switchLanguage: 'تغيير اللغة',
     skipToContent: 'انتقل إلى المحتوى الرئيسي',
   },
+  errors: {
+    notFound: {
+      title: 'الصفحة غير موجودة',
+      heading: 'الصفحة غير موجودة',
+      message: 'الصفحة التي تبحث عنها غير موجودة أو تم نقلها.',
+      back: 'العودة إلى الصفحة الرئيسية',
+    },
+    serverError: {
+      title: 'خطأ في الخادم',
+      heading: 'خطأ داخلي في الخادم',
+      message: 'حدث خطأ ما. يرجى المحاولة مرة أخرى لاحقاً.',
+      back: 'العودة إلى الصفحة الرئيسية',
+    },
+  },
+  rss: {
+    title: 'Starwind Pro \u2014 خلاصة RSS',
+    description: 'أحدث المحتويات المنشورة على Starwind Pro',
+  },
 } satisfies CommonTranslations;

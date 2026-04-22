@@ -1,10 +1,11 @@
 ---
 /**
  * SectionRenderer — Renders a CMS page section based on its type.
- * Content is stored as JSON string in the DB; each type maps to a layout.
+ * Content is stored as jsonb in the DB; each type maps to a layout.
  */
 import type { pageSections } from '@database/schemas';
 import { sanitizeHtml, safeUrl, safeEmbedUrl } from '@lib/sanitize';
+import { sectionTypes } from '@/actions/admin/sections';
 
 type SectionRow = typeof pageSections.$inferSelect;
 
@@ -14,14 +15,27 @@ interface Props {
 
 const { section } = Astro.props;
 
+// jsonb content — Drizzle returns a parsed object. Support legacy text as fallback.
 let content: Record<string, unknown> = {};
-try {
-  content = JSON.parse(section.content);
-} catch {
-  content = { raw: section.content };
+if (section.content && typeof section.content === 'object') {
+  content = section.content as Record<string, unknown>;
+} else if (typeof section.content === 'string') {
+  try { content = JSON.parse(section.content); } catch { content = { raw: section.content }; }
 }
 
 const { type } = section;
+
+// i18n labels for iframe titles
+const SUPPORTED_IFRAME_LOCALES = ['fr', 'en', 'es', 'ar'] as const;
+const locale = Astro.currentLocale ?? 'fr';
+const IFRAME_LABELS: Record<string, { map: string; video: string }> = {
+  fr: { map: 'Carte interactive', video: 'Lecteur vidéo' },
+  en: { map: 'Interactive map', video: 'Video player' },
+  es: { map: 'Mapa interactivo', video: 'Reproductor de vídeo' },
+  ar: { map: 'خريطة تفاعلية', video: 'مشغل فيديو' },
+};
+const safeLocale = (SUPPORTED_IFRAME_LOCALES as readonly string[]).includes(locale) ? locale : 'fr';
+const labels = IFRAME_LABELS[safeLocale];
 
 type GalleryImage = { src: string; alt?: string; width?: number; height?: number };
 const galleryImages: GalleryImage[] = Array.isArray(content.images)
@@ -133,8 +147,8 @@ const galleryImages: GalleryImage[] = Array.isArray(content.images)
   <section class="cms-section cms-contact py-12 text-center">
     {content.title && <h2 class="text-3xl font-bold mb-4">{content.title}</h2>}
     {content.text && <p class="text-muted-foreground mb-6">{content.text}</p>}
-    {content.email && <p><a href={`mailto:${content.email}`} class="underline">{content.email}</a></p>}
-    {content.phone && <p><a href={`tel:${content.phone}`} class="underline">{content.phone}</a></p>}
+    {content.email && safeUrl(`mailto:${content.email}`) && <p><a href={safeUrl(`mailto:${content.email}`)} class="underline">{content.email}</a></p>}
+    {content.phone && safeUrl(`tel:${content.phone}`) && <p><a href={safeUrl(`tel:${content.phone}`)} class="underline">{content.phone}</a></p>}
   </section>
 )}
 
@@ -146,7 +160,7 @@ const galleryImages: GalleryImage[] = Array.isArray(content.images)
       height="400"
       class="rounded-lg border-0"
       loading="lazy"
-      title="Map"
+      title={labels.map}
     />
   </section>
 )}
@@ -162,7 +176,7 @@ const galleryImages: GalleryImage[] = Array.isArray(content.images)
         loading="lazy"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen
-        title="Video"
+        title={labels.video}
       />
     )}
     {content.caption && <p class="text-sm text-muted-foreground mt-2">{content.caption}</p>}
@@ -175,7 +189,7 @@ const galleryImages: GalleryImage[] = Array.isArray(content.images)
   </section>
 )}
 
-{!['hero', 'text', 'image', 'gallery', 'cta', 'testimonials', 'faq', 'features', 'contact', 'map', 'video', 'custom'].includes(type) && (
+{!(sectionTypes as readonly string[]).includes(type) && (
   <section class="cms-section cms-unknown py-8 text-center text-muted-foreground text-sm">
     <p>Unknown section type: {type}</p>
   </section>

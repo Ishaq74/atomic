@@ -40,4 +40,22 @@ export default {
     switchLanguage: 'Cambiar idioma',
     skipToContent: 'Ir al contenido principal',
   },
+  errors: {
+    notFound: {
+      title: 'P\u00e1gina no encontrada',
+      heading: 'P\u00e1gina no encontrada',
+      message: 'La p\u00e1gina que busca no existe o ha sido movida.',
+      back: 'Volver al inicio',
+    },
+    serverError: {
+      title: 'Error del servidor',
+      heading: 'Error interno del servidor',
+      message: 'Algo sali\u00f3 mal. Por favor, int\u00e9ntelo de nuevo m\u00e1s tarde.',
+      back: 'Volver al inicio',
+    },
+  },
+  rss: {
+    title: 'Starwind Pro \u2014 Fuente RSS',
+    description: '\u00daltimos contenidos publicados en Starwind Pro',
+  },
 } satisfies CommonTranslations;

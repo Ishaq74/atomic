@@ -48,6 +48,24 @@ export interface CommonTranslations {
     switchLanguage: string;
     skipToContent: string;
   };
+  errors: {
+    notFound: {
+      title: string;
+      heading: string;
+      message: string;
+      back: string;
+    };
+    serverError: {
+      title: string;
+      heading: string;
+      message: string;
+      back: string;
+    };
+  };
+  rss: {
+    title: string;
+    description: string;
+  };
 }
 
 export interface HomeTranslations {
@@ -279,9 +297,11 @@ export interface AuthTranslations {
       users: string;
       organizations: string;
       auditLog: string;
+      roles: string;
       site: string;
       navigation: string;
       pages: string;
+      media: string;
       theme: string;
     };
     stats: {
@@ -365,6 +385,56 @@ export interface AuthTranslations {
       allActions: string;
       noResults: string;
       showMore: string;
+    };
+    roles: {
+      title: string;
+      description: string;
+      globalRoles: string;
+      orgRoles: string;
+      resource: string;
+      permissions: string;
+      roleName: {
+        admin: string;
+        editor: string;
+        user: string;
+        owner: string;
+        orgAdmin: string;
+        member: string;
+      };
+      resourceName: {
+        page: string;
+        section: string;
+        media: string;
+        site: string;
+        navigation: string;
+        audit: string;
+        theme: string;
+        user: string;
+        session: string;
+        organization: string;
+        member: string;
+        invitation: string;
+        team: string;
+        ac: string;
+      };
+      systemPermissions: string;
+      customRoles: string;
+      customRolesDescription: string;
+      selectOrg: string;
+      noOrgs: string;
+      noCustomRoles: string;
+      createRole: string;
+      editRole: string;
+      deleteRole: string;
+      roleNameLabel: string;
+      roleNamePlaceholder: string;
+      permissionsLabel: string;
+      confirmDelete: string;
+      created: string;
+      updated: string;
+      deleted: string;
+      save: string;
+      cancel: string;
     };
     impersonation: {
       banner: string;
@@ -524,6 +594,7 @@ export interface AuthTranslations {
           template: string;
           sections: string;
           status: string;
+          locked: string;
           actions: string;
         };
         legal: {
@@ -708,7 +779,38 @@ export interface AuthTranslations {
     detail: {
       backToList: string;
       membersTab: string;
+      rolesTab: string;
       settingsTab: string;
+    };
+    roles: {
+      title: string;
+      description: string;
+      builtinTitle: string;
+      builtinDescription: string;
+      noCustomRoles: string;
+      createRole: string;
+      editRole: string;
+      deleteRole: string;
+      roleNameLabel: string;
+      roleNamePlaceholder: string;
+      permissionsLabel: string;
+      confirmDelete: string;
+      created: string;
+      updated: string;
+      deleted: string;
+      save: string;
+      cancel: string;
+      assignToMembers: string;
+      memberRoleUpdated: string;
+      resourceName: {
+        page: string;
+        section: string;
+        media: string;
+        site: string;
+        navigation: string;
+        audit: string;
+        theme: string;
+      };
     };
     members: {
       title: string;

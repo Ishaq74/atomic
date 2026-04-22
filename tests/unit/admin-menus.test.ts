@@ -36,11 +36,15 @@ vi.mock('@database/schemas', () => ({
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
+}));
+const mockUserHasPermission = vi.fn(() => Promise.resolve({ success: true }));
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: mockUserHasPermission } },
 }));
 
 // ── Imports ─────────────────────────────────────────────────────────
@@ -134,13 +138,14 @@ describe('createNavigationMenu', () => {
   });
 
   it('throws FORBIDDEN for non-admin', async () => {
+    mockUserHasPermission.mockResolvedValueOnce({ success: false });
     const ctx = {
       locals: { user: { id: 'u1', role: 'user' } },
       request: { headers: new Headers() },
     } as any;
     await expect(
       createMenu.handler({ name: 'test' }, ctx),
-    ).rejects.toThrow('administrateurs');
+    ).rejects.toThrow('Permissions insuffisantes');
   });
 });
 
@@ -233,12 +238,13 @@ describe('deleteNavigationMenu', () => {
   });
 
   it('requires admin role', async () => {
+    mockUserHasPermission.mockResolvedValueOnce({ success: false });
     const ctx = {
       locals: { user: { id: 'u1', role: 'user' } },
       request: { headers: new Headers() },
     } as any;
     await expect(
       deleteMenu.handler({ id: 'm1' }, ctx),
-    ).rejects.toThrow('administrateurs');
+    ).rejects.toThrow('Permissions insuffisantes');
   });
 });

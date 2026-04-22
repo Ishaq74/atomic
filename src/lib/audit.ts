@@ -60,10 +60,48 @@ export type AuditAction =
   | "THEME_CREATE"
   | "THEME_DELETE"
   | "CONSENT_SETTINGS_UPDATE"
+  | "MEDIA_FOLDER_CREATE"
+  | "MEDIA_FOLDER_UPDATE"
+  | "MEDIA_FOLDER_DELETE"
+  | "MEDIA_FILE_UPLOAD"
+  | "MEDIA_FILE_RENAME"
+  | "MEDIA_FILE_MOVE"
+  | "MEDIA_FILE_DELETE"
+  | "MEDIA_FILE_ALT_UPDATE"
+  | "MEDIA_FILE_ALT_DELETE"
+  | "PAGE_VERSION_CREATE"
+  | "PAGE_VERSION_RESTORE"
+  | "PAGE_SCHEDULE"
+  | "PAGE_UNSCHEDULE"
+  | "PAGE_RESTORE"
+  | "PAGE_PERMANENT_DELETE"
+  | "PAGES_BULK_PUBLISH"
+  | "PAGES_BULK_ARCHIVE"
+  | "PAGE_SCHEDULE_UNPUBLISH"
+  | "PAGE_UNSCHEDULE_UNPUBLISH"
+  | "PAGE_CLONE"
+  | "PAGE_LOCK"
+  | "PAGE_UNLOCK"
+  | "PAGE_SUBMIT_FOR_REVIEW"
+  | "PAGE_APPROVE"
+  | "PAGE_REJECT"
+  | "PAGE_COMMENT_CREATE"
+  | "PAGE_COMMENT_DELETE"
+  | "PAGES_BULK_DELETE"
+  | "PAGES_BULK_RESTORE"
+  | "CONTENT_EXPORT"
+  | "CONTENT_IMPORT"
+  | "WEBHOOK_CREATE"
+  | "WEBHOOK_UPDATE"
+  | "WEBHOOK_DELETE"
   | "USER_DATA_EXPORT"
   | "CONTACT_FORM_SUBMIT"
   | "EMAIL_SEND_FAILED"
-  | "AUDIT_LOG_ACCESS";
+  | "AUDIT_LOG_ACCESS"
+  | "ORG_ROLE_CREATE"
+  | "ORG_ROLE_UPDATE"
+  | "ORG_ROLE_DELETE"
+  | "ORG_MEMBER_ROLE_UPDATE";
 
 export interface AuditEventInput {
   userId?: string | null;
@@ -75,6 +113,16 @@ export interface AuditEventInput {
   userAgent?: string | null;
 }
 
+/** Maximum serialized metadata size (10 KB). Larger payloads are truncated. */
+const MAX_METADATA_SIZE = 10 * 1024;
+
+function safeMetadata(metadata: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  if (!metadata) return null;
+  const json = JSON.stringify(metadata);
+  if (json.length <= MAX_METADATA_SIZE) return metadata;
+  return { _truncated: true, _originalSize: json.length, action: metadata.action ?? null };
+}
+
 export async function logAuditEvent(input: AuditEventInput): Promise<void> {
   try {
     const db = getDrizzle();
@@ -83,7 +131,7 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
       action: input.action,
       resource: input.resource ?? null,
       resourceId: input.resourceId ?? null,
-      metadata: input.metadata ?? null,
+      metadata: safeMetadata(input.metadata),
       ipAddress: input.ipAddress ?? null,
       userAgent: input.userAgent ?? null,
     });

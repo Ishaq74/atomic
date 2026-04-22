@@ -1,5 +1,5 @@
 ---
-import { requireAdmin } from '@/lib/auth-guards';
+import { requirePermission } from '@/lib/auth-guards';
 import { fetchAdminOrgs } from '@/lib/auth-data';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import AuthLayout from '@organisms/AuthLayout/AuthLayout.astro';
@@ -8,7 +8,7 @@ import AdminOrgsPage from '@pages/admin/AdminOrgsPage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro);
+const result = await requirePermission(Astro, { user: ["list"] });
 if ('redirect' in result) return result.redirect;
 const { user, locale, authT } = result;
 

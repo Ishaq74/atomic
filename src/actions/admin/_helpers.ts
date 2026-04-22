@@ -2,6 +2,10 @@ import { ActionError } from "astro:actions";
 import type { ActionAPIContext } from "astro:actions";
 import { logAuditEvent, extractIp, type AuditAction } from "@/lib/audit";
 import { checkRateLimit } from "@/lib/rate-limit";
+import type { statement } from "@/lib/permissions";
+
+type Statement = typeof statement;
+type Permissions = { [K in keyof Statement]?: Statement[K][number][] };
 
 /**
  * Vérifie que l'utilisateur est connecté et a le rôle admin.
@@ -32,6 +36,50 @@ export function assertAdmin(context: ActionAPIContext) {
 }
 
 /**
+ * Vérifie que l'utilisateur est connecté et a les permissions requises (RBAC).
+ * Utilise better-auth `userHasPermission` en passant le rôle directement.
+ * Lance une ActionError si ce n'est pas le cas.
+ *
+ * @see src/lib/permissions.ts — définitions des statements et rôles
+ */
+export async function assertPermission(
+  context: ActionAPIContext,
+  permissions: Permissions,
+) {
+  const user = context.locals.user;
+  if (!user) {
+    throw new ActionError({
+      code: "UNAUTHORIZED",
+      message: "Vous devez être connecté pour effectuer cette action.",
+    });
+  }
+  if (user.banned) {
+    throw new ActionError({
+      code: "FORBIDDEN",
+      message: "Compte suspendu.",
+    });
+  }
+
+  const result = await import("@/lib/auth").then((m) =>
+    m.auth.api.userHasPermission({
+      body: {
+        userId: user.id,
+        permissions: permissions as Record<string, string[]>,
+      },
+    }),
+  );
+
+  if (!result.success) {
+    throw new ActionError({
+      code: "FORBIDDEN",
+      message: "Permissions insuffisantes pour cette action.",
+    });
+  }
+
+  return user;
+}
+
+/**
  * Applique un rate-limit par IP (ou userId en fallback).
  * Lance une ActionError TOO_MANY_REQUESTS si le seuil est dépassé.
  */
@@ -42,7 +90,9 @@ export function adminRateLimit(
   opts = { window: 60, max: 30 },
 ) {
   // Key on userId (always available after assertAdmin) to avoid NAT/shared-IP collisions.
-  const rl = checkRateLimit(`admin-${scope}:${userId}`, opts);
+  // Encode scope to prevent key collision if scope contains ':'.
+  const safeScope = scope.replace(/:/g, '_');
+  const rl = checkRateLimit(`admin-${safeScope}:${userId}`, opts);
   if (!rl.allowed) {
     throw new ActionError({
       code: "TOO_MANY_REQUESTS",
@@ -73,5 +123,5 @@ export function auditAdmin(
     metadata: opts?.metadata ?? null,
     ipAddress: extractIp(context.request.headers, context.clientAddress),
     userAgent: context.request.headers.get("user-agent"),
-  });
+  }).catch(() => { /* swallow — audit must never crash the caller */ });
 }

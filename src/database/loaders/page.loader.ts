@@ -1,4 +1,4 @@
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, or, lte, isNull } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { cached } from "@database/cache";
 import { pages, pageSections } from "@database/schemas";
@@ -20,6 +20,7 @@ export const getPage = cached(
   ): Promise<PageWithSections | null> => {
   if (!isValidLocale(locale)) return null;
   const db = getDrizzle();
+  const now = new Date();
 
   const [page] = await db
     .select()
@@ -28,12 +29,29 @@ export const getPage = cached(
       and(
         eq(pages.locale, locale),
         eq(pages.slug, slug),
-        eq(pages.isPublished, true),
+        isNull(pages.deletedAt),
+        or(
+          eq(pages.isPublished, true),
+          lte(pages.scheduledAt, now),
+        ),
       ),
     )
     .limit(1);
 
   if (!page) return null;
+
+  // Lazy-update: if the page was served via scheduled publishing, persist the
+  // published state so the admin UI stays consistent.
+  if (!page.isPublished && page.scheduledAt && page.scheduledAt <= now) {
+    try {
+      await db
+        .update(pages)
+        .set({ isPublished: true, publishedAt: page.scheduledAt, scheduledAt: null })
+        .where(eq(pages.id, page.id));
+    } catch (err: unknown) {
+      console.error('[page.loader] Lazy-update for scheduled publish failed:', err);
+    }
+  }
 
   const sections = await db
     .select()
@@ -59,16 +77,25 @@ export const getPagesList = cached(
   async (locale: string) => {
     if (!isValidLocale(locale)) return [];
     const db = getDrizzle();
+    const now = new Date();
     return db
       .select({
         id: pages.id,
         slug: pages.slug,
         title: pages.title,
         sortOrder: pages.sortOrder,
+        publishedAt: pages.publishedAt,
       })
       .from(pages)
       .where(
-        and(eq(pages.locale, locale), eq(pages.isPublished, true)),
+        and(
+          eq(pages.locale, locale),
+          isNull(pages.deletedAt),
+          or(
+            eq(pages.isPublished, true),
+            lte(pages.scheduledAt, now),
+          ),
+        ),
       )
       .orderBy(asc(pages.sortOrder))
       .limit(500);

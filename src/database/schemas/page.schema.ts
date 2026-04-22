@@ -8,7 +8,9 @@ import {
   uniqueIndex,
   index,
   check,
+  jsonb,
 } from "drizzle-orm/pg-core";
+import { user } from "./auth.schema";
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
 // CMS pages. One row per page × locale. Unique on (locale, slug).
@@ -24,10 +26,20 @@ export const pages = pgTable(
     metaTitle: text("meta_title"),
     metaDescription: text("meta_description"),
     ogImage: text("og_image"),
+    canonical: text("canonical"),
+    robots: text("robots"),
     template: text("template").default("default").notNull(),
     isPublished: boolean("is_published").default(false).notNull(),
     publishedAt: timestamp("published_at"),
+    scheduledAt: timestamp("scheduled_at"),
+    scheduledUnpublishAt: timestamp("scheduled_unpublish_at"),
     sortOrder: integer("sort_order").default(0).notNull(),
+    deletedAt: timestamp("deleted_at"),
+    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
+    lockedBy: text("locked_by").references(() => user.id, { onDelete: "set null" }),
+    lockedAt: timestamp("locked_at"),
+    // search_vector tsvector column exists in DB but is excluded from Drizzle schema
+    // — managed entirely by DB triggers (migration 0018), queried via raw SQL in /api/search
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()
@@ -38,6 +50,9 @@ export const pages = pgTable(
     uniqueIndex("pages_locale_slug_uidx").on(table.locale, table.slug),
     index("pages_locale_idx").on(table.locale),
     index("pages_locale_published_idx").on(table.locale, table.isPublished, table.sortOrder),
+    index("pages_deletedAt_idx").on(table.deletedAt),
+    index("pages_scheduledAt_idx").on(table.scheduledAt),
+    index("pages_scheduledUnpublishAt_idx").on(table.scheduledUnpublishAt),
     check("pages_publish_consistency", sql`NOT ${table.isPublished} OR ${table.publishedAt} IS NOT NULL`),
   ],
 );
@@ -54,7 +69,7 @@ export const pageSections = pgTable(
       .notNull()
       .references(() => pages.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
-    content: text("content").notNull(),
+    content: jsonb("content").notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -62,6 +77,7 @@ export const pageSections = pgTable(
       .defaultNow()
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
+    updatedBy: text("updated_by").references(() => user.id, { onDelete: "set null" }),
   },
   (table) => [
     index("page_sections_pageId_idx").on(table.pageId),

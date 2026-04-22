@@ -37,7 +37,7 @@ vi.mock('@database/schemas', () => ({
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 vi.mock('@/lib/rate-limit', () => ({
@@ -45,6 +45,9 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 vi.mock('@/lib/sanitize', () => ({
   sanitizeHtml: vi.fn((v: string) => v),
+}));
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: vi.fn(() => Promise.resolve({ success: true })) } },
 }));
 
 // ── Imports ─────────────────────────────────────────────────────────
@@ -120,22 +123,21 @@ beforeEach(() => {
 describe('sanitizeSectionContent', () => {
   it('sanitizes string values in JSON', () => {
     const input = JSON.stringify({ title: 'Hello', nested: { text: 'World' } });
-    const result = sanitizeSectionContent(input);
-    const parsed = JSON.parse(result);
-    expect(parsed.title).toBe('Hello');
-    expect(parsed.nested.text).toBe('World');
+    const result = sanitizeSectionContent(input) as Record<string, any>;
+    expect(result.title).toBe('Hello');
+    expect(result.nested.text).toBe('World');
   });
 
   it('handles arrays', () => {
     const input = JSON.stringify(['a', 'b']);
     const result = sanitizeSectionContent(input);
-    expect(JSON.parse(result)).toEqual(['a', 'b']);
+    expect(result).toEqual(['a', 'b']);
   });
 
   it('preserves numbers, booleans, null', () => {
     const input = JSON.stringify({ n: 42, b: true, x: null });
     const result = sanitizeSectionContent(input);
-    expect(JSON.parse(result)).toEqual({ n: 42, b: true, x: null });
+    expect(result).toEqual({ n: 42, b: true, x: null });
   });
 
   it('throws on invalid JSON', () => {
@@ -207,6 +209,20 @@ describe('updateSection', () => {
         adminCtx(),
       ),
     ).rejects.toThrow('modifiée par un autre');
+  });
+
+  it('validates content structure against section type on update', async () => {
+    // Provide content with invalid structure for a hero section:
+    // hero allows `title` (string), not a number.
+    // First select call: fetch current section type (hero)
+    mockSelect.mockReturnValueOnce(selectChain([{ type: 'hero' }]));
+    // The update should fail because validateStructure rejects non-string title
+    await expect(
+      updateSection.handler(
+        { id: 's1', content: JSON.stringify({ title: 12345 }) },
+        adminCtx(),
+      ),
+    ).rejects.toThrow('invalide');
   });
 });
 

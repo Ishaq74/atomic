@@ -4,20 +4,15 @@ export const prerender = false;
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { Container } from '@components/atoms/container';
 import { Button } from '@components/atoms/button';
-import { DEFAULT_LOCALE, type Locale } from '@i18n/config';
-import { toLocale } from '@i18n/utils';
+import { type Locale } from '@i18n/config';
+import { toLocale, getCommonTranslations } from '@i18n/utils';
 
 const url = new URL(Astro.request.url);
 const pathSegments = url.pathname.split('/').filter(Boolean);
 const locale: Locale = toLocale(pathSegments[0]);
 
-const messages: Record<string, { title: string; heading: string; message: string; back: string }> = {
-  fr: { title: 'Erreur serveur', heading: 'Erreur interne du serveur', message: 'Quelque chose s\'est mal passé. Veuillez réessayer plus tard.', back: 'Retour à l\'accueil' },
-  en: { title: 'Server Error', heading: 'Internal Server Error', message: 'Something went wrong. Please try again later.', back: 'Back to home' },
-  es: { title: 'Error del servidor', heading: 'Error interno del servidor', message: 'Algo salió mal. Por favor, inténtelo de nuevo más tarde.', back: 'Volver al inicio' },
-  ar: { title: 'خطأ في الخادم', heading: 'خطأ داخلي في الخادم', message: 'حدث خطأ ما. يرجى المحاولة مرة أخرى لاحقاً.', back: 'العودة إلى الصفحة الرئيسية' },
-};
-const t = messages[locale] ?? messages[DEFAULT_LOCALE];
+const common = await getCommonTranslations(locale);
+const t = common.errors.serverError;
 ---
 
 <BaseLayout title={`500 — ${t.title}`}>

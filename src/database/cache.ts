@@ -9,6 +9,7 @@
 import { getCacheStore } from '@/lib/store';
 
 const DEFAULT_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_AGE_MS = 30 * 60 * 1000;   // 30 minutes absolute max (prevents infinite sliding)
 const MAX_ENTRIES = 500;
 
 const inflight = new Map<string, Promise<unknown>>();
@@ -65,10 +66,15 @@ export function cached<Args extends unknown[], R>(
     const entry = store.get(key);
 
     if (entry && Date.now() < entry.expiresAt) {
-      hits++;
-      entry.expiresAt = Date.now() + ttlMs; // Sliding TTL — refresh on hit
-      store.touch(key, entry); // Move to end → LRU
-      return Promise.resolve(entry.data as R);
+      // Enforce absolute max-age — stale entries cannot live forever via sliding TTL
+      if (entry.createdAt && Date.now() - entry.createdAt >= MAX_AGE_MS) {
+        store.delete(key);
+      } else {
+        hits++;
+        entry.expiresAt = Date.now() + ttlMs; // Sliding TTL — refresh on hit
+        store.touch(key, entry); // Move to end → LRU
+        return Promise.resolve(entry.data as R);
+      }
     }
 
     // Return existing in-flight promise if one exists (coalescing)
@@ -83,7 +89,7 @@ export function cached<Args extends unknown[], R>(
         const firstKey = s.firstKey();
         if (firstKey !== undefined) s.delete(firstKey);
       }
-      s.set(key, { data, expiresAt: Date.now() + ttlMs });
+      s.set(key, { data, expiresAt: Date.now() + ttlMs, createdAt: Date.now() });
       inflight.delete(key);
       return data;
     }).catch((err) => {

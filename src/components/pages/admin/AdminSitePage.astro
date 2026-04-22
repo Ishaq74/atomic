@@ -528,7 +528,7 @@ const cms = t.admin.cms.site;
         if (!file) return;
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('type', 'site');
+        formData.append('type', 'media');
         const oldUrl = hiddenInput.value;
         if (oldUrl) formData.append('oldUrl', oldUrl);
         try {

@@ -106,4 +106,18 @@ describe('checkRateLimit', () => {
     expect(result.allowed).toBe(false);
     expect(result.remaining).toBe(0);
   });
+
+  it('jittered resetAt is always at least 1 second in the future', () => {
+    const key = `${keyPrefix}:jitter-floor`;
+    const opts = { window: 1, max: 1 };
+    checkRateLimit(key, opts); // exhaust limit
+    // Call many times to exercise random jitter path
+    const baseline = Date.now();
+    for (let i = 0; i < 50; i++) {
+      const result = checkRateLimit(key, opts);
+      expect(result.allowed).toBe(false);
+      // resetAt must be ≥ baseline + 1s (allow 100ms clock drift in CI)
+      expect(result.resetAt).toBeGreaterThanOrEqual(baseline + 900);
+    }
+  });
 });

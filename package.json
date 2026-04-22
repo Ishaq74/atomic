@@ -21,6 +21,7 @@
     "db:migrate": "npx tsx src/database/commands/db.migrate.ts",
     "db:reset": "npx tsx src/database/commands/db.reset.ts",
     "db:seed": "npx tsx src/database/commands/db.seed.ts",
+    "db:seed-media": "npx tsx src/database/commands/db.seed-media.ts",
     "db:sync": "npx tsx src/database/commands/db.sync.ts",
     "db:cleanup-audit": "npx tsx src/database/commands/db.cleanup-audit.ts",
     "smtp:check": "npx tsx src/smtp/commands/smtp.check.ts",
@@ -48,6 +49,7 @@
   },
   "dependencies": {
     "@astrojs/node": "10.0.4",
+    "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "3.7.2",
     "@iconify-json/circle-flags": "^1.2.10",
     "@iconify-json/mdi": "^1.2.3",

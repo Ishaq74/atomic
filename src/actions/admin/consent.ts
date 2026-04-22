@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { consentSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 import { isValidLocale } from "@i18n/utils";
 
 export const updateConsentSettings = defineAction({
@@ -32,7 +32,7 @@ export const updateConsentSettings = defineAction({
     isActive: z.boolean().optional(),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "consent");
 
     if (!isValidLocale(input.locale)) {

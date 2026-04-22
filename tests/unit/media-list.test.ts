@@ -43,11 +43,12 @@ describe('listUploads', () => {
   });
 
   it('lists files from all types when no type specified', async () => {
-    // Each type directory call
+    // Each type directory call (avatar, logo, site, media)
     mockReaddir
       .mockResolvedValueOnce(['avatar1.jpg'] as any) // avatars
       .mockResolvedValueOnce(['logo1.png'] as any)    // logos
-      .mockResolvedValueOnce(['site1.svg'] as any);   // site
+      .mockResolvedValueOnce(['site1.svg'] as any)    // site
+      .mockResolvedValueOnce(['media1.jpg'] as any);  // media
 
     mockStat.mockResolvedValue({
       isFile: () => true,
@@ -56,9 +57,9 @@ describe('listUploads', () => {
     } as any);
 
     const result = await listUploads();
-    expect(result).toHaveLength(3);
+    expect(result).toHaveLength(4);
     expect(result.map((f) => f.type)).toEqual(
-      expect.arrayContaining(['avatar', 'logo', 'site']),
+      expect.arrayContaining(['avatar', 'logo', 'site', 'media']),
     );
   });
 

@@ -4,7 +4,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { navigationItems, navigationMenus } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 import { LOCALES } from "@i18n/config";
 import type { DrizzleDB } from "@database/drizzle";
 
@@ -90,7 +90,7 @@ const navItemBase = z.object({
 export const createNavigationItem = defineAction({
   input: navItemBase,
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "nav");
 
     const db = getDrizzle();
@@ -146,7 +146,7 @@ export const updateNavigationItem = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "nav");
 
     const { id, ...data } = input;
@@ -188,7 +188,7 @@ export const deleteNavigationItem = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "nav");
 
     const db = getDrizzle();
@@ -229,7 +229,7 @@ export const reorderNavigationItems = defineAction({
       .max(200, "Maximum 200 éléments par réordonnancement."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "nav");
 
     const db = getDrizzle();

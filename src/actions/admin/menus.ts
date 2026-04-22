@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { navigationMenus } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 
 /** Core menus required by BaseLayout — cannot be deleted or renamed. */
 export const PROTECTED_MENU_NAMES = ["header", "footer_primary", "footer_secondary", "footer_legal"] as const;
@@ -24,7 +24,7 @@ export const createNavigationMenu = defineAction({
       .optional(),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "menus");
 
     const db = getDrizzle();
@@ -76,7 +76,7 @@ export const updateNavigationMenu = defineAction({
     showHeading: z.boolean().optional(),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "menus");
 
     const { id, ...data } = input;
@@ -138,7 +138,7 @@ export const deleteNavigationMenu = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { navigation: ["update"] });
     adminRateLimit(context, user.id, "menus");
 
     const db = getDrizzle();

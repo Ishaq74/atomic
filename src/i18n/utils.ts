@@ -27,13 +27,31 @@ const homeModules: Record<Locale, () => Promise<{ default: HomeTranslations }>> 
 };
 
 export async function getCommonTranslations(locale: Locale): Promise<CommonTranslations> {
-  const mod = await commonModules[locale]();
-  return mod.default;
+  try {
+    const mod = await commonModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load common translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await commonModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
 }
 
 export async function getHomeTranslations(locale: Locale): Promise<HomeTranslations> {
-  const mod = await homeModules[locale]();
-  return mod.default;
+  try {
+    const mod = await homeModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load home translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await homeModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
 }
 
 const aboutModules: Record<Locale, () => Promise<{ default: AboutTranslations }>> = {
@@ -44,8 +62,17 @@ const aboutModules: Record<Locale, () => Promise<{ default: AboutTranslations }>
 };
 
 export async function getAboutTranslations(locale: Locale): Promise<AboutTranslations> {
-  const mod = await aboutModules[locale]();
-  return mod.default;
+  try {
+    const mod = await aboutModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load about translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await aboutModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
 }
 
 const contactModules: Record<Locale, () => Promise<{ default: ContactTranslations }>> = {
@@ -56,8 +83,17 @@ const contactModules: Record<Locale, () => Promise<{ default: ContactTranslation
 };
 
 export async function getContactTranslations(locale: Locale): Promise<ContactTranslations> {
-  const mod = await contactModules[locale]();
-  return mod.default;
+  try {
+    const mod = await contactModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load contact translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await contactModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
 }
 
 // ─── Auth ────────────────────────────────────────────────────────────
@@ -70,8 +106,17 @@ const authModules: Record<Locale, () => Promise<{ default: AuthTranslations }>> 
 };
 
 export async function getAuthTranslations(locale: Locale): Promise<AuthTranslations> {
-  const mod = await authModules[locale]();
-  return mod.default;
+  try {
+    const mod = await authModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load auth translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await authModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
 }
 
 export function getAuthUrl(locale: Locale, pageId: AuthPageId, authTranslations: AuthTranslations): string {
@@ -86,8 +131,8 @@ export function resolveAuthSlug(slug: string, authTranslations: AuthTranslations
 
 // ─── Admin & Org direct routes ──────────────────────────────────────
 
-export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit' | 'site' | 'navigation' | 'pages' | 'theme';
-export type OrgSubpage = 'members' | 'settings';
+export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit' | 'roles' | 'site' | 'navigation' | 'pages' | 'media' | 'theme';
+export type OrgSubpage = 'members' | 'roles' | 'settings';
 
 export function getAdminUrl(locale: Locale, subpage?: AdminSubpage): string {
   return subpage ? `/${locale}/admin/${subpage}` : `/${locale}/admin`;

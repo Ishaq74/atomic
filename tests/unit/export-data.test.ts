@@ -19,7 +19,7 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 

@@ -1,5 +1,5 @@
 ---
-import { requireAdmin } from '@/lib/auth-guards';
+import { requirePermission } from '@/lib/auth-guards';
 import {
   getSiteSettings,
   getSocialLinks,
@@ -14,7 +14,7 @@ import AdminSitePage from '@pages/admin/AdminSitePage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro);
+const result = await requirePermission(Astro, { site: ["read"] });
 if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 

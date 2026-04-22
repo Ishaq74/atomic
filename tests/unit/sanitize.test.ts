@@ -62,9 +62,9 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(42)).toBe('');
   });
 
-  it('returns empty string when input exceeds MAX_SANITIZE_LENGTH (500KB)', () => {
+  it('throws when input exceeds MAX_SANITIZE_LENGTH (500KB)', () => {
     const hugeInput = '<p>' + 'x'.repeat(500_001) + '</p>';
-    expect(sanitizeHtml(hugeInput)).toBe('');
+    expect(() => sanitizeHtml(hugeInput)).toThrow(/trop volumineux/);
   });
 
   it('allows input just under MAX_SANITIZE_LENGTH', () => {
@@ -154,6 +154,11 @@ describe('safeUrl', () => {
 
   it('allows mailto: links', () => {
     expect(safeUrl('mailto:user@example.com')).toBe('mailto:user@example.com');
+  });
+
+  it('allows tel: protocol (no double slashes)', () => {
+    expect(safeUrl('tel:+33123456789')).toBe('tel:+33123456789');
+    expect(safeUrl('tel:0123456789')).toBe('tel:0123456789');
   });
 
   it('blocks javascript: protocol', () => {

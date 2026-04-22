@@ -14,7 +14,12 @@ import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 import { DataView } from '@molecules/DataView';
 import AdminPagination from '@molecules/AdminPagination/AdminPagination.astro';
 
-type PageRow = typeof pages.$inferSelect & { sectionCount?: number };
+type PageRow = Pick<
+  typeof pages.$inferSelect,
+  'id' | 'locale' | 'title' | 'slug' | 'template' | 'metaTitle' | 'metaDescription' |
+  'ogImage' | 'isPublished' | 'publishedAt' | 'sortOrder' | 'lockedBy' | 'lockedAt' |
+  'createdAt' | 'updatedAt'
+> & { sectionCount: number };
 
 interface Props {
   t: AuthTranslations;
@@ -27,6 +32,12 @@ interface Props {
 
 const { t, locale, pages: allPages, currentPage, totalPages, baseUrl } = Astro.props;
 const cms = t.admin.cms.pages;
+const LOCK_TTL_MS = 5 * 60 * 1000;
+
+function isLocked(page: PageRow) {
+  if (!page.lockedBy || !page.lockedAt) return false;
+  return Date.now() - new Date(page.lockedAt).getTime() < LOCK_TTL_MS;
+}
 
 function formatShortDate(d: Date | string | null) {
   if (!d) return '—';
@@ -101,13 +112,14 @@ function isoDate(d: Date | string | null) {
             <TableHead>{cms.columns.template}</TableHead>
             <TableHead class="text-center">{cms.columns.sections}</TableHead>
             <TableHead class="text-center">{cms.columns.status}</TableHead>
+            <TableHead class="text-center">{cms.columns.locked}</TableHead>
             <TableHead class="text-right">{cms.columns.actions}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody id="admin-pages-tbody">
           {allPages.length === 0 ? (
             <TableRow>
-              <TableCell colspan={7} class="text-center text-muted-foreground py-8">
+              <TableCell colspan={8} class="text-center text-muted-foreground py-8">
                 {cms.noResults}
               </TableCell>
             </TableRow>
@@ -134,6 +146,17 @@ function isoDate(d: Date | string | null) {
                   <Badge variant={page.isPublished ? 'default' : 'secondary'}>
                     {page.isPublished ? cms.published : cms.draft}
                   </Badge>
+                </TableCell>
+                <TableCell class="text-center">
+                  {isLocked(page) ? (
+                    <span class="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400" title={`Locked by ${page.lockedBy}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                      </svg>
+                    </span>
+                  ) : (
+                    <span class="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell class="text-right">
                   <div class="flex gap-1 justify-end flex-wrap">
@@ -183,6 +206,13 @@ function isoDate(d: Date | string | null) {
                   <Badge variant={page.isPublished ? 'default' : 'secondary'} size="sm">
                     {page.isPublished ? cms.published : cms.draft}
                   </Badge>
+                  {isLocked(page) && (
+                    <span class="inline-flex items-center text-amber-600 dark:text-amber-400" title={`Locked by ${page.lockedBy}`}>
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                      </svg>
+                    </span>
+                  )}
                 </div>
               </div>
               <div class="flex items-center justify-between text-xs text-muted-foreground mb-3">

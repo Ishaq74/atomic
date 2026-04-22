@@ -113,14 +113,14 @@ describe('CMS Admin — Sections', () => {
       .values({
         pageId: parentPageId,
         type: 'hero',
-        content: JSON.stringify({ heading: 'Hello' }),
+        content: { heading: 'Hello' },
         sortOrder: 0,
         isVisible: true,
       })
       .returning();
 
     expect(section.type).toBe('hero');
-    expect(JSON.parse(section.content)).toEqual({ heading: 'Hello' });
+    expect(section.content).toEqual({ heading: 'Hello' });
     sectionId = section.id;
     cleanupIds.push({ table: 'page_sections', id: sectionId });
   });
@@ -128,12 +128,12 @@ describe('CMS Admin — Sections', () => {
   it('updates a section', async () => {
     const [updated] = await db
       .update(pageSections)
-      .set({ content: JSON.stringify({ heading: 'Updated' }), isVisible: false })
+      .set({ content: { heading: 'Updated' }, isVisible: false })
       .where(eq(pageSections.id, sectionId))
       .returning();
 
     expect(updated.isVisible).toBe(false);
-    expect(JSON.parse(updated.content)).toEqual({ heading: 'Updated' });
+    expect(updated.content).toEqual({ heading: 'Updated' });
   });
 
   it('deletes a section', async () => {

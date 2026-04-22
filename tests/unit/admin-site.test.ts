@@ -34,13 +34,16 @@ vi.mock('@database/schemas', () => ({
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
 }));
 vi.mock('@i18n/utils', () => ({ isValidLocale: vi.fn((l: string) => ['fr', 'en', 'es', 'ar'].includes(l)) }));
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: vi.fn(() => Promise.resolve({ success: true })) } },
+}));
 
 // ── Imports ─────────────────────────────────────────────────────────
 import {
@@ -143,6 +146,15 @@ describe('updateSiteSettings', () => {
       adminCtx(),
     );
     expect(result).toEqual(updated);
+  });
+
+  it('invalidates locale-scoped cache key', async () => {
+    const { invalidateCache } = await import('@database/cache');
+    const updated = { id: 's1', siteName: 'X', locale: 'en' };
+    mockUpdate.mockReturnValue(updateChain([updated]));
+
+    await updateSite.handler({ id: 's1', siteName: 'X' }, adminCtx());
+    expect(invalidateCache).toHaveBeenCalledWith('site:settings:en');
   });
 
   it('throws NOT_FOUND when setting missing', async () => {

@@ -120,7 +120,7 @@ const isOwner = activeOrgRole === 'owner';
       if (logoInput?.files?.[0]) {
         const formData = new FormData();
         formData.append('file', logoInput.files[0]);
-        formData.append('type', 'logo');
+        formData.append('type', 'brand');
         if (orgLogo) formData.append('oldUrl', orgLogo);
         const resp = await fetch('/api/upload', { method: 'POST', body: formData });
         if (resp.ok) {

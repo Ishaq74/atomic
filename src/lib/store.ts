@@ -41,6 +41,8 @@ export class MemoryRateLimitStore implements RateLimitStore {
 export interface CacheEntry {
   data: unknown;
   expiresAt: number;
+  /** Timestamp when the entry was first cached (for absolute max-age). */
+  createdAt: number;
 }
 
 export interface CacheStore {

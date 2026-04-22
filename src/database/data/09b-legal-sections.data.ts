@@ -26,7 +26,7 @@ export default [
     type: 'faq',
     sortOrder: 0,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Mentions Légales',
       intro: "Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance en l'économie numérique, nous tenons à vous informer de l'identité des différents intervenants impliqués dans la réalisation et le suivi du site {{siteName}}.",
       items: [
@@ -37,7 +37,7 @@ export default [
         { question: 'Données personnelles', answer: 'Le traitement de vos données à caractère personnel est régi par notre Politique de Confidentialité, disponible dans la section « Politique de Confidentialité », conformément au Règlement Général sur la Protection des Données 2016/679 du 27 avril 2016 (« RGPD »).' },
         { question: 'Litiges', answer: "En cas de litige entre le professionnel et le consommateur, ceux-ci s'efforceront de trouver une solution amiable. À défaut d'accord amiable, le consommateur a la possibilité de saisir gratuitement le médiateur de la consommation dont relève le professionnel, dans un délai d'un an à compter de la réclamation écrite adressée au professionnel." },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalfr00002',
@@ -45,7 +45,7 @@ export default [
     type: 'faq',
     sortOrder: 1,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Politique de Confidentialité',
       items: [
         { question: "Informations sur l'entreprise", answer: "L'entreprise {{siteName}}, située au {{address}}, {{postalCode}} {{city}}, {{country}}, est responsable du traitement des données personnelles collectées sur ce site." },
@@ -58,7 +58,7 @@ export default [
         { question: 'Cookies et suivi en ligne', answer: "Ce site utilise des cookies et d'autres technologies de suivi pour améliorer votre expérience de navigation et pour collecter des informations sur la manière dont vous utilisez le site." },
         { question: 'Mises à jour de la politique de confidentialité', answer: 'Cette politique de confidentialité peut être mise à jour périodiquement pour refléter les changements dans nos pratiques en matière de confidentialité. Toute modification importante sera clairement indiquée sur cette page.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalfr00003',
@@ -66,7 +66,7 @@ export default [
     type: 'faq',
     sortOrder: 2,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Conditions Générales de Vente',
       items: [
         { question: "Champ d'application", answer: "Les présentes Conditions Générales de Vente (CGV) s'appliquent à toutes les commandes passées par le client (ci-après dénommé « le Client ») auprès de {{siteName}} (ci-après dénommé « le Vendeur ») via le site web {{siteName}}." },
@@ -79,7 +79,7 @@ export default [
         { question: 'Responsabilité', answer: "Le Vendeur ne saurait être tenu pour responsable des dommages directs ou indirects causés par l'utilisation des produits vendus. La responsabilité du Vendeur est limitée au montant de la commande." },
         { question: 'Litiges', answer: "En cas de litige, une solution amiable sera recherchée en priorité. À défaut d'accord amiable, le litige sera soumis aux tribunaux compétents." },
       ],
-    }),
+    },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -91,7 +91,7 @@ export default [
     type: 'faq',
     sortOrder: 0,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Legal Notice',
       intro: 'In accordance with the provisions of Law No. 2004-575 of June 21, 2004 on confidence in the digital economy, we wish to inform you of the identity of the parties involved in the creation and management of the {{siteName}} website.',
       items: [
@@ -102,7 +102,7 @@ export default [
         { question: 'Personal Data', answer: 'The processing of your personal data is governed by our Privacy Policy, available in the "Privacy Policy" section, in accordance with the General Data Protection Regulation 2016/679 of April 27, 2016 ("GDPR").' },
         { question: 'Disputes', answer: 'In the event of a dispute between the professional and the consumer, they will endeavor to find an amicable solution. Failing an amicable agreement, the consumer may refer the matter free of charge to the consumer mediator within one year of the written complaint addressed to the professional.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalen00002',
@@ -110,7 +110,7 @@ export default [
     type: 'faq',
     sortOrder: 1,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Privacy Policy',
       items: [
         { question: 'Company Information', answer: "{{siteName}}, located at {{address}}, {{postalCode}} {{city}}, {{country}}, is responsible for the processing of personal data collected on this website." },
@@ -123,7 +123,7 @@ export default [
         { question: 'Cookies and Online Tracking', answer: 'This website uses cookies and other tracking technologies to improve your browsing experience and to collect information about how you use the site.' },
         { question: 'Privacy Policy Updates', answer: 'This privacy policy may be updated periodically to reflect changes in our privacy practices. Any significant changes will be clearly indicated on this page.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalen00003',
@@ -131,7 +131,7 @@ export default [
     type: 'faq',
     sortOrder: 2,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Terms of Sale',
       items: [
         { question: 'Scope of Application', answer: 'These Terms of Sale apply to all orders placed by the customer (hereinafter referred to as "the Customer") from {{siteName}} (hereinafter referred to as "the Seller") via the website {{siteName}}.' },
@@ -144,7 +144,7 @@ export default [
         { question: 'Liability', answer: "The Seller shall not be held liable for direct or indirect damages caused by the use of products sold. The Seller's liability is limited to the amount of the order." },
         { question: 'Disputes', answer: 'In the event of a dispute, an amicable solution will be sought as a priority. Failing an amicable agreement, the dispute will be submitted to the competent courts.' },
       ],
-    }),
+    },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -156,7 +156,7 @@ export default [
     type: 'faq',
     sortOrder: 0,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Aviso Legal',
       intro: 'De conformidad con las disposiciones de la Ley n° 2004-575 del 21 de junio de 2004 sobre la confianza en la economía digital, le informamos de la identidad de las diferentes partes involucradas en la creación y el seguimiento del sitio {{siteName}}.',
       items: [
@@ -167,7 +167,7 @@ export default [
         { question: 'Datos personales', answer: 'El tratamiento de sus datos personales se rige por nuestra Política de Privacidad, disponible en la sección « Política de Privacidad », de conformidad con el Reglamento General de Protección de Datos 2016/679 del 27 de abril de 2016 (« RGPD »).' },
         { question: 'Litigios', answer: 'En caso de litigio entre el profesional y el consumidor, ambos se esforzarán por encontrar una solución amistosa. A falta de acuerdo amistoso, el consumidor puede recurrir gratuitamente al mediador de consumo en un plazo de un año desde la reclamación escrita dirigida al profesional.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legales00002',
@@ -175,7 +175,7 @@ export default [
     type: 'faq',
     sortOrder: 1,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Política de Privacidad',
       items: [
         { question: 'Información de la empresa', answer: "La empresa {{siteName}}, ubicada en {{address}}, {{postalCode}} {{city}}, {{country}}, es responsable del tratamiento de los datos personales recogidos en este sitio." },
@@ -188,7 +188,7 @@ export default [
         { question: 'Cookies y seguimiento en línea', answer: 'Este sitio utiliza cookies y otras tecnologías de seguimiento para mejorar su experiencia de navegación y para recopilar información sobre cómo utiliza el sitio.' },
         { question: 'Actualizaciones de la política de privacidad', answer: 'Esta política de privacidad puede actualizarse periódicamente para reflejar los cambios en nuestras prácticas de privacidad. Cualquier modificación importante se indicará claramente en esta página.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legales00003',
@@ -196,7 +196,7 @@ export default [
     type: 'faq',
     sortOrder: 2,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'Condiciones Generales de Venta',
       items: [
         { question: 'Ámbito de aplicación', answer: "Las presentes Condiciones Generales de Venta (CGV) se aplican a todos los pedidos realizados por el cliente (en adelante « el Cliente ») a {{siteName}} (en adelante « el Vendedor ») a través del sitio web {{siteName}}." },
@@ -209,7 +209,7 @@ export default [
         { question: 'Responsabilidad', answer: 'El Vendedor no será responsable de los daños directos o indirectos causados por el uso de los productos vendidos. La responsabilidad del Vendedor se limita al importe del pedido.' },
         { question: 'Litigios', answer: 'En caso de litigio, se buscará prioritariamente una solución amistosa. A falta de acuerdo amistoso, el litigio se someterá a los tribunales competentes.' },
       ],
-    }),
+    },
   },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -221,7 +221,7 @@ export default [
     type: 'faq',
     sortOrder: 0,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'إشعار قانوني',
       intro: 'وفقًا لأحكام القانون رقم 2004-575 المؤرخ في 21 يونيو 2004 بشأن الثقة في الاقتصاد الرقمي، نود إعلامكم بهوية الأطراف المشاركة في إنشاء ومتابعة موقع {{siteName}}.',
       items: [
@@ -232,7 +232,7 @@ export default [
         { question: 'البيانات الشخصية', answer: 'تخضع معالجة بياناتكم الشخصية لسياسة الخصوصية الخاصة بنا، المتاحة في قسم « سياسة الخصوصية »، وفقًا للائحة العامة لحماية البيانات 2016/679 الصادرة في 27 أبريل 2016 (« GDPR »).' },
         { question: 'النزاعات', answer: 'في حالة نزاع بين المهني والمستهلك، يسعى الطرفان لإيجاد حل ودي. في حال عدم التوصل إلى اتفاق ودي، يمكن للمستهلك اللجوء مجانًا إلى وسيط المستهلك خلال سنة من تاريخ الشكوى المكتوبة الموجهة إلى المهني.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalar00002',
@@ -240,7 +240,7 @@ export default [
     type: 'faq',
     sortOrder: 1,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'سياسة الخصوصية',
       items: [
         { question: 'معلومات عن الشركة', answer: 'شركة {{siteName}}، الكائنة في {{address}}، {{postalCode}} {{city}}، {{country}}، هي المسؤولة عن معالجة البيانات الشخصية المجمعة على هذا الموقع.' },
@@ -253,7 +253,7 @@ export default [
         { question: 'ملفات تعريف الارتباط والتتبع عبر الإنترنت', answer: 'يستخدم هذا الموقع ملفات تعريف الارتباط وتقنيات تتبع أخرى لتحسين تجربة التصفح ولجمع معلومات حول كيفية استخدامك للموقع.' },
         { question: 'تحديثات سياسة الخصوصية', answer: 'قد يتم تحديث سياسة الخصوصية هذه بشكل دوري لتعكس التغييرات في ممارسات الخصوصية لدينا. سيتم الإشارة بوضوح إلى أي تعديل مهم في هذه الصفحة.' },
       ],
-    }),
+    },
   },
   {
     id: '10000000-0000-4000-a000-legalar00003',
@@ -261,7 +261,7 @@ export default [
     type: 'faq',
     sortOrder: 2,
     isVisible: true,
-    content: JSON.stringify({
+    content: {
       title: 'الشروط العامة للبيع',
       items: [
         { question: 'نطاق التطبيق', answer: 'تنطبق شروط البيع العامة هذه على جميع الطلبات المقدمة من العميل (المشار إليه فيما يلي بـ « العميل ») لدى {{siteName}} (المشار إليها فيما يلي بـ « البائع ») عبر موقع {{siteName}}.' },
@@ -274,6 +274,6 @@ export default [
         { question: 'المسؤولية', answer: 'لا يتحمل البائع مسؤولية الأضرار المباشرة أو غير المباشرة الناجمة عن استخدام المنتجات المباعة. تقتصر مسؤولية البائع على مبلغ الطلب.' },
         { question: 'النزاعات', answer: 'في حالة النزاع، يُبحث عن حل ودي أولًا. في حال عدم التوصل إلى اتفاق ودي، يُحال النزاع إلى المحاكم المختصة.' },
       ],
-    }),
+    },
   },
 ];

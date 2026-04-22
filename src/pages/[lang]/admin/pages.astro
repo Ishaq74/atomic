@@ -1,5 +1,5 @@
 ---
-import { requireAdmin } from '@/lib/auth-guards';
+import { requirePermission } from '@/lib/auth-guards';
 import { getDrizzle } from '@database/drizzle';
 import { pages, pageSections } from '@database/schemas';
 import { asc, eq, count } from 'drizzle-orm';
@@ -13,7 +13,7 @@ import AdminLegalEditor from '@pages/admin/AdminLegalEditor.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro);
+const result = await requirePermission(Astro, { page: ["read"] });
 if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 
@@ -67,6 +67,8 @@ const [allPagesRaw, [total]] = await Promise.all([
       isPublished: pages.isPublished,
       publishedAt: pages.publishedAt,
       sortOrder: pages.sortOrder,
+      lockedBy: pages.lockedBy,
+      lockedAt: pages.lockedAt,
       createdAt: pages.createdAt,
       updatedAt: pages.updatedAt,
       sectionCount: count(pageSections.id),

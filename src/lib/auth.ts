@@ -5,6 +5,7 @@ import { getLazyDrizzle, getDrizzle, schema } from "@database/drizzle";
 import { session as sessionTable } from "@database/schemas";
 import { eq } from "drizzle-orm";
 import { username, admin, organization, testUtils } from "better-auth/plugins";
+import { ac, adminRole, editorRole, userRole, orgOwnerRole, orgAdminRole, orgMemberRole } from "@/lib/permissions";
 
 const isTest = process.env.NODE_ENV === 'test';
 import { type Locale, LOCALES, DEFAULT_LOCALE } from "@i18n/config";
@@ -205,8 +206,22 @@ export const auth = betterAuth({
   },
   plugins: [
     username(),
-    admin(),
+    admin({
+      ac,
+      roles: {
+        admin: adminRole,
+        editor: editorRole,
+        user: userRole,
+      },
+    }),
     organization({
+      ac,
+      roles: {
+        owner: orgOwnerRole,
+        admin: orgAdminRole,
+        member: orgMemberRole,
+      },
+      dynamicAccessControl: { enabled: true },
       async sendInvitationEmail(data) {
         const rawBaseUrl = process.env.BETTER_AUTH_URL;
         if (!rawBaseUrl) {

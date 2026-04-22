@@ -38,14 +38,14 @@ vi.mock('@database/drizzle', () => ({
 }));
 
 vi.mock('@database/schemas', () => ({
-  pages: { id: 'id', locale: 'locale', slug: 'slug', title: 'title', isActive: 'is_active' },
+  pages: { id: 'id', locale: 'locale', slug: 'slug', title: 'title', isActive: 'is_active', sortOrder: 'sortOrder', deletedAt: 'deletedAt' },
   pageSections: { id: 'id', pageId: 'page_id' },
   themeSettings: { id: 'id', isActive: 'is_active' },
 }));
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 vi.mock('@/lib/rate-limit', () => ({
@@ -54,6 +54,9 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@i18n/config', () => ({
   LOCALES: ['fr', 'en', 'es', 'ar'] as const,
   DEFAULT_LOCALE: 'fr',
+}));
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: vi.fn(() => Promise.resolve({ success: true })) } },
 }));
 
 // ── Imports ─────────────────────────────────────────────────────────
@@ -79,9 +82,12 @@ function adminCtx() {
 }
 
 function selectChain(rows: any[]) {
+  const terminal: any = Object.assign(Promise.resolve(rows), {
+    limit: vi.fn().mockResolvedValue(rows),
+  });
   return {
     from: () => ({
-      where: () => ({ limit: () => Promise.resolve(rows) }),
+      where: () => terminal,
     }),
   };
 }
@@ -94,6 +100,8 @@ describe('createPage', () => {
 
   it('creates a page when slug is unique for locale', async () => {
     const newPage = { id: 'p1', locale: 'fr', slug: 'about', title: 'À propos' };
+    // Auto-sortOrder select
+    mockSelect.mockReturnValueOnce(selectChain([{ maxSort: 0 }]));
     mockInsert.mockReturnValueOnce({
       values: () => ({ returning: () => Promise.resolve([newPage]) }),
     });
@@ -107,6 +115,8 @@ describe('createPage', () => {
 
   it('throws CONFLICT when slug+locale already exists', async () => {
     const dbError = Object.assign(new Error('unique violation'), { code: '23505' });
+    // Auto-sortOrder select
+    mockSelect.mockReturnValueOnce(selectChain([{ maxSort: 0 }]));
     mockInsert.mockReturnValueOnce({
       values: () => ({ returning: () => Promise.reject(dbError) }),
     });
@@ -120,10 +130,12 @@ describe('createPage', () => {
 describe('deletePage', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('deletes a page', async () => {
-    mockDelete.mockReturnValueOnce({
-      where: () => ({
-        returning: () => Promise.resolve([{ id: 'p1', title: 'X' }]),
+  it('soft-deletes a page', async () => {
+    mockUpdate.mockReturnValueOnce({
+      set: () => ({
+        where: () => ({
+          returning: () => Promise.resolve([{ id: 'p1', title: 'X' }]),
+        }),
       }),
     });
     const result = await deletePage.handler({ id: 'p1' }, adminCtx());
@@ -131,8 +143,12 @@ describe('deletePage', () => {
   });
 
   it('throws NOT_FOUND', async () => {
-    mockDelete.mockReturnValueOnce({
-      where: () => ({ returning: () => Promise.resolve([]) }),
+    mockUpdate.mockReturnValueOnce({
+      set: () => ({
+        where: () => ({
+          returning: () => Promise.resolve([]),
+        }),
+      }),
     });
     await expect(deletePage.handler({ id: 'bad' }, adminCtx())).rejects.toThrow('introuvable');
   });

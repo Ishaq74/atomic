@@ -67,11 +67,11 @@ describe('Legal CMS — Seed data', () => {
       .where(eq(pageSections.pageId, page.id));
 
     for (const s of sections) {
-      const parsed = JSON.parse(s.content);
+      const parsed = typeof s.content === 'string' ? JSON.parse(s.content) : s.content as Record<string, unknown>;
       expect(parsed.title).toBeTypeOf('string');
       expect(parsed.items).toBeInstanceOf(Array);
-      expect(parsed.items.length).toBeGreaterThan(0);
-      parsed.items.forEach((item: { question: string; answer: string }) => {
+      expect((parsed.items as unknown[]).length).toBeGreaterThan(0);
+      (parsed.items as { question: string; answer: string }[]).forEach((item) => {
         expect(item.question).toBeTypeOf('string');
         expect(item.answer).toBeTypeOf('string');
       });

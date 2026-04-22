@@ -23,6 +23,19 @@ import {
   updatePage,
   deletePage,
   publishPage,
+  schedulePage,
+  unschedulePage,
+  scheduleUnpublishPage,
+  unscheduleUnpublishPage,
+  restoreFromTrash,
+  permanentlyDeletePage,
+  bulkPublishPages,
+  bulkArchivePages,
+  bulkRestorePages,
+  bulkDeletePages,
+  clonePage,
+  lockPage,
+  unlockPage,
 } from "./admin/pages";
 import {
   createSection,
@@ -32,6 +45,36 @@ import {
 } from "./admin/sections";
 import { createTheme, updateTheme, deleteTheme } from "./admin/theme";
 import { updateConsentSettings } from "./admin/consent";
+import {
+  createMediaFolder,
+  updateMediaFolder,
+  deleteMediaFolder,
+  uploadMediaFile,
+  renameMediaFile,
+  moveMediaFile,
+  deleteMediaFile,
+  upsertMediaFileAlt,
+  deleteMediaFileAlt,
+} from "./admin/media";
+import {
+  createPageVersion,
+  listPageVersions,
+  restorePageVersion,
+} from "./admin/versions";
+import {
+  listOrgRoles,
+  createOrgRole,
+  updateOrgRole,
+  deleteOrgRole,
+  updateMemberRole,
+} from "./admin/roles";
+import {
+  orgListRoles,
+  orgCreateRole,
+  orgUpdateRole,
+  orgDeleteRole,
+  orgUpdateMemberRole,
+} from "./org/roles";
 
 export const server = {
   // ─── Site ────────────────────────────────────────────────────────
@@ -66,6 +109,19 @@ export const server = {
   updatePage,
   deletePage,
   publishPage,
+  schedulePage,
+  unschedulePage,
+  scheduleUnpublishPage,
+  unscheduleUnpublishPage,
+  restoreFromTrash,
+  permanentlyDeletePage,
+  bulkPublishPages,
+  bulkArchivePages,
+  bulkRestorePages,
+  bulkDeletePages,
+  clonePage,
+  lockPage,
+  unlockPage,
 
   // ─── Sections ────────────────────────────────────────────────────
   createSection,
@@ -80,4 +136,34 @@ export const server = {
 
   // ─── Consentement cookies ────────────────────────────────────────
   updateConsentSettings,
+
+  // ─── Média ───────────────────────────────────────────────────────
+  createMediaFolder,
+  updateMediaFolder,
+  deleteMediaFolder,
+  uploadMediaFile,
+  renameMediaFile,
+  moveMediaFile,
+  deleteMediaFile,
+  upsertMediaFileAlt,
+  deleteMediaFileAlt,
+
+  // ─── Versioning pages ────────────────────────────────────────────
+  createPageVersion,
+  listPageVersions,
+  restorePageVersion,
+
+  // ─── Rôles (RBAC org — admin) ─────────────────────────────────────
+  listOrgRoles,
+  createOrgRole,
+  updateOrgRole,
+  deleteOrgRole,
+  updateMemberRole,
+
+  // ─── Rôles (RBAC org — owner/admin) ──────────────────────────────
+  orgListRoles,
+  orgCreateRole,
+  orgUpdateRole,
+  orgDeleteRole,
+  orgUpdateMemberRole,
 };

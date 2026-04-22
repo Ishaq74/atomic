@@ -64,12 +64,17 @@ vi.mock('@database/cache', () => ({
 }));
 
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
+}));
+
+const mockUserHasPermission = vi.fn().mockResolvedValue({ success: true });
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: mockUserHasPermission } },
 }));
 
 // ── Import SUT ──────────────────────────────────────────────────────
@@ -109,7 +114,10 @@ function noAuthCtx() {
 
 // ── Tests ───────────────────────────────────────────────────────────
 describe('createNavigationMenu', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUserHasPermission.mockResolvedValue({ success: true });
+  });
 
   it('rejects unauthenticated users', async () => {
     await expect(
@@ -118,9 +126,10 @@ describe('createNavigationMenu', () => {
   });
 
   it('rejects non-admin users', async () => {
+    mockUserHasPermission.mockResolvedValueOnce({ success: false });
     await expect(
       createNavigationMenu.handler({ name: 'main' }, userCtx()),
-    ).rejects.toThrow('administrateurs');
+    ).rejects.toThrow('Permissions insuffisantes');
   });
 
   it('creates a menu when name is unique', async () => {

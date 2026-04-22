@@ -1,13 +1,14 @@
 // ─── Media Upload Types ──────────────────────────────────────────────
 
 /** Types d'upload supportés — chaque type mappe vers un sous-dossier */
-export type UploadType = 'avatar' | 'logo' | 'site';
+export type UploadType = 'avatar' | 'logo' | 'site' | 'media';
 
 /** Mapping type → sous-dossier dans public/uploads/ */
 export const UPLOAD_DIRS: Record<UploadType, string> = {
   avatar: 'images/avatars',
   logo: 'images/logos',
   site: 'images/site',
+  media: 'images/media',
 };
 
 /** Types MIME autorisés */

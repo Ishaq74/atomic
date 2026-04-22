@@ -37,13 +37,16 @@ vi.mock('@database/schemas', () => ({
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(),
+  logAuditEvent: vi.fn(() => Promise.resolve()),
   extractIp: vi.fn(() => '127.0.0.1'),
 }));
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
 }));
 vi.mock('@i18n/config', () => ({ LOCALES: ['fr', 'en', 'es', 'ar'] as const }));
+vi.mock('@/lib/auth', () => ({
+  auth: { api: { userHasPermission: vi.fn(() => Promise.resolve({ success: true })) } },
+}));
 
 // ── Imports ─────────────────────────────────────────────────────────
 import {

@@ -33,3 +33,31 @@ BEGIN
         END IF;
     END LOOP;
 END $$;
+--> statement-breakpoint
+
+-- ─── Full-Text Search triggers ───────────────────────────────────────────────
+-- Fire refresh_page_search_vector() when searchable page/section data changes.
+DO $$
+BEGIN
+    IF to_regclass('pages') IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'pages_search_vector_update')
+    THEN
+        CREATE TRIGGER pages_search_vector_update
+          AFTER INSERT OR UPDATE OF title, meta_title, meta_description, slug, locale
+          ON pages
+          FOR EACH ROW
+          EXECUTE FUNCTION refresh_page_search_vector();
+        RAISE NOTICE 'trigger pages_search_vector_update créé';
+    END IF;
+
+    IF to_regclass('page_sections') IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'page_sections_search_vector_update')
+    THEN
+        CREATE TRIGGER page_sections_search_vector_update
+          AFTER INSERT OR UPDATE OR DELETE
+          ON page_sections
+          FOR EACH ROW
+          EXECUTE FUNCTION refresh_page_search_vector();
+        RAISE NOTICE 'trigger page_sections_search_vector_update créé';
+    END IF;
+END $$;

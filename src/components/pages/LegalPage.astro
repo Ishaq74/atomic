@@ -47,8 +47,10 @@ function interpolate(text: string): string {
 const faqSections: FaqSection[] = sections
   .filter((s) => s.type === 'faq')
   .map((s) => {
-    try { return JSON.parse(s.content) as FaqSection; }
-    catch { return null; }
+    try {
+      const raw = s.content;
+      return (typeof raw === 'string' ? JSON.parse(raw) : raw) as FaqSection;
+    } catch { return null; }
   })
   .filter((s): s is FaqSection => s !== null && Array.isArray(s.items))
   .map((s) => ({

@@ -10,6 +10,7 @@ import type { OrgSubpage } from '@i18n/utils';
 
 import ArrowLeftIcon from '@tabler/icons/outline/arrow-left.svg';
 import UsersIcon from '@tabler/icons/outline/users.svg';
+import ShieldIcon from '@tabler/icons/outline/shield.svg';
 import SettingsIcon from '@tabler/icons/outline/settings.svg';
 
 import {
@@ -44,6 +45,7 @@ const canManage = orgRole === 'admin' || orgRole === 'owner';
 
 const navItems: { id: OrgSubpage; title: string; url: string; icon: typeof UsersIcon; show: boolean }[] = [
   { id: 'members', title: t.organizations.members.title, url: getOrgUrl(locale, org.slug, 'members'), icon: UsersIcon, show: true },
+  { id: 'roles', title: t.organizations.roles.title, url: getOrgUrl(locale, org.slug, 'roles'), icon: ShieldIcon, show: canManage },
   { id: 'settings', title: t.organizations.settings.title, url: getOrgUrl(locale, org.slug, 'settings'), icon: SettingsIcon, show: canManage },
 ];
 ---

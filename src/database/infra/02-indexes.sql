@@ -18,3 +18,12 @@ ON audit_log (resource, resource_id, created_at DESC);
 -- (pages_locale_slug_active_idx supprimé : redondant avec pages_locale_slug_uidx + pages_locale_published_idx)
 CREATE INDEX IF NOT EXISTS navigation_items_menu_locale_active_sort_idx
 ON navigation_items (menu_id, locale, is_active, sort_order);
+--> statement-breakpoint
+
+-- ─── Full-Text Search column + GIN index ─────────────────────────────────────
+-- tsvector column managed by triggers, NOT by Drizzle ORM.
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS search_vector tsvector;
+--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS pages_search_vector_idx
+ON pages USING GIN (search_vector);

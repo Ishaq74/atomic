@@ -1,5 +1,5 @@
 ---
-import { requireAdmin } from '@/lib/auth-guards';
+import { requirePermission } from '@/lib/auth-guards';
 import { fetchAdminAuditLogs } from '@/lib/auth-data';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import AuthLayout from '@organisms/AuthLayout/AuthLayout.astro';
@@ -8,7 +8,7 @@ import AdminAuditPage from '@pages/admin/AdminAuditPage.astro';
 
 export const prerender = false;
 
-const result = await requireAdmin(Astro);
+const result = await requirePermission(Astro, { audit: ["read"] });
 if ('redirect' in result) return result.redirect;
 const { locale, authT } = result;
 

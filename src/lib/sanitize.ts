@@ -15,7 +15,7 @@ const ALLOWED_ATTR = [
   "colspan", "rowspan", "loading",
 ];
 
-const SAFE_URL_PROTOCOLS = /^(https?:\/\/|mailto:|tel:\/\/|\/(?!\/)).+/;
+const SAFE_URL_PROTOCOLS = /^(https?:\/\/|mailto:|tel:|\/(?!\/)).+/;
 
 /** Validates a URL for use in <a href>. Blocks javascript:, data:, vbscript: etc. */
 export function safeUrl(url: unknown): string {
@@ -35,7 +35,9 @@ const MAX_SANITIZE_LENGTH = 500_000; // 500 KB
 
 export function sanitizeHtml(dirty: unknown): string {
   if (typeof dirty !== "string") return "";
-  if (dirty.length > MAX_SANITIZE_LENGTH) return "";
+  if (dirty.length > MAX_SANITIZE_LENGTH) {
+    throw new Error(`Contenu HTML trop volumineux (${(dirty.length / 1024).toFixed(0)} KB). Maximum : ${(MAX_SANITIZE_LENGTH / 1024).toFixed(0)} KB.`);
+  }
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS,
     ALLOWED_ATTR,

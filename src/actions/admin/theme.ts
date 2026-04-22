@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { themeSettings } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 import { THEME_TOKEN_KEYS, isValidOklch } from "@/lib/theme-tokens";
 
 const oklchRegex = /^oklch\(\s*[\d.]+%?\s+[\d.]+\s+[\d.]+(?:\s*\/\s*[\d.]+%?)?\s*\)$/;
@@ -51,7 +51,7 @@ export const createTheme = defineAction({
     name: z.string().min(1, "Le nom du thème est requis.").max(50),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { theme: ["update"] });
     adminRateLimit(context, user.id, "theme");
     const db = getDrizzle();
 
@@ -118,7 +118,7 @@ export const updateTheme = defineAction({
       .optional(),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { theme: ["update"] });
     adminRateLimit(context, user.id, "theme");
 
     const { id, ...data } = input;
@@ -186,7 +186,7 @@ export const deleteTheme = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { theme: ["update"] });
     adminRateLimit(context, user.id, "theme");
     const db = getDrizzle();
 

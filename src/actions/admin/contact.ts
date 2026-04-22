@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { contactInfo } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 
 export const updateContactInfo = defineAction({
   input: z.object({
@@ -74,7 +74,7 @@ export const updateContactInfo = defineAction({
     }
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "contact");
 
     const { id, ...data } = input;

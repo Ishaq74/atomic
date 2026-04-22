@@ -4,7 +4,7 @@ import { eq, sql, inArray } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { socialLinks } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
-import { assertAdmin, adminRateLimit, auditAdmin } from "./_helpers";
+import { assertPermission, adminRateLimit, auditAdmin } from "./_helpers";
 
 const socialLinkBase = z.object({
   platform: z
@@ -39,7 +39,7 @@ const socialLinkBase = z.object({
 export const createSocialLink = defineAction({
   input: socialLinkBase,
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "social");
 
     const db = getDrizzle();
@@ -72,7 +72,7 @@ export const updateSocialLink = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "social");
 
     const { id, ...data } = input;
@@ -106,7 +106,7 @@ export const deleteSocialLink = defineAction({
     id: z.string().min(1, "L'identifiant est requis."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "social");
 
     const db = getDrizzle();
@@ -145,7 +145,7 @@ export const reorderSocialLinks = defineAction({
       .max(200, "Maximum 200 éléments par réordonnancement."),
   }),
   handler: async (input, context) => {
-    const user = assertAdmin(context);
+    const user = await assertPermission(context, { site: ["update"] });
     adminRateLimit(context, user.id, "social");
 
     const db = getDrizzle();

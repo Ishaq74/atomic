@@ -11,6 +11,7 @@ import { Input } from '@atoms/input';
 import { Label } from '@atoms/label';
 import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 import Badge from '@atoms/badge/Badge.astro';
+import MediaPicker from '@atoms/media-picker/MediaPicker.astro';
 
 type PageRow = typeof pages.$inferSelect;
 type SectionRow = typeof pageSections.$inferSelect;
@@ -82,6 +83,24 @@ backUrl.searchParams.delete('edit');
     </CardContent>
   </Card>
 
+  <!-- ─── Version history ─── -->
+  <Card class="mb-6">
+    <CardHeader>
+      <div class="flex items-center justify-between">
+        <CardTitle class="text-sm">Historique des versions</CardTitle>
+        <div class="flex gap-2">
+          <Button id="create-version-btn" size="sm" variant="outline">Créer un snapshot</Button>
+          <Button id="toggle-versions-btn" size="sm" variant="ghost">Afficher</Button>
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div id="versions-list" class="hidden space-y-2">
+        <p class="text-xs text-muted-foreground" id="versions-loading">Chargement…</p>
+      </div>
+    </CardContent>
+  </Card>
+
   <!-- ─── Sections list ─── -->
   <Card>
     <CardHeader>
@@ -126,7 +145,10 @@ backUrl.searchParams.delete('edit');
                   data-id={section.id}
                 >{section.content}</textarea>
               </div>
-              <div class="mt-2 flex justify-end">
+              <div class="mt-2 flex justify-end gap-2">
+                <Button size="sm" variant="outline" class="insert-media-btn" data-id={section.id}>
+                  Insérer un média
+                </Button>
                 <Button size="sm" variant="outline" class="save-section-btn" data-id={section.id}>
                   {cms.save}
                 </Button>
@@ -137,11 +159,19 @@ backUrl.searchParams.delete('edit');
       )}
     </CardContent>
   </Card>
+
+  {/* Media picker dialog (shared across all sections) */}
+  <MediaPicker id="sections-media-picker" locale={locale} />
 </sections-editor>
 
 <script>
   import { actions } from 'astro:actions';
   import { toast } from '@atoms/toast';
+
+  /** Escape user-controlled text before inserting into innerHTML. */
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
 
   class SectionsEditor extends HTMLElement {
     connectedCallback() {
@@ -225,6 +255,109 @@ backUrl.searchParams.delete('edit');
             toast.error(error.message ?? tError);
           }
         });
+      });
+
+      // ─── Insert media (open picker) ───
+      let activeTextarea: HTMLTextAreaElement | null = null;
+      const picker = this.querySelector<HTMLElement>('#sections-media-picker');
+
+      this.querySelectorAll<HTMLElement>('.insert-media-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.id!;
+          activeTextarea = this.querySelector<HTMLTextAreaElement>(`.section-content-input[data-id="${id}"]`);
+          // Open the picker programmatically
+          if (picker && 'open' in picker && typeof (picker as any).open === 'function') {
+            (picker as any).open();
+          } else {
+            picker?.classList.remove('hidden');
+          }
+        });
+      });
+
+      picker?.addEventListener('media-select', ((e: CustomEvent) => {
+        if (!activeTextarea) return;
+        const { url, alt } = e.detail;
+        // Try to parse current content as JSON and inject url/alt
+        try {
+          const content = JSON.parse(activeTextarea.value || '{}');
+          // Insert url and alt into common patterns
+          if ('src' in content || 'url' in content || 'image' in content) {
+            content.src = content.src !== undefined ? url : content.src;
+            content.url = content.url !== undefined ? url : content.url;
+            content.image = content.image !== undefined ? url : content.image;
+            if (alt) content.alt = alt;
+          } else {
+            content.image = url;
+            if (alt) content.alt = alt;
+          }
+          activeTextarea.value = JSON.stringify(content, null, 2);
+        } catch {
+          // If content is not JSON, append the URL
+          const insertion = alt ? `\n${url} (${alt})` : `\n${url}`;
+          activeTextarea.value += insertion;
+        }
+        activeTextarea = null;
+      }) as EventListener);
+
+      // ─── Version history ───
+      const createVersionBtn = this.querySelector<HTMLElement>('#create-version-btn');
+      const toggleVersionsBtn = this.querySelector<HTMLElement>('#toggle-versions-btn');
+      const versionsList = this.querySelector<HTMLElement>('#versions-list');
+
+      const loadVersions = async () => {
+        if (!versionsList) return;
+        const { data, error } = await actions.listPageVersions({ pageId });
+        if (error) { toast.error(error.message ?? tError); return; }
+        if (!data || data.length === 0) {
+          versionsList.innerHTML = '<p class="text-xs text-muted-foreground">Aucune version enregistrée.</p>';
+          return;
+        }
+        versionsList.innerHTML = data.map((v: any) => `
+          <div class="flex items-center justify-between border rounded px-3 py-2 text-sm">
+            <div>
+              <span class="font-medium">v${v.versionNumber}</span>
+              <span class="text-muted-foreground ml-2">${new Date(v.createdAt).toLocaleString()}</span>
+              ${v.note ? `<span class="text-muted-foreground ml-2">— ${esc(String(v.note))}</span>` : ''}
+            </div>
+            <button class="restore-version-btn text-xs underline text-primary hover:text-primary/80" data-version-id="${esc(String(v.id))}">
+              Restaurer
+            </button>
+          </div>
+        `).join('');
+        // Bind restore buttons
+        versionsList.querySelectorAll<HTMLElement>('.restore-version-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Restaurer cette version ? Un snapshot de l\'état actuel sera créé automatiquement.')) return;
+            const versionId = btn.dataset.versionId!;
+            const { error: restoreErr } = await actions.restorePageVersion({ versionId });
+            if (!restoreErr) { toast.success('Version restaurée.'); location.reload(); }
+            else toast.error(restoreErr.message ?? tError);
+          });
+        });
+      };
+
+      createVersionBtn?.addEventListener('click', async () => {
+        const note = prompt('Note optionnelle pour ce snapshot :');
+        const { error } = await actions.createPageVersion({
+          pageId,
+          ...(note ? { note } : {}),
+        });
+        if (!error) {
+          toast.success('Snapshot créé.');
+          if (versionsList && !versionsList.classList.contains('hidden')) {
+            await loadVersions();
+          }
+        } else {
+          toast.error(error.message ?? tError);
+        }
+      });
+
+      toggleVersionsBtn?.addEventListener('click', async () => {
+        if (!versionsList) return;
+        const isHidden = versionsList.classList.contains('hidden');
+        versionsList.classList.toggle('hidden');
+        toggleVersionsBtn.textContent = isHidden ? 'Masquer' : 'Afficher';
+        if (isHidden) await loadVersions();
       });
     }
   }

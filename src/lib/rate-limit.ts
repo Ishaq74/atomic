@@ -65,7 +65,8 @@ export function checkRateLimit(
 
   // Add jitter (±2s) to prevent attackers from timing requests to the exact reset
   const jitter = Math.floor(Math.random() * 4000) - 2000;
-  return { allowed: false, remaining: 0, resetAt: entry.resetAt + jitter };
+  const jitteredReset = Math.max(Date.now() + 1000, entry.resetAt + jitter);
+  return { allowed: false, remaining: 0, resetAt: jitteredReset };
 }
 
 /** Clear all rate limit entries — exposed for testing only. */
