@@ -24,8 +24,8 @@ importers:
         specifier: ^1.2.3
         version: 1.2.3
       '@iconify-json/openmoji':
-        specifier: ^1.2.23
-        version: 1.2.23
+        specifier: ^1.2.27
+        version: 1.2.27
       '@tabler/icons':
         specifier: ^3
         version: 3.40.0
@@ -931,8 +931,8 @@ packages:
   '@iconify-json/mdi@1.2.3':
     resolution: {integrity: sha512-O3cLwbDOK7NNDf2ihaQOH5F9JglnulNDFV7WprU2dSoZu3h3cWH//h74uQAB87brHmvFVxIOkuBX2sZSzYhScg==}
 
-  '@iconify-json/openmoji@1.2.23':
-    resolution: {integrity: sha512-ppgoydoehDJ08pEtuyYF+X1FXvbvAvOcFDI+Gtb+7o1SVxP7EbO2xMCDjY8aNW98a5PBs57PJuv1iopdV+75oA==}
+  '@iconify-json/openmoji@1.2.27':
+    resolution: {integrity: sha512-pIH1ofyNMYOD1vysHYtRzhAMMftcdmw+kCdzr/GDxIIa8jU4XrK3LzZcMs+kHXWzNaZL13VZkJ7H+a07BPWiiQ==}
 
   '@iconify/tools@4.2.0':
     resolution: {integrity: sha512-WRxPva/ipxYkqZd1+CkEAQmd86dQmrwH0vwK89gmp2Kh2WyyVw57XbPng0NehP3x4V1LzLsXUneP1uMfTMZmUA==}
@@ -1107,8 +1107,8 @@ packages:
   '@lhci/utils@0.15.1':
     resolution: {integrity: sha512-WclJnUQJeOMY271JSuaOjCv/aA0pgvuHZS29NFNdIeI14id8eiFsjith85EGKYhljgoQhJ2SiW4PsVfFiakNNw==}
 
-  '@mongodb-js/saslprep@1.4.6':
-    resolution: {integrity: sha512-y+x3H1xBZd38n10NZF/rEBlvDOOMQ6LKUTHqr8R9VkJ+mmQOYtJFxIlkkK8fZrtOiL6VixbOBWMbZGBdal3Z1g==}
+  '@mongodb-js/saslprep@1.4.10':
+    resolution: {integrity: sha512-DDb3OAw8ezai9p2i1F7R5wMVmyrMIuT8ixjV56R4Hl4cazCo2tOMTDyPR5rrCUcHiMbWHzCXOdife5OD6H1C8w==}
 
   '@noble/ciphers@2.1.1':
     resolution: {integrity: sha512-bysYuiVfhxNJuldNXlFEitTVdNnYUc+XNJZd7Qm2a5j1vZHgY+fazadNFWFaMK/2vye0JVlxV3gHmC0WDfAOQw==}
@@ -1849,6 +1849,7 @@ packages:
   basic-ftp@5.2.0:
     resolution: {integrity: sha512-VoMINM2rqJwJgfdHq6RiUudKt2BV+FY5ZFezP/ypmwayk68+NzzAQy4XXLlqsGD4MCzq3DrmNFD/uUmBJuGoXw==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   better-auth@1.5.6:
     resolution: {integrity: sha512-QSpJTqaT1XVfWRQe/fm3PgeuwOIlz1nWX/Dx7nsHStJ382bLzmDbQk2u7IT0IJ6wS5SRxfqEE1Ev9TXontgyAQ==}
@@ -4970,10 +4971,12 @@ packages:
 
   uuid@10.0.0:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    deprecated: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
     hasBin: true
 
   vary@1.1.2:
@@ -5991,7 +5994,7 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
-  '@iconify-json/openmoji@1.2.23':
+  '@iconify-json/openmoji@1.2.27':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -6185,7 +6188,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@mongodb-js/saslprep@1.4.6':
+  '@mongodb-js/saslprep@1.4.10':
     dependencies:
       sparse-bitfield: 3.0.3
     optional: true
@@ -9254,7 +9257,7 @@ snapshots:
 
   mongodb@7.1.0(socks@2.8.7):
     dependencies:
-      '@mongodb-js/saslprep': 1.4.6
+      '@mongodb-js/saslprep': 1.4.10
       bson: 7.2.0
       mongodb-connection-string-url: 7.0.1
     optionalDependencies:
