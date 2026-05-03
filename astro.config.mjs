@@ -12,7 +12,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
-      holdUntilCrawlEnd: false,
+      noDiscovery: true,
     },
   },
 
