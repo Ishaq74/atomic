@@ -129,8 +129,8 @@ export const GET: APIRoute = async ({ url, clientAddress }) => {
     JSON.stringify({
       query: q,
       locale,
-      count: results.length,
-      results: results.map((r) => ({
+      count: (results as unknown as any[]).length,
+      results: (results as unknown as any[]).map((r: any) => ({
         id: r.id,
         slug: r.slug,
         title: r.title,

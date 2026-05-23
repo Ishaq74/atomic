@@ -22,7 +22,7 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 
 const mockUserHasPermission = vi.fn(() => Promise.resolve({ success: true }));
-const mockListOrgRoles = vi.fn(() => Promise.resolve([]));
+const mockListOrgRoles = vi.fn(() => Promise.resolve([{ id: '', role: '', permission: {} as Record<string, unknown> }]));
 const mockCreateOrgRole = vi.fn(() => Promise.resolve({ id: 'role-1', role: 'reviewer' }));
 const mockUpdateOrgRole = vi.fn(() => Promise.resolve({ id: 'role-1', role: 'reviewer-v2' }));
 const mockDeleteOrgRole = vi.fn(() => Promise.resolve({ success: true }));
@@ -97,9 +97,10 @@ beforeEach(() => {
 
 describe('listOrgRoles', () => {
   it('lists roles for an organization', async () => {
-    mockListOrgRoles.mockResolvedValue([{ id: 'r1', role: 'reviewer', permission: {} }]);
+    const mockRole = { id: 'r1', role: 'reviewer', permission: { create: true } };
+    mockListOrgRoles.mockResolvedValue([mockRole]);
     const result = await listOrgRoles.handler({ organizationId: ORG_ID }, adminCtx());
-    expect(result).toEqual([{ id: 'r1', role: 'reviewer', permission: {} }]);
+    expect(result).toEqual([mockRole]);
     expect(mockListOrgRoles).toHaveBeenCalledWith(expect.objectContaining({
       query: { organizationId: ORG_ID },
     }));

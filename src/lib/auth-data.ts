@@ -57,7 +57,7 @@ export async function fetchAdminUsers(
   });
   const rawUsers = result?.users ?? [];
   const users: AdminUser[] = rawUsers.map((u) => {
-    const raw = u as Record<string, unknown>;
+    const raw = u as unknown as Record<string, unknown>;
     return {
       id: u.id,
       name: u.name,

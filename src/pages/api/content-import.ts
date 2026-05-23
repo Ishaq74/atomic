@@ -63,7 +63,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   const parsed = importSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
-      { error: 'VALIDATION_ERROR', details: parsed.error.flatten().fieldErrors },
+      { error: 'VALIDATION_ERROR', details: z.flattenError(parsed.error).fieldErrors },
       { status: 400 },
     );
   }

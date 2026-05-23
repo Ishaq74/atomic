@@ -580,6 +580,7 @@ function filenameExt(name: string): string {
 <script>
   import { actions } from 'astro:actions';
   import { toast } from '@atoms/toast';
+  import type { Locale } from '@i18n/config';
 
   class MediaManager extends HTMLElement {
     private locale = '';
@@ -777,9 +778,9 @@ function filenameExt(name: string): string {
                 ti => ti.dataset.locale === loc && ti.dataset.fileId === fileId
               );
               const title = titleInput?.value.trim() || null;
-              promises.push(actions.upsertMediaFileAlt({ fileId, locale: loc, alt, title }));
+              promises.push(actions.upsertMediaFileAlt({ fileId, locale: loc as Locale, alt, title }));
             } else {
-              promises.push(actions.deleteMediaFileAlt({ fileId, locale: loc }).catch(() => {}));
+              promises.push(actions.deleteMediaFileAlt({ fileId, locale: loc as Locale }).catch(() => {}));
             }
           });
 
