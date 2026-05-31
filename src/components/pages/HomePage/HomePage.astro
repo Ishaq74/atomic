@@ -4,6 +4,7 @@ import HeroSection from './HeroSection.astro';
 import RisingParticles from "@wow/RisingParticles.astro";
 import LogoCloud from '@wow/LogoCloud.astro';
 import PillarsSection from './PillarsSection.astro';
+import CategorySection from './CategorySection.astro';
 import SideCarouselCards from '@organisms/Testimonials/SideCarouselCards.astro';
 import PricingSection from './PricingSection.astro';
 import CTABannerSection from './CTABannerSection.astro';
@@ -47,6 +48,10 @@ const { t } = Astro.props;
 
 <ScrollReveal direction="up" duration={700}>
   <PillarsSection t={t.pillars} />
+</ScrollReveal>
+
+<ScrollReveal direction="up" duration={700} delay={100}>
+  <CategorySection />
 </ScrollReveal>
 
 <ScrollReveal direction="up" duration={700} delay={100}>

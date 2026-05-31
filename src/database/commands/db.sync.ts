@@ -83,6 +83,22 @@ async function copyTableData(from: Client, to: Client, table: string) {
   console.log(c.green(`  [OK] ${table} (${rows.length} lignes)`));
 }
 
+async function validateTargetSchema(source: Client, target: Client) {
+  const sourceTables = await getTables(source);
+  const targetTables = await getTables(target);
+  const missingTables = sourceTables.filter(table => !targetTables.includes(table));
+
+  if (missingTables.length > 0) {
+    console.error(c.red(c.bold(`\n❌ Schéma incompatible : la cible ne contient pas toutes les tables de la source.`)));
+    console.error(c.yellow(`   Tables manquantes dans la cible :`));
+    for (const table of missingTables) {
+      console.error(c.yellow(`     - ${table}`));
+    }
+    console.error(c.yellow(`\n   Exécutez ${c.cyan('pnpm db:migrate')} sur la cible ou alignez le schéma cible avant de relancer.`));
+    process.exit(1);
+  }
+}
+
 // ── Main ─────────────────────────────────────────────────────────────
 
 async function sync() {
@@ -120,6 +136,8 @@ async function sync() {
   const to = connTarget.client!;
 
   try {
+    await validateTargetSchema(from, to);
+
     const tables = await getTables(from);
     if (tables.length === 0) {
       console.log(c.yellow('[INFO] Aucune table trouvée dans la source.'));
