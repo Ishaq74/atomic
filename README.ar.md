@@ -1,59 +1,59 @@
 # Atomic
 
-[**EN**](./README.md) | [FR](./README.fr.md) | [AR](./README.ar.md) | [ES](./README.es.md)
+[EN](./README.md) | [FR](./README.fr.md) | [**AR**](./README.ar.md) | [ES](./README.es.md)
 
-Full-stack SSR web application — authentication, organisations, CMS, media, SMTP and i18n across 4 locales.
+تطبيق ويب SSR متكامل — مصادقة، منظمات، CMS، وسائط، SMTP وi18n عبر 4 لغات.
 
-_This README is auto-generated to provide comprehensive context for AI assistance._
+_يتم إنشاء هذا الملف تلقائيًا لتوفير سياق شامل للمساعدة بالذكاء الاصطناعي._
 
-## Table of Contents
+## جدول المحتويات
 
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-- [Design System](#design-system)
-- [Database](#database)
-- [Authentication](#authentication)
-- [Content & CMS](#content-cms)
-- [Media](#media)
-- [Email & Notifications](#email-notifications)
-- [Internationalisation](#internationalisation)
-- [CI/CD & Quality](#cicd-quality)
+- [نظرة عامة](#نظرة-عامة)
+- [البدء](#البدء)
+- [نظام التصميم](#نظام-التصميم)
+- [قاعدة البيانات](#قاعدة-البيانات)
+- [المصادقة](#المصادقة)
+- [المحتوى ونظام إدارة المحتوى](#المحتوى-ونظام-إدارة-المحتوى)
+- [الوسائط](#الوسائط)
+- [البريد والإشعارات](#البريد-والإشعارات)
+- [التدويل](#التدويل)
+- [التكامل المستمر والجودة](#التكامل-المستمر-والجودة)
 
-## Overview
+## نظرة عامة
 
-SSR multi-language web application with complete authentication, organisation management, CMS, media upload, and audit trail.
+تطبيق ويب SSR متعدد اللغات مع مصادقة كاملة وإدارة المنظمات ونظام إدارة المحتوى والوسائط وسجل التدقيق.
 
-- ⚡ **Astro 6** (SSR, `@astrojs/node`) — Server-side rendering, Tailwind CSS 4, TypeScript
-- 🔐 **better-auth** — Email/password, email verification, organisations, roles, admin impersonation
-- 🗄️ **Drizzle ORM** + **PostgreSQL 16** — Type-safe migrations, loaders, full-text search
-- 🎨 **Starwind** — 47+ accessible Astro UI components
-- 🌍 **i18n** — fr, en, es, ar (RTL) with localised routes
-- 📋 **CMS** — Pages, typed JSON sections, navigation, scheduling, versioning, import/export
-- 📁 **Media** — Upload, Sharp image processing, folder organisation
-- 📧 **SMTP** — Brevo / Resend / Nodemailer + dead-letter queue
-- 🛡️ **Security** — Audit trail, rate limiting, input sanitization
-- ✅ **Testing** — 741 Vitest + 34 E2E Playwright scenarios × 3 browsers
+- ⚡ **Astro 6** (SSR, `@astrojs/node`) — عرض من جانب الخادم، Tailwind CSS 4، TypeScript
+- 🔐 **better-auth** — بريد إلكتروني/كلمة مرور، تحقق من البريد، منظمات، أدوار، انتحال هوية المسؤول
+- 🗄️ **Drizzle ORM** + **PostgreSQL 16** — ترحيلات آمنة من حيث النوع، محملات، بحث نصي كامل
+- 🎨 **Starwind** — 47+ مكون واجهة مستخدم Astro سهل الوصول
+- 🌍 **i18n** — fr، en، es، ar (RTL) مع مسارات محلية
+- 📋 **CMS** — صفحات، أقسام JSON مكتوبة، تنقل، جدولة، نسخ، استيراد/تصدير
+- 📁 **الوسائط** — رفع، معالجة Sharp، تنظيم المجلدات
+- 📧 **SMTP** — Brevo / Resend / Nodemailer + قائمة انتظار الرسائل الميتة
+- 🛡️ **الأمان** — سجل تدقيق، تحديد معدل الطلبات، تطهير المدخلات
+- ✅ **الاختبارات** — 741 Vitest + 34 سيناريو E2E Playwright × 3 متصفحات
 
-### Tech Stack
+### المجموعة التقنية
 
-| Technology | Role |
+| التقنية | الدور |
 |:--|:--|
-| **Astro 6** (`@astrojs/node`) | SSR framework |
-| **better-auth** | Auth, organisations, sessions |
-| **Drizzle ORM** + **PostgreSQL 16** | Database |
-| **Tailwind CSS 4** + **Starwind** | Design system (47+ components) |
-| **Vitest** + **Playwright** | Unit, integration & E2E tests |
+| **Astro 6** (`@astrojs/node`) | إطار عمل SSR |
+| **better-auth** | المصادقة والمنظمات |
+| **Drizzle ORM** + **PostgreSQL 16** | قاعدة البيانات |
+| **Tailwind CSS 4** + **Starwind** | نظام التصميم (47+ مكوناً) |
+| **Vitest** + **Playwright** | الاختبارات |
 | **GitHub Actions** | CI/CD |
 
-## Getting Started
+## البدء
 
-### Prerequisites
+### المتطلبات الأساسية
 
 - **Node.js** >= 22.12.0
 - **pnpm** >= 10
 - **PostgreSQL** >= 16
 
-### Installation
+### التثبيت
 
 ```bash
 pnpm install
@@ -62,7 +62,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-### Environment Variables
+### متغيرات البيئة
 
 | Variable | Description |
 |:---------|:------------|
@@ -80,7 +80,7 @@ pnpm dev
 | `SMTP_PORT` | SMTP server port, e.g. 587 (Nodemailer only) |
 | `SMTP_SECURE` | Enable TLS/SSL — true | false (Nodemailer only) |
 
-### TypeScript Aliases
+### مستعارات TypeScript
 
 - `@/*` → `src/*`
 - `@styles/*` → `src/styles/*`
@@ -99,9 +99,9 @@ pnpm dev
 - `@smtp/*` → `src/smtp/*`
 - `@media/*` → `src/media/*`
 
-## Design System
+## نظام التصميم
 
-### Files
+### الملفات
 
 ```
 src/components/
@@ -195,7 +195,7 @@ images/
   brand/
 ```
 
-### Components
+### المكونات
 
 - **atoms/** — 48 components
 - **molecules/** — 2 components
@@ -203,7 +203,7 @@ images/
 - **pages/** — 9 components
 - **wow/** — 9 components
 
-### Styles & Tokens
+### الأنماط والرموز
 
 `global.css` — 86 CSS custom properties
 
@@ -217,7 +217,7 @@ images/
 /* ... 80 more */
 ```
 
-### Tests
+### الاختبارات
 
 - `tests/unit/sanitize.test.ts`
 - `tests/unit/section-content-xss.test.ts`
@@ -226,9 +226,9 @@ images/
 - `tests/unit/seo.test.ts`
 - `tests/unit/theme-tokens.test.ts`
 
-## Database
+## قاعدة البيانات
 
-### Files
+### الملفات
 
 ```
 src/database/
@@ -288,7 +288,7 @@ schemas/
 schemas.ts
 ```
 
-### Schemas & Tables
+### المخططات والجداول
 
 **auth.schema.ts**
 - `user`: `id`, `name`, `email`, `emailVerified`, `image`, `createdAt`, `updatedAt`, `username`, `displayUsername`, `role`, `banned`, `banReason`, `banExpires` _(sessions: many, accounts: many, members: many, invitations: many)_
@@ -329,11 +329,11 @@ schemas.ts
 **consent.schema.ts**
 - `consent_settings`: `id`, `locale`, `title`, `description`, `acceptAll`, `rejectAll`, `customize`, `savePreferences`, `necessaryLabel`, `necessaryDescription`, `analyticsLabel`, `analyticsDescription`, `marketingLabel`, `marketingDescription`, `privacyPolicyLabel`, `privacyPolicyUrl`, `isActive`, `createdAt`, `updatedAt`
 
-### Migrations
+### الترحيلات
 
 - `0000_plain_old_lace.sql`
 
-### Commands
+### الأوامر
 
 | Command |
 |---------|
@@ -348,7 +348,7 @@ schemas.ts
 | `pnpm db:sync` |
 | `pnpm db:cleanup-audit` |
 
-### Tests
+### الاختبارات
 
 - `tests/integration/db-health.test.ts`
 - `tests/unit/cache.test.ts`
@@ -362,9 +362,9 @@ schemas.ts
 - `tests/unit/search-fts.test.ts`
 - `tests/unit/site-loader.test.ts`
 
-## Authentication
+## المصادقة
 
-### Files
+### الملفات
 
 ```
 src/lib/ (auth)
@@ -383,30 +383,30 @@ src/actions/
 src/middleware.ts
 ```
 
-### Authentication Flows
+### تدفقات المصادقة
 
-- Sign up (username + email + password)
-- Email login
-- Email verification
-- Password reset
-- Account deletion (GDPR)
-- Admin impersonation
+- التسجيل (اسم المستخدم + البريد + كلمة المرور)
+- تسجيل الدخول بالبريد الإلكتروني
+- التحقق من البريد الإلكتروني
+- إعادة تعيين كلمة المرور
+- حذف الحساب (RGPD)
+- انتحال هوية المسؤول
 
-### Roles & Organizations
+### الأدوار والمنظمات
 
-- **user** — standard access
-- **admin** — full access + impersonation
-- Organizations: creation, invitations, members, custom roles
+- **user** — وصول قياسي
+- **admin** — وصول كامل + انتحال الهوية
+- المنظمات: الإنشاء، الدعوات، الأعضاء، الأدوار المخصصة
 
-### Security & Audit
+### الأمان والتدقيق
 
-- Automatic audit trail on all sensitive actions
-- In-memory rate limiting
-- Input sanitization
-- Guards on protected routes
-- `middleware.ts` injects auth session on every request
+- سجل تدقيق تلقائي على جميع الإجراءات الحساسة
+- تحديد معدل الطلبات في الذاكرة
+- تطهير المدخلات
+- حراسة المسارات المحمية
+- `middleware.ts` يضخ جلسة المصادقة في كل طلب
 
-### Tests
+### الاختبارات
 
 - `tests/e2e/auth.spec.ts`
 - `tests/integration/audit.test.ts`
@@ -425,9 +425,9 @@ src/middleware.ts
 - `tests/unit/production-hardening.test.ts`
 - `tests/unit/rate-limit.test.ts`
 
-## Content & CMS
+## المحتوى ونظام إدارة المحتوى
 
-### Files
+### الملفات
 
 ```
 src/pages/
@@ -477,9 +477,9 @@ src/layouts/
 BaseLayout.astro
 ```
 
-The CMS manages localised pages with typed JSON content sections, navigation menus, page versioning and scheduled publishing. Content can be imported and exported. Routes are prefixed with the locale (`/fr/`, `/en/`, `/es/`, `/ar/`).
+يدير نظام إدارة المحتوى الصفحات المحلية مع أقسام محتوى JSON مكتوبة، قوائم تنقل، نسخ الصفحات والنشر المجدول. يمكن استيراد المحتوى وتصديره.
 
-### Tests
+### الاختبارات
 
 - `tests/e2e/cms-admin.spec.ts`
 - `tests/integration/cms-admin.test.ts`
@@ -510,9 +510,9 @@ The CMS manages localised pages with typed JSON content sections, navigation men
 - `tests/unit/navigation-menus.test.ts`
 - `tests/unit/navigation-tree.test.ts`
 
-## Media
+## الوسائط
 
-### Files
+### الملفات
 
 ```
 src/media/
@@ -528,29 +528,29 @@ uploads/
   media/
 ```
 
-### Upload & Processing
+### الرفع والمعالجة
 
-- Secure upload with MIME type and size validation
-- Image processing with **sharp** (resize, optimisation)
-- Storage in `public/uploads/`
-- Delete and list uploaded files
+- رفع آمن مع التحقق من نوع MIME والحجم
+- معالجة الصور باستخدام **sharp**
+- التخزين في `public/uploads/`
+- حذف وقائمة الملفات المرفوعة
 
-### Commands
+### الأوامر
 
 | Command |
 |---------|
 | `pnpm db:seed-media` |
 
-### Tests
+### الاختبارات
 
 - `tests/unit/admin-media.test.ts`
 - `tests/unit/media-list.test.ts`
 - `tests/unit/upload-api.test.ts`
 - `tests/unit/upload.test.ts`
 
-## Email & Notifications
+## البريد والإشعارات
 
-### Files
+### الملفات
 
 ```
 src/smtp/
@@ -576,35 +576,35 @@ types.ts
 logs/ ← email dead-letter queue (JSONL, one file per day)
 ```
 
-### Providers
+### مزودو الخدمة
 
 - **Brevo** (`SMTP_PROVIDER=BREVO`)
 - **Resend** (`SMTP_PROVIDER=RESEND`)
-- **Nodemailer** (`SMTP_PROVIDER=NODEMAILER`) — standard SMTP
+- **Nodemailer** (`SMTP_PROVIDER=NODEMAILER`)
 
-Provider selected via `SMTP_PROVIDER` environment variable.
+يتم تحديد المزود عبر متغير البيئة `SMTP_PROVIDER`.
 
-### Templates
+### القوالب
 
-i18n email templates for: email verification, password reset, organisation invitations.
+قوالب بريد إلكتروني متعددة اللغات لـ: التحقق من البريد، إعادة تعيين كلمة المرور، دعوات المنظمات.
 
-### Commands
+### الأوامر
 
 | Command |
 |---------|
 | `pnpm smtp:check` |
 | `pnpm logs:rotate` |
 
-### Tests
+### الاختبارات
 
 - `tests/unit/contact-form-template.test.ts`
 - `tests/unit/send-email.test.ts`
 - `tests/unit/smtp-env.test.ts`
 - `tests/unit/smtp-providers.test.ts`
 
-## Internationalisation
+## التدويل
 
-### Files
+### الملفات
 
 ```
 src/i18n/
@@ -636,7 +636,7 @@ fr/
 utils.ts
 ```
 
-### Supported Locales
+### اللغات المدعومة
 
 | Locale | Language | Direction |
 |--------|----------|-----------|
@@ -645,11 +645,11 @@ utils.ts
 | `es` | Español | LTR |
 | `ar` | العربية | RTL |
 
-### Routing
+### التوجيه
 
-All routes are prefixed with the locale: `/fr/`, `/en/`, `/es/`, `/ar/`. Default locale is `fr`.
+جميع المسارات مسبوقة بالإعداد المحلي: `/fr/`، `/en/`، `/es/`، `/ar/`. الإعداد المحلي الافتراضي هو `fr`.
 
-### Tests
+### الاختبارات
 
 - `tests/unit/cms-i18n.test.ts`
 - `tests/unit/i18n-key-completeness.test.ts`
@@ -657,9 +657,9 @@ All routes are prefixed with the locale: `/fr/`, `/en/`, `/es/`, `/ar/`. Default
 - `tests/unit/i18n-urls.test.ts`
 - `tests/unit/i18n-utils.test.ts`
 
-## CI/CD & Quality
+## التكامل المستمر والجودة
 
-### Files
+### الملفات
 
 ```
 tests/
@@ -681,22 +681,22 @@ workflows/
   codeql.yml
 ```
 
-### CI/CD Pipeline
+### خط الأنابيب
 
-GitHub Actions pipeline on every push/PR to `main`:
+خط أنابيب GitHub Actions على كل push/PR نحو `main`:
 
-1. **Lint & Type Check** — ESLint + `astro check` + `pnpm audit`
-2. **Unit & Integration** — Vitest + coverage (PostgreSQL 16)
-3. **E2E** — Playwright (Chromium + Firefox + WebKit)
+1. **Lint & Type Check**
+2. **Unit & Integration** — Vitest
+3. **E2E** — Playwright
 4. **Accessibility & Performance** — Pa11y + Lighthouse CI
-5. **Build** — production artefact on `main`
+5. **Build**
 
-### Accessibility & Performance
+### إمكانية الوصول والأداء
 
-- **Pa11y** — WCAG AAA compliance
-- **Lighthouse CI** — performance, accessibility, best practices, SEO
+- **Pa11y** — توافق WCAG AAA
+- **Lighthouse CI** — الأداء وإمكانية الوصول والأفضليات و SEO
 
-### Commands
+### الأوامر
 
 | Command |
 |---------|
