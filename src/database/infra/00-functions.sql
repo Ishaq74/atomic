@@ -102,3 +102,24 @@ BEGIN
   RETURN NULL;
 END
 $$ LANGUAGE plpgsql;
+--> statement-breakpoint
+
+-- Rebuild search_vector for a blog post translation row (BEFORE trigger: all
+-- searchable fields — title/slug/excerpt/meta/content — live on the same row,
+-- unlike pages which need a cross-table page_sections lookup).
+-- Weights: A = title, B = meta_title + meta_description + excerpt, C = slug, D = content.
+CREATE OR REPLACE FUNCTION refresh_blog_post_search_vector() RETURNS trigger AS $$
+DECLARE
+  cfg regconfig;
+BEGIN
+  cfg := locale_to_regconfig(NEW.locale);
+
+  NEW.search_vector :=
+    setweight(to_tsvector(cfg, coalesce(NEW.title, '')), 'A') ||
+    setweight(to_tsvector(cfg, coalesce(NEW.meta_title, '') || ' ' || coalesce(NEW.meta_description, '') || ' ' || coalesce(NEW.excerpt, '')), 'B') ||
+    setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.slug, ''), '-', ' ', 'g')), 'C') ||
+    setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.content, ''), '<[^>]+>', ' ', 'g')), 'D');
+
+  RETURN NEW;
+END
+$$ LANGUAGE plpgsql;

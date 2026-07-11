@@ -37,6 +37,11 @@ export const statement = {
   navigation: ["read", "update"],
   audit: ["read", "export"],
   theme: ["read", "update"],
+  blog: ["create", "read", "update", "delete", "publish", "moderate"],
+  blogCategory: ["create", "read", "update", "delete"],
+  blogTag: ["create", "read", "update", "delete"],
+  blogComment: ["read", "update", "delete", "moderate"],
+  blogReview: ["read", "update", "delete", "moderate"],
 } as const;
 
 export const ac = createAccessControl(statement);
@@ -53,6 +58,11 @@ export const adminRole = ac.newRole({
   navigation: ["read", "update"],
   audit: ["read", "export"],
   theme: ["read", "update"],
+  blog: ["create", "read", "update", "delete", "publish", "moderate"],
+  blogCategory: ["create", "read", "update", "delete"],
+  blogTag: ["create", "read", "update", "delete"],
+  blogComment: ["read", "update", "delete", "moderate"],
+  blogReview: ["read", "update", "delete", "moderate"],
 });
 
 /** Editor: manages content, no user/session/site/theme management */
@@ -66,6 +76,11 @@ export const editorRole = ac.newRole({
   navigation: ["read"],
   audit: ["read"],
   theme: ["read"],
+  blog: ["create", "read", "update", "delete", "publish"],
+  blogCategory: ["create", "read", "update", "delete"],
+  blogTag: ["create", "read", "update", "delete"],
+  blogComment: ["read", "update", "moderate"],
+  blogReview: ["read", "update", "moderate"],
 });
 
 /** Regular user: read-only access to CMS content */
@@ -78,6 +93,11 @@ export const userRole = ac.newRole({
   site: ["read"],
   navigation: ["read"],
   theme: ["read"],
+  blog: ["read"],
+  blogCategory: ["read"],
+  blogTag: ["read"],
+  blogComment: ["read"],
+  blogReview: ["read"],
 });
 
 // ─── Organization roles (org plugin — stored in member.role) ────────────────
@@ -94,6 +114,11 @@ export const orgOwnerRole = ac.newRole({
   navigation: ["read", "update"],
   audit: ["read", "export"],
   theme: ["read", "update"],
+  blog: ["create", "read", "update", "delete", "publish", "moderate"],
+  blogCategory: ["create", "read", "update", "delete"],
+  blogTag: ["create", "read", "update", "delete"],
+  blogComment: ["read", "update", "delete", "moderate"],
+  blogReview: ["read", "update", "delete", "moderate"],
 });
 
 /** Org Admin: org admin + content management */
@@ -106,6 +131,11 @@ export const orgAdminRole = ac.newRole({
   navigation: ["read", "update"],
   audit: ["read"],
   theme: ["read"],
+  blog: ["create", "read", "update", "delete", "publish", "moderate"],
+  blogCategory: ["create", "read", "update", "delete"],
+  blogTag: ["create", "read", "update", "delete"],
+  blogComment: ["read", "update", "delete", "moderate"],
+  blogReview: ["read", "update", "delete", "moderate"],
 });
 
 /** Org Member: read-only org operations + content read */
@@ -117,4 +147,9 @@ export const orgMemberRole = ac.newRole({
   site: ["read"],
   navigation: ["read"],
   theme: ["read"],
+  blog: ["read"],
+  blogCategory: ["read"],
+  blogTag: ["read"],
+  blogComment: ["read"],
+  blogReview: ["read"],
 });

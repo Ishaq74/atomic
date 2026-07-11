@@ -1,0 +1,73 @@
+---
+import { requirePermission } from "@/lib/auth-guards";
+import { getBlogTranslations } from "@i18n/utils";
+import { getBlogCategories, getBlogTags, getBlogModerationQueue, getBlogPostsForAdmin } from "@database/loaders/blog.loader";
+import BaseLayout from "@layouts/BaseLayout.astro";
+import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
+import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
+import BlogAdminPage from "@/components/blog/BlogAdminPage.astro";
+
+export const prerender = false;
+
+const result = await requirePermission(Astro, {
+  blog: ["read"],
+  blogCategory: ["read"],
+  blogTag: ["read"],
+  blogComment: ["read"],
+  blogReview: ["read"],
+});
+
+if ('redirect' in result) return result.redirect;
+
+const { locale, authT, user } = result;
+const blogT = await getBlogTranslations(locale);
+const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
+const baseAdminUrl = `/${locale}/admin/blog`;
+const basePublicUrl = `/${locale}/${blogT.routes.blog}`;
+
+const [{ rows, meta }, categoryRows, tagRows, moderation] = await Promise.all([
+  getBlogPostsForAdmin(null, locale, { page }),
+  getBlogCategories(null, locale),
+  getBlogTags(null, locale),
+  getBlogModerationQueue(null, { limit: 10 }),
+]);
+
+const categories = categoryRows.map((item) => ({
+  id: item.id,
+  slug: item.slug,
+  name: item.translation?.name ?? item.slug,
+  description: item.translation?.description ?? null,
+  color: item.color,
+  icon: item.icon,
+  parentId: item.parentId,
+  sortOrder: item.sortOrder,
+  postCount: item.postCount,
+}));
+
+const tags = tagRows.map((item) => ({
+  id: item.id,
+  slug: item.slug,
+  name: item.translation?.name ?? item.slug,
+  color: item.color,
+  postCount: item.postCount,
+}));
+---
+
+<BaseLayout title={blogT.admin.title} description={blogT.admin.title}>
+  <AuthLayout title={blogT.admin.title}>
+    <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
+    <BlogAdminPage
+      locale={locale}
+      blogT={blogT}
+      title={blogT.admin.title}
+      posts={rows as never}
+      postsMeta={meta}
+      categories={categories}
+      tags={tags}
+      moderation={moderation as never}
+      baseAdminUrl={baseAdminUrl}
+      basePublicUrl={basePublicUrl}
+      userId={user.id}
+    />
+  </AuthLayout>
+</BaseLayout>

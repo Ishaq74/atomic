@@ -91,6 +91,7 @@ const isOwner = activeOrgRole === 'owner';
   data-t-deleted={t.organizations.danger.deleted}
   data-t-leave-confirm={t.organizations.danger.leaveConfirm}
   data-t-delete-confirm={t.organizations.danger.deleteConfirm}
+  data-t-error={t.admin.cms.common.error}
 ></div>
 
 <script>
@@ -139,7 +140,7 @@ const isOwner = activeOrgRole === 'owner';
 
       const { error } = await authClient.organization.update({ data: updateData });
       if (error) {
-        toast.error(error.message ?? 'Error');
+        toast.error(error.message ?? d.tError ?? '');
       } else {
         toast.success(d.tSaved ?? '');
         const newSlug = slug || orgSlug;
@@ -153,7 +154,7 @@ const isOwner = activeOrgRole === 'owner';
       if (!confirm(d.tLeaveConfirm ?? '')) return;
       const { error } = await authClient.organization.leave({ organizationId: orgId });
       if (error) {
-        toast.error(error.message ?? 'Error');
+        toast.error(error.message ?? d.tError ?? '');
       } else {
         toast.success(d.tLeft ?? '');
         window.location.href = dashboardUrl;
@@ -166,7 +167,7 @@ const isOwner = activeOrgRole === 'owner';
       if (!confirm(d.tDeleteConfirm ?? '')) return;
       const { error } = await authClient.organization.delete({ organizationId: orgId });
       if (error) {
-        toast.error(error.message ?? 'Error');
+        toast.error(error.message ?? d.tError ?? '');
       } else {
         toast.success(d.tDeleted ?? '');
         window.location.href = dashboardUrl;

@@ -152,6 +152,7 @@ function isoDate(d: Date | string | null) {
   class="hidden"
   data-t-deleted={ta.organizations.deleted}
   data-t-confirm-delete={ta.organizations.confirmDelete}
+  data-t-error={t.admin.cms.common.error}
 ></div>
 
 <script>
@@ -209,10 +210,10 @@ function isoDate(d: Date | string | null) {
     document.querySelectorAll<HTMLElement>('.admin-delete-org-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const orgId = btn.dataset.orgId;
-        if (!orgId || !confirm(d.tConfirmDelete ?? 'Delete this organization?')) return;
+        if (!orgId || !confirm(d.tConfirmDelete ?? '')) return;
         const { error } = await authClient.organization.delete({ organizationId: orgId });
-        if (!error) { toast.success(d.tDeleted ?? 'Deleted.'); location.reload(); }
-        else toast.error(error.message ?? 'Error');
+        if (!error) { toast.success(d.tDeleted ?? ''); location.reload(); }
+        else toast.error(error.message ?? d.tError ?? '');
       });
     });
   }

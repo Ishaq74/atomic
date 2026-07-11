@@ -47,12 +47,27 @@ export interface OrganizationInvitationStrings {
   ignore: string;
 }
 
+export interface BlogNewsletterStrings {
+  subject: string;
+  heading: string;
+  greeting: string;
+  greetingGeneric: string;
+  body: string;
+  button: string;
+  extra: string;
+  ignore: string;
+  unsubscribedSubject: string;
+  unsubscribedHeading: string;
+  unsubscribedBody: string;
+}
+
 type EmailTranslations = {
   layout: EmailLayoutStrings;
   verifyEmail: VerifyEmailStrings;
   resetPassword: ResetPasswordStrings;
   deleteAccount: DeleteAccountStrings;
   organizationInvitation: OrganizationInvitationStrings;
+  blogNewsletter: BlogNewsletterStrings;
 };
 
 const translations: Record<Locale, EmailTranslations> = {
@@ -95,6 +110,19 @@ const translations: Record<Locale, EmailTranslations> = {
       button: 'Accepter l\'invitation',
       ignore: 'Si vous ne souhaitez pas rejoindre cette organisation, ignorez simplement cet email.',
     },
+    blogNewsletter: {
+      subject: 'Confirmez votre inscription à la newsletter',
+      heading: 'Newsletter du blog',
+      greeting: 'Bonjour {name},',
+      greetingGeneric: 'Bonjour,',
+      body: 'Confirmez votre inscription à notre newsletter pour recevoir nos meilleurs articles directement dans votre boîte mail.',
+      button: 'Confirmer l\'inscription',
+      extra: '',
+      ignore: 'Si vous n\'avez pas demandé cette inscription, ignorez cet email ou {unsubscribeUrl}.',
+      unsubscribedSubject: 'Désinscription confirmée',
+      unsubscribedHeading: 'Vous êtes désabonné',
+      unsubscribedBody: 'Vous ne recevrez plus notre newsletter. Vous pouvez vous réinscrire à tout moment.',
+    },
   },
   en: {
     layout: {
@@ -134,6 +162,19 @@ const translations: Record<Locale, EmailTranslations> = {
       body: '{inviterName} has invited you to join {orgName} as a {role}. Click the button below to accept the invitation.',
       button: 'Accept invitation',
       ignore: 'If you don\'t want to join this organization, simply ignore this email.',
+    },
+    blogNewsletter: {
+      subject: 'Confirm your newsletter subscription',
+      heading: 'Blog newsletter',
+      greeting: 'Hi {name},',
+      greetingGeneric: 'Hello,',
+      body: 'Confirm your subscription to our newsletter to receive our best articles straight to your inbox.',
+      button: 'Confirm subscription',
+      extra: '',
+      ignore: 'If you didn\'t request this subscription, ignore this email or {unsubscribeUrl}.',
+      unsubscribedSubject: 'Unsubscription confirmed',
+      unsubscribedHeading: 'You are unsubscribed',
+      unsubscribedBody: 'You will no longer receive our newsletter. You can subscribe again at any time.',
     },
   },
   es: {
@@ -175,6 +216,19 @@ const translations: Record<Locale, EmailTranslations> = {
       button: 'Aceptar invitación',
       ignore: 'Si no desea unirse a esta organización, simplemente ignore este correo.',
     },
+    blogNewsletter: {
+      subject: 'Confirme su suscripción al boletín',
+      heading: 'Boletín del blog',
+      greeting: 'Hola {name},',
+      greetingGeneric: 'Hola,',
+      body: 'Confirme su suscripción a nuestro boletín para recibir nuestros mejores artículos directamente en su correo.',
+      button: 'Confirmar suscripción',
+      extra: '',
+      ignore: 'Si no solicitó esta suscripción, ignore este correo o {unsubscribeUrl}.',
+      unsubscribedSubject: 'Baja confirmada',
+      unsubscribedHeading: 'Está dado de baja',
+      unsubscribedBody: 'Ya no recibirá nuestro boletín. Puede suscribirse de nuevo cuando quiera.',
+    },
   },
   ar: {
     layout: {
@@ -214,6 +268,19 @@ const translations: Record<Locale, EmailTranslations> = {
       body: '{inviterName} يدعوك للانضمام إلى {orgName} بصفة {role}. انقر على الزر أدناه لقبول الدعوة.',
       button: 'قبول الدعوة',
       ignore: 'إذا لم ترغب في الانضمام إلى هذه المؤسسة، تجاهل هذا البريد.',
+    },
+    blogNewsletter: {
+      subject: 'أكّد اشتراكك في النشرة البريدية',
+      heading: 'نشرة المدونة',
+      greeting: 'مرحبًا {name}،',
+      greetingGeneric: 'مرحبًا،',
+      body: 'أكّد اشتراكك في نشرتنا البريدية لتصلك أفضل مقالاتنا مباشرة إلى بريدك.',
+      button: 'تأكيد الاشتراك',
+      extra: '',
+      ignore: 'إذا لم تطلب هذا الاشتراك، تجاهل هذا البريد أو {unsubscribeUrl}.',
+      unsubscribedSubject: 'تم تأكيد الإلغاء',
+      unsubscribedHeading: 'تم إلغاء اشتراكك',
+      unsubscribedBody: 'لن تتلقى نشرتنا البريدية بعد الآن. يمكنك الاشتراك مجددًا في أي وقت.',
     },
   },
 };

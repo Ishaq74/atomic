@@ -2,6 +2,7 @@
 import type { PageWithSections } from '@database/loaders/page.loader';
 import type { Locale } from '@i18n/config';
 import { getSiteSettings, getContactInfo } from '@database/loaders/site.loader';
+import { safeJsonLd } from '@/lib/sanitize';
 import { Badge } from '@atoms/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@atoms/tabs';
 import {
@@ -119,7 +120,8 @@ const faqJsonLd = JSON.stringify({
   </Tabs>
 </section>
 
-<script is:inline type="application/ld+json" set:html={faqJsonLd} />
+{/* eslint-disable-next-line astro/no-set-html-directive -- faqJsonLd is pre-escaped via safeJsonLd() (neutralizes </script> breakout); it is structured data (JSON.stringify output), not arbitrary HTML */}
+<script is:inline type="application/ld+json" set:html={safeJsonLd(faqJsonLd)} />
 
 <script>
   let legalController: AbortController | null = null;

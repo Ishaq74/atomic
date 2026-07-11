@@ -248,6 +248,7 @@ function initials(name?: string) {
   data-t-deleted={ta.users.deleted}
   data-t-confirm-ban={ta.users.confirmBan}
   data-t-confirm-delete={ta.users.confirmDelete}
+  data-t-error={t.admin.cms.common.error}
 ></div>
 
 <script>
@@ -326,10 +327,10 @@ function initials(name?: string) {
         if (!userId) return;
         const { error } = await authClient.admin.setRole({ userId, role: sel.value as 'user' | 'admin' });
         if (!error) {
-          toast.success(d.tRoleChanged ?? 'Role updated.');
+          toast.success(d.tRoleChanged ?? '');
           location.reload();
         } else {
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
           sel.value = original;
         }
       });
@@ -339,10 +340,10 @@ function initials(name?: string) {
     document.querySelectorAll<HTMLElement>('.admin-ban-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const userId = btn.dataset.userId;
-        if (!userId || !confirm(d.tConfirmBan ?? 'Ban this user?')) return;
+        if (!userId || !confirm(d.tConfirmBan ?? '')) return;
         const { error } = await authClient.admin.banUser({ userId });
-        if (!error) { toast.success(d.tBanned ?? 'Banned.'); location.reload(); }
-        else toast.error(error.message ?? 'Error');
+        if (!error) { toast.success(d.tBanned ?? ''); location.reload(); }
+        else toast.error(error.message ?? d.tError ?? '');
       });
     });
 
@@ -352,8 +353,8 @@ function initials(name?: string) {
         const userId = btn.dataset.userId;
         if (!userId) return;
         const { error } = await authClient.admin.unbanUser({ userId });
-        if (!error) { toast.success(d.tUnbanned ?? 'Unbanned.'); location.reload(); }
-        else toast.error(error.message ?? 'Error');
+        if (!error) { toast.success(d.tUnbanned ?? ''); location.reload(); }
+        else toast.error(error.message ?? d.tError ?? '');
       });
     });
 
@@ -364,7 +365,7 @@ function initials(name?: string) {
         if (!userId) return;
         const { error } = await authClient.admin.impersonateUser({ userId });
         if (!error) location.reload();
-        else toast.error(error.message ?? 'Error');
+        else toast.error(error.message ?? d.tError ?? '');
       });
     });
 
@@ -372,10 +373,10 @@ function initials(name?: string) {
     document.querySelectorAll<HTMLElement>('.admin-delete-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const userId = btn.dataset.userId;
-        if (!userId || !confirm(d.tConfirmDelete ?? 'Delete this user?')) return;
+        if (!userId || !confirm(d.tConfirmDelete ?? '')) return;
         const { error } = await authClient.admin.removeUser({ userId });
-        if (!error) { toast.success(d.tDeleted ?? 'Deleted.'); location.reload(); }
-        else toast.error(error.message ?? 'Error');
+        if (!error) { toast.success(d.tDeleted ?? ''); location.reload(); }
+        else toast.error(error.message ?? d.tError ?? '');
       });
     });
   }

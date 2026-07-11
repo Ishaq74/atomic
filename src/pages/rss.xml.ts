@@ -1,14 +1,16 @@
 import rss from "@astrojs/rss";
 import type { APIRoute } from "astro";
 import { getPagesList } from "@database/loaders/page.loader";
+import { getBlogPosts } from "@database/loaders/blog.loader";
 import { LOCALES, DEFAULT_LOCALE, type Locale } from "@i18n/config";
 import { getCommonTranslations } from "@i18n/utils";
+import { buildBlogPostUrl } from "@/lib/blog/utils";
 
 export const prerender = false;
 
 /**
  * GET /rss.xml
- * RSS feed of all published CMS pages across all locales.
+ * RSS feed of all published CMS pages and global blog posts, across all locales.
  */
 export const GET: APIRoute = async (context) => {
   const common = await getCommonTranslations(DEFAULT_LOCALE);
@@ -17,6 +19,7 @@ export const GET: APIRoute = async (context) => {
     title: string;
     link: string;
     pubDate?: Date;
+    description?: string;
   }[] = [];
 
   for (const locale of LOCALES) {
@@ -34,6 +37,35 @@ export const GET: APIRoute = async (context) => {
         link: `/${locale}/${page.slug}`,
         pubDate: page.publishedAt ?? undefined,
       });
+    }
+  }
+
+  // Global blog posts (org-scoped blogs are excluded — this is the sitewide feed)
+  for (const locale of LOCALES) {
+    try {
+      let page = 1;
+      for (;;) {
+        const { items, meta } = await getBlogPosts(null, locale as Locale, {
+          page,
+          limit: 100,
+          sortBy: "publishedAt",
+          sortOrder: "desc",
+        });
+        for (const item of items) {
+          if (!item.translation) continue;
+          const categorySlug = item.categories[0]?.slug ?? null;
+          allItems.push({
+            title: `[${locale.toUpperCase()}] ${item.translation.title}`,
+            link: buildBlogPostUrl(locale as Locale, null, item.translation.slug, categorySlug),
+            pubDate: item.post.publishedAt ?? undefined,
+            description: item.translation.excerpt ?? undefined,
+          });
+        }
+        if (!meta.hasNextPage) break;
+        page += 1;
+      }
+    } catch (err) {
+      console.error(`[rss] Failed to load blog posts for locale "${locale}":`, err);
     }
   }
 

@@ -14,6 +14,7 @@
  *   });
  */
 import type { Locale } from '@i18n/config';
+import { getAuthTranslations } from '@i18n/utils';
 import { getAllMediaFiles, getMediaFolders } from '@database/loaders/media.loader';
 import type { MediaFolderNode, MediaFileWithAlts } from '@database/loaders/media.loader';
 import { Input } from '@atoms/input';
@@ -23,10 +24,20 @@ import { Badge } from '@atoms/badge';
 interface Props {
   id: string;
   locale: Locale;
+  organizationId?: string | null;
 }
 
-const { id, locale } = Astro.props;
-const [allFiles, folderTree] = await Promise.all([getAllMediaFiles(), getMediaFolders()]);
+const { id, locale, organizationId } = Astro.props;
+const authT = await getAuthTranslations(locale);
+const mediaT = authT.admin.cms.media;
+const [allFiles, folderTree] = await Promise.all([
+  getAllMediaFiles(organizationId ?? null),
+  getMediaFolders(organizationId ?? null),
+]);
+
+function pluralize(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -60,6 +71,8 @@ const folders = flattenFolderIds(folderTree);
     alts: f.alts,
   })))}
   data-folders={JSON.stringify(folders)}
+  data-file-singular={mediaT.counts.file}
+  data-file-plural={mediaT.counts.files}
   class="hidden"
 >
   {/* Backdrop */}
@@ -69,11 +82,11 @@ const folders = flattenFolderIds(folderTree);
   <div class="media-picker-dialog fixed inset-4 z-50 mx-auto my-auto flex max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-xl border bg-background shadow-xl">
     {/* Header */}
     <div class="flex items-center justify-between border-b px-4 py-3">
-      <h3 class="text-lg font-semibold">Sélectionner un média</h3>
+      <h3 class="text-lg font-semibold">{mediaT.pickerTitle}</h3>
       <div class="flex items-center gap-3">
-        <Input type="search" placeholder="Rechercher…" class="h-8 w-48 text-sm media-picker-search" />
+        <Input type="search" placeholder={mediaT.pickerSearchPlaceholder} class="h-8 w-48 text-sm media-picker-search" />
         <select class="media-picker-folder-filter h-8 rounded-md border bg-background px-2 text-sm">
-          <option value="">Tous les dossiers</option>
+          <option value="">{mediaT.pickerAllFolders}</option>
           {folders.map(f => <option value={f.id}>{f.name}</option>)}
         </select>
         <button class="media-picker-close rounded-md p-1 hover:bg-muted" data-action="close">
@@ -115,16 +128,16 @@ const folders = flattenFolderIds(folderTree);
         })}
       </div>
       {allFiles.length === 0 && (
-        <p class="py-12 text-center text-sm text-muted-foreground">Aucun média. Uploadez des fichiers dans la bibliothèque de médias.</p>
+        <p class="py-12 text-center text-sm text-muted-foreground">{mediaT.pickerEmpty}</p>
       )}
     </div>
 
     {/* Footer */}
     <div class="flex items-center justify-between border-t px-4 py-3">
-      <span class="media-picker-count text-sm text-muted-foreground">{allFiles.length} fichiers</span>
+      <span class="media-picker-count text-sm text-muted-foreground">{pluralize(allFiles.length, mediaT.counts.file, mediaT.counts.files)}</span>
       <div class="flex gap-2">
-        <Button size="sm" variant="outline" class="media-picker-cancel-btn" data-action="close">Annuler</Button>
-        <Button size="sm" class="media-picker-select-btn" disabled>Sélectionner</Button>
+        <Button size="sm" variant="outline" class="media-picker-cancel-btn" data-action="close">{mediaT.pickerCancel}</Button>
+        <Button size="sm" class="media-picker-select-btn" disabled>{mediaT.pickerSelect}</Button>
       </div>
     </div>
   </div>
@@ -238,7 +251,11 @@ const folders = flattenFolderIds(folderTree);
       });
 
       const countEl = this.querySelector('.media-picker-count');
-      if (countEl) countEl.textContent = `${visibleCount} fichiers`;
+      if (countEl) {
+        const singular = this.dataset.fileSingular ?? 'file';
+        const plural = this.dataset.filePlural ?? 'files';
+        countEl.textContent = `${visibleCount} ${visibleCount === 1 ? singular : plural}`;
+      }
     }
   }
 

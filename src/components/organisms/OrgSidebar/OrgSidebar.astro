@@ -4,11 +4,15 @@
  * Includes a "Back to Dashboard" link and the org header.
  */
 import type { AuthTranslations, Locale } from '@i18n/config';
+import { LOCALES, LOCALE_LABELS } from '@i18n/config';
+import { getRelativeLocaleUrl } from 'astro:i18n';
 import { getAuthUrl, getOrgUrl } from '@i18n/utils';
 import type { FullOrganization } from '@/lib/auth-data';
 import type { OrgSubpage } from '@i18n/utils';
 
 import ArrowLeftIcon from '@tabler/icons/outline/arrow-left.svg';
+import FileTextIcon from '@tabler/icons/outline/file-text.svg';
+import PhotoIcon from '@tabler/icons/outline/photo.svg';
 import UsersIcon from '@tabler/icons/outline/users.svg';
 import ShieldIcon from '@tabler/icons/outline/shield.svg';
 import SettingsIcon from '@tabler/icons/outline/settings.svg';
@@ -42,10 +46,18 @@ const { t, locale, org, activeItem, orgRole } = Astro.props;
 
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
 const canManage = orgRole === 'admin' || orgRole === 'owner';
+const pathWithoutLocale = Astro.url.pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
+const localeSwitcherT = t.admin.localeSwitcher ?? { title: 'Languages' };
+
+function buildLocaleHref(targetLocale: Locale) {
+  return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`;
+}
 
 const navItems: { id: OrgSubpage; title: string; url: string; icon: typeof UsersIcon; show: boolean }[] = [
   { id: 'members', title: t.organizations.members.title, url: getOrgUrl(locale, org.slug, 'members'), icon: UsersIcon, show: true },
   { id: 'roles', title: t.organizations.roles.title, url: getOrgUrl(locale, org.slug, 'roles'), icon: ShieldIcon, show: canManage },
+  { id: 'blog', title: t.organizations.blog.title, url: getOrgUrl(locale, org.slug, 'blog'), icon: FileTextIcon, show: canManage },
+  { id: 'media', title: t.organizations.media.title, url: getOrgUrl(locale, org.slug, 'media'), icon: PhotoIcon, show: canManage },
   { id: 'settings', title: t.organizations.settings.title, url: getOrgUrl(locale, org.slug, 'settings'), icon: SettingsIcon, show: canManage },
 ];
 ---
@@ -97,6 +109,32 @@ const navItems: { id: OrgSubpage; title: string; url: string; icon: typeof Users
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+
+    <SidebarGroup>
+      <SidebarGroupLabel>{localeSwitcherT.title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <div class="flex flex-wrap gap-2 px-2 pb-2">
+          {LOCALES.map((targetLocale) => {
+            const isActive = targetLocale === locale;
+            return (
+              <a
+                href={buildLocaleHref(targetLocale)}
+                class:list={[
+                  'inline-flex min-w-9 items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                  {
+                    'border-primary bg-primary text-primary-foreground': isActive,
+                    'border-border text-muted-foreground hover:border-foreground/20 hover:bg-muted hover:text-foreground': !isActive,
+                  },
+                ]}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {LOCALE_LABELS[targetLocale]}
+              </a>
+            );
+          })}
+        </div>
       </SidebarGroupContent>
     </SidebarGroup>
   </SidebarContent>

@@ -60,4 +60,15 @@ BEGIN
           EXECUTE FUNCTION refresh_page_search_vector();
         RAISE NOTICE 'trigger page_sections_search_vector_update créé';
     END IF;
+
+    IF to_regclass('blog_post_translations') IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'blog_post_translations_search_vector_update')
+    THEN
+        CREATE TRIGGER blog_post_translations_search_vector_update
+          BEFORE INSERT OR UPDATE OF title, slug, excerpt, meta_title, meta_description, content, locale
+          ON blog_post_translations
+          FOR EACH ROW
+          EXECUTE FUNCTION refresh_blog_post_search_vector();
+        RAISE NOTICE 'trigger blog_post_translations_search_vector_update créé';
+    END IF;
 END $$;

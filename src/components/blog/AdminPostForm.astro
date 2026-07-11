@@ -1,0 +1,741 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { Icon } from "astro-icon/components";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@i18n/config";
+import type { BlogTranslations } from "@i18n/config";
+import { buildBlogPostHref } from "@/lib/blog/utils";
+import { BLOG_POST_STATUSES } from "@/lib/blog/constants";
+import { Card, CardContent, CardHeader, CardTitle } from "@atoms/card";
+import { Input } from "@atoms/input";
+import { Textarea } from "@atoms/textarea";
+import { Label } from "@atoms/label";
+import { Checkbox } from "@atoms/checkbox";
+import { NativeSelect, NativeSelectOption } from "@atoms/native-select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@atoms/tabs";
+import { Badge } from "@atoms/badge";
+import Button from "@atoms/button/Button.astro";
+import MediaPicker from "@atoms/media-picker/MediaPicker.astro";
+import ContentEditor from "@components/content/ContentEditor.astro";
+
+interface TaxonomyOption {
+  id: string;
+  slug: string;
+  label: string;
+}
+
+interface BlogPostGalleryItem {
+  id: string;
+  title: string | null;
+  description: string | null;
+  sortOrder: number;
+  media: { mediaId: string; altText: string; caption: string | null; sortOrder: number }[];
+}
+
+interface BlogPostLinkItem {
+  id: string;
+  linkType: "RELATED" | "PREVIOUS" | "NEXT" | "REFERENCE";
+  sortOrder: number;
+  target: { id: string; slug: string; title: string | null };
+}
+
+interface RevisionItem {
+  revision: {
+    id: string;
+    title: string;
+    slug: string;
+    status: string;
+    createdAt: Date;
+  };
+  author: { id: string; name: string | null } | null;
+}
+
+interface PostEditorData {
+  post: {
+    id: string;
+    status: (typeof BLOG_POST_STATUSES)[number];
+    featuredImageId: string | null;
+    isFeatured: boolean;
+    isSticky: boolean;
+    commentStatus: "OPEN" | "CLOSED" | "DISABLED";
+    allowReviews: boolean;
+    seoScore: number | null;
+    publishedAt: Date | null;
+  };
+  translation: {
+    title: string;
+    slug: string;
+    content: string;
+    excerpt: string | null;
+    metaTitle: string | null;
+    metaDescription: string | null;
+    metaKeywords: string | null;
+    canonicalUrl: string | null;
+    ogTitle: string | null;
+    ogDescription: string | null;
+    ogImageId: string | null;
+  } | null;
+  seo: {
+    focusKeyword: string | null;
+    focusKeywordScore: number | null;
+  } | null;
+  galleries: BlogPostGalleryItem[];
+  links: BlogPostLinkItem[];
+  categoryIds: string[];
+  tagIds: string[];
+  revisions: RevisionItem[];
+  lock: { userId: string; expiresAt: Date } | null;
+  translations?: { locale: Locale; title: string; slug: string }[];
+}
+
+interface Props {
+  locale: Locale;
+  blogT: BlogTranslations;
+  mode: "create" | "edit";
+  editorData?: PostEditorData | null;
+  categories: TaxonomyOption[];
+  tags: TaxonomyOption[];
+  baseAdminUrl: string;
+  basePublicUrl?: string;
+  organizationId?: string | null;
+}
+
+const {
+  locale,
+  blogT,
+  mode,
+  editorData,
+  categories,
+  tags,
+  baseAdminUrl,
+  basePublicUrl,
+  organizationId,
+} = Astro.props;
+
+const post = editorData?.post ?? null;
+const translation = editorData?.translation ?? null;
+const revisions = editorData?.revisions ?? [];
+const galleries = editorData?.galleries ?? [];
+const links = editorData?.links ?? [];
+const selectedCategoryIds = new Set(editorData?.categoryIds ?? []);
+const selectedTagIds = new Set(editorData?.tagIds ?? []);
+const isEdit = mode === "edit";
+const adminT = blogT.admin;
+const localeSwitcherT = adminT.localeSwitcher ?? {
+  title: "Languages",
+  available: "Available",
+  missing: "Missing",
+};
+const currentPath = Astro.url.pathname;
+const pathWithoutLocale = currentPath.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
+const availableLocales = new Set(editorData?.translations?.map((item) => item.locale) ?? []);
+const primaryCategorySlug = categories.find((category) => selectedCategoryIds.has(category.id))?.slug ?? null;
+const previewUrl = translation && basePublicUrl
+  ? buildBlogPostHref(basePublicUrl, translation.slug, primaryCategorySlug)
+  : null;
+
+function buildLocaleHref(targetLocale: Locale): string {
+  return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`;
+}
+
+function toDatetimeLocal(date: Date | null): string {
+  if (!date) return "";
+  const d = new Date(date);
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+}
+---
+
+<div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
+  <Card>
+    <CardHeader>
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <CardTitle>{isEdit ? blogT.admin.editPost : blogT.admin.newPost}</CardTitle>
+          {post?.seoScore !== null && post?.seoScore !== undefined && (
+            <p class="mt-2 text-sm text-muted-foreground">
+              {blogT.admin.seoScore}: <span class="font-medium text-foreground">{post.seoScore}/100</span>
+            </p>
+          )}
+        </div>
+        {previewUrl && (
+          <Button variant="outline" size="sm" href={previewUrl}>
+            <Icon name="mdi:open-in-new" class="size-4" />
+            {blogT.admin.preview}
+          </Button>
+        )}
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>
+        {LOCALES.map((loc) => {
+          const isActive = loc === locale;
+          const hasTranslation = isEdit ? availableLocales.has(loc) : loc === locale;
+          const badgeClass = isActive
+            ? "bg-primary-foreground/15 text-primary-foreground"
+            : hasTranslation
+              ? "bg-success/10 text-success"
+              : "bg-warning/10 text-warning-foreground";
+          return (
+            <a
+              href={buildLocaleHref(loc)}
+              class:list={[
+                'inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                {"border-primary bg-primary text-primary-foreground": isActive, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": !isActive},
+              ]}
+            >
+              <span>{LOCALE_LABELS[loc]}</span>
+              {isEdit && (
+                <span
+                  class:list={[
+                    'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                    badgeClass,
+                  ]}
+                >
+                  {hasTranslation ? localeSwitcherT.available : localeSwitcherT.missing}
+                </span>
+              )}
+            </a>
+          );
+        })}
+      </div>
+      {editorData?.lock && (
+        <div class="mt-4 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning-foreground">
+          {blogT.admin.lockWarning}
+        </div>
+      )}
+    </CardHeader>
+    <CardContent>
+      <form
+        id="blog-post-form"
+        class="space-y-6"
+        data-mode={mode}
+        data-locale={locale}
+        data-base-admin-url={baseAdminUrl}
+        data-t-error={adminT.feedback.genericError}
+        data-t-created={adminT.feedback.created}
+        data-t-updated={adminT.feedback.updated}
+      >
+        <input type="hidden" name="organizationId" value={organizationId ?? ""} />
+        <input type="hidden" name="locale" value={locale} />
+        {post && <input type="hidden" name="id" value={post.id} />}
+
+        <Tabs defaultValue="content">
+          <TabsList>
+            <TabsTrigger value="content" defaultActive>{adminT.tabs.content}</TabsTrigger>
+            <TabsTrigger value="seo">{adminT.tabs.seo}</TabsTrigger>
+            <TabsTrigger value="galleries">{adminT.tabs.galleries}</TabsTrigger>
+            <TabsTrigger value="links">{adminT.tabs.links}</TabsTrigger>
+            <TabsTrigger value="settings">{adminT.tabs.settings}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="content" defaultActive class="space-y-4 pt-4">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <Label for="post-title">{adminT.fields.title}</Label>
+                <Input id="post-title" name="title" type="text" required value={translation?.title ?? ""} />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-slug">{adminT.fields.slug}</Label>
+                <Input id="post-slug" name="slug" type="text" required value={translation?.slug ?? ""} />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <Label for="post-excerpt">{adminT.fields.excerpt}</Label>
+              <Textarea id="post-excerpt" name="excerpt" rows={3} defaultValue={translation?.excerpt ?? ""} />
+            </div>
+
+            <ContentEditor
+              name="content"
+              value={translation?.content ?? ""}
+              locale={locale}
+              organizationId={organizationId}
+              resolverName="blog"
+              mediaPickerId="blog-content-picker"
+              label={adminT.fields.content}
+              required={true}
+              rows={14}
+              i18n={{
+                toolbarLabel: adminT.editor.toolbarLabel,
+                bold: adminT.editor.bold,
+                italic: adminT.editor.italic,
+                heading: adminT.editor.heading,
+                list: adminT.editor.list,
+                link: adminT.editor.link,
+                image: adminT.editor.image,
+                preview: adminT.editor.preview,
+                hint: adminT.editor.hint,
+                linkDialogTitle: adminT.editor.linkDialogTitle,
+                linkInternal: adminT.editor.linkInternal,
+                linkExternal: adminT.editor.linkExternal,
+                linkSearchPlaceholder: adminT.editor.linkSearchPlaceholder,
+                linkText: adminT.editor.linkText,
+                linkUrl: adminT.editor.linkUrl,
+                linkInsert: adminT.editor.linkInsert,
+                linkNoResult: adminT.editor.linkNoResult,
+                imageAlt: adminT.editor.imageAlt,
+              }}
+            />
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <Label for="featured-image-id">{adminT.fields.featuredImage}</Label>
+                <div class="flex items-center gap-2">
+                  <Input id="featured-image-id" name="featuredImageId" type="text" readonly value={post?.featuredImageId ?? ""} />
+                  <Button type="button" variant="outline" size="sm" data-media-picker="blog-featured-picker">{adminT.actionLabels.chooseMedia}</Button>
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <Label for="og-image-id">{adminT.fields.ogImage}</Label>
+                <div class="flex items-center gap-2">
+                  <Input id="og-image-id" name="ogImageId" type="text" readonly value={translation?.ogImageId ?? ""} />
+                  <Button type="button" variant="outline" size="sm" data-media-picker="blog-og-picker">{adminT.actionLabels.chooseMedia}</Button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="seo" class="space-y-4 pt-4">
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <Label for="post-meta-title">{adminT.fields.metaTitle}</Label>
+                <Input id="post-meta-title" name="metaTitle" type="text" value={translation?.metaTitle ?? ""} />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-meta-keywords">{adminT.fields.metaKeywords}</Label>
+                <Input id="post-meta-keywords" name="metaKeywords" type="text" value={translation?.metaKeywords ?? ""} />
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <Label for="post-meta-description">{adminT.fields.metaDescription}</Label>
+              <Textarea id="post-meta-description" name="metaDescription" rows={3} defaultValue={translation?.metaDescription ?? ""} />
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <Label for="post-canonical">{adminT.fields.canonicalUrl}</Label>
+                <Input id="post-canonical" name="canonicalUrl" type="url" value={translation?.canonicalUrl ?? ""} />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-focus-keyword">{adminT.fields.focusKeyword}</Label>
+                <Input id="post-focus-keyword" name="focusKeyword" type="text" value={editorData?.seo?.focusKeyword ?? ""} />
+              </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+              <div class="space-y-1.5">
+                <Label for="post-og-title">{adminT.fields.ogTitle}</Label>
+                <Input id="post-og-title" name="ogTitle" type="text" value={translation?.ogTitle ?? ""} />
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-og-description">{adminT.fields.ogDescription}</Label>
+                <Input id="post-og-description" name="ogDescription" type="text" value={translation?.ogDescription ?? ""} />
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="settings" class="space-y-4 pt-4">
+            <div class="grid gap-4 md:grid-cols-3">
+              <div class="space-y-1.5">
+                <Label for="post-status">{blogT.admin.status}</Label>
+                <NativeSelect id="post-status" name="status">
+                  {BLOG_POST_STATUSES.map((status) => (
+                    <NativeSelectOption value={status} selected={status === (post?.status ?? "DRAFT")}>
+                      {blogT.statuses[status]}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-comment-status">{adminT.fields.commentStatus}</Label>
+                <NativeSelect id="post-comment-status" name="commentStatus">
+                  <NativeSelectOption value="OPEN" selected={(post?.commentStatus ?? "OPEN") === "OPEN"}>{adminT.commentStatuses.OPEN}</NativeSelectOption>
+                  <NativeSelectOption value="CLOSED" selected={(post?.commentStatus ?? "OPEN") === "CLOSED"}>{adminT.commentStatuses.CLOSED}</NativeSelectOption>
+                  <NativeSelectOption value="DISABLED" selected={(post?.commentStatus ?? "OPEN") === "DISABLED"}>{adminT.commentStatuses.DISABLED}</NativeSelectOption>
+                </NativeSelect>
+              </div>
+              <div class="space-y-1.5">
+                <Label for="post-published-at">{adminT.fields.publishedAt}</Label>
+                <Input id="post-published-at" name="publishedAt" type="datetime-local" value={toDatetimeLocal(post?.publishedAt ?? null)} />
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+              <Checkbox id="post-featured" name="isFeatured" label={blogT.labels.featured} checked={post?.isFeatured ?? false} />
+              <Checkbox id="post-sticky" name="isSticky" label={blogT.labels.sticky} checked={post?.isSticky ?? false} />
+              <Checkbox id="post-reviews" name="allowReviews" label={blogT.labels.reviews} checked={post?.allowReviews ?? true} />
+            </div>
+
+            <div class="space-y-2">
+              <Label>{blogT.labels.categories}</Label>
+              <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {categories.map((category) => (
+                  <Checkbox
+                    id={`category-${category.id}`}
+                    name="categoryIds"
+                    value={category.id}
+                    label={category.label}
+                    checked={selectedCategoryIds.has(category.id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <Label>{blogT.labels.tags}</Label>
+              <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {tags.map((tag) => (
+                  <Checkbox
+                    id={`tag-${tag.id}`}
+                    name="tagIds"
+                    value={tag.id}
+                    label={tag.label}
+                    checked={selectedTagIds.has(tag.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="galleries" class="space-y-4 pt-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-heading text-base font-semibold">{adminT.tabs.galleries}</h3>
+              <Button type="button" size="sm" id="gallery-add-btn">
+                <Icon name="mdi:plus" class="size-4" />
+                {adminT.actionLabels.addGallery}
+              </Button>
+            </div>
+            <div id="galleries-list" class="space-y-4" data-post-id={post?.id ?? ""} data-org={organizationId ?? ""}>
+              {galleries.map((gallery) => (
+                <div class="rounded-lg border p-4" data-gallery-id={gallery.id}>
+                  <div class="flex items-center justify-between gap-3">
+                    <input type="text" name={`gallery-title-${gallery.id}`} value={gallery.title ?? ""} placeholder={adminT.fields.galleryTitle} class="font-medium bg-transparent border-b border-transparent focus:border-border focus:outline-none" />
+                    <Button type="button" size="sm" variant="error" class="gallery-delete-btn" data-gallery-id={gallery.id}>
+                      <Icon name="mdi:delete" class="size-4" />
+                    </Button>
+                  </div>
+                  <p class="mt-1 text-xs text-muted-foreground">{gallery.media.length} {blogT.labels.media}</p>
+                </div>
+              ))}
+              {galleries.length === 0 && (
+                <p class="text-sm text-muted-foreground">{adminT.empty.galleries}</p>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="links" class="space-y-4 pt-4">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <h3 class="font-heading text-base font-semibold">{adminT.tabs.links}</h3>
+              <div class="flex items-center gap-2">
+                <Button type="button" size="sm" id="link-check-btn" variant="outline">
+                  <Icon name="mdi:link-off" class="size-4" />
+                  {adminT.actionLabels.checkLinks}
+                </Button>
+                <Button type="button" size="sm" id="link-add-btn">
+                  <Icon name="mdi:plus" class="size-4" />
+                  {adminT.actionLabels.addLink}
+                </Button>
+              </div>
+            </div>
+            <div id="link-check-report" class="space-y-2" aria-live="polite"></div>
+            <div id="links-list" class="space-y-4" data-post-id={post?.id ?? ""} data-org={organizationId ?? ""}>
+              {links.map((link) => (
+                <div class="flex items-center gap-3 rounded-lg border p-3" data-link-id={link.id}>
+                  <span class="rounded bg-muted px-2 py-1 text-xs font-medium uppercase">{link.linkType}</span>
+                  <span class="min-w-0 flex-1 truncate">{link.target.title ?? link.target.slug}</span>
+                  <Button type="button" size="sm" variant="error" class="link-delete-btn" data-link-id={link.id}>
+                    <Icon name="mdi:delete" class="size-4" />
+                  </Button>
+                </div>
+              ))}
+              {links.length === 0 && (
+                <p class="text-sm text-muted-foreground">{adminT.empty.links}</p>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div class="flex items-center justify-end gap-3 border-t pt-4">
+          <Button type="button" variant="outline" href={baseAdminUrl}>{adminT.actionLabels.cancel}</Button>
+          <Button type="submit" size="sm">
+            <Icon name="mdi:content-save" class="size-4" />
+            {isEdit ? blogT.admin.saveDraft : blogT.admin.publish}
+          </Button>
+        </div>
+      </form>
+    </CardContent>
+  </Card>
+
+  <div class="space-y-6">
+    <Card>
+      <CardHeader>
+        <CardTitle class="text-base">{adminT.sidebar.statusTitle}</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-3 text-sm">
+        <div class="flex items-center justify-between gap-3">
+          <span class="text-muted-foreground">{adminT.sidebar.currentState}</span>
+          <Badge variant={post?.status === "PUBLISHED" ? "success" : post?.status === "ARCHIVED" ? "secondary" : "warning"}>
+            {blogT.statuses[post?.status ?? "DRAFT"]}
+          </Badge>
+        </div>
+        {post?.publishedAt && (
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-muted-foreground">{adminT.sidebar.published}</span>
+            <span>{post.publishedAt.toLocaleString(locale)}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle class="text-base">{adminT.sidebar.recentRevisions}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {revisions.length === 0 ? (
+          <p class="text-sm text-muted-foreground">{adminT.sidebar.noRevisions}</p>
+        ) : (
+          <div class="space-y-3">
+            {revisions.map(({ revision, author }) => (
+              <div class="rounded-lg border px-3 py-2">
+                <div class="flex items-center justify-between gap-3 text-sm">
+                  <span class="font-medium">{revision.title}</span>
+                  <Badge variant="outline" size="sm">{revision.status}</Badge>
+                </div>
+                <p class="mt-1 text-xs text-muted-foreground">
+                  /{revision.slug} · {author?.name ?? adminT.sidebar.unknownAuthor} · {new Date(revision.createdAt).toLocaleString(locale)}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  </div>
+</div>
+
+<MediaPicker id="blog-featured-picker" locale={locale} organizationId={organizationId ?? null} />
+<MediaPicker id="blog-og-picker" locale={locale} organizationId={organizationId ?? null} />
+<MediaPicker id="blog-content-picker" locale={locale} organizationId={organizationId ?? null} />
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    const formEl = document.getElementById('blog-post-form') as HTMLFormElement | null;
+    if (!formEl || formEl.dataset.bound === '1') return;
+    const form = formEl;
+    form.dataset.bound = '1';
+
+    const featuredPicker = document.getElementById('blog-featured-picker');
+    const ogPicker = document.getElementById('blog-og-picker');
+    const featuredInput = document.getElementById('featured-image-id') as HTMLInputElement | null;
+    const ogInput = document.getElementById('og-image-id') as HTMLInputElement | null;
+    const postId = (form.querySelector('input[name="id"]') as HTMLInputElement | null)?.value;
+    const orgIdValue = (form.querySelector('input[name="organizationId"]') as HTMLInputElement | null)?.value?.trim();
+    const organizationId = orgIdValue ? orgIdValue : undefined;
+    let lockTimer: number | undefined;
+
+    async function refreshLock() {
+      if (form.dataset.mode !== 'edit' || !postId) return;
+      const { error } = await actions.lockBlogPost({ id: postId, organizationId });
+      if (error) {
+        toast.error(error.message ?? form.dataset.tError ?? '');
+      }
+    }
+
+    async function releaseLock() {
+      if (form.dataset.mode !== 'edit' || !postId) return;
+      window.clearInterval(lockTimer);
+      await actions.unlockBlogPost({ id: postId, organizationId });
+    }
+
+    featuredPicker?.addEventListener('media-select', (event) => {
+      const detail = (event as CustomEvent).detail;
+      if (featuredInput) featuredInput.value = detail.fileId ?? '';
+    });
+
+    ogPicker?.addEventListener('media-select', (event) => {
+      const detail = (event as CustomEvent).detail;
+      if (ogInput) ogInput.value = detail.fileId ?? '';
+    });
+
+    if (form.dataset.mode === 'edit' && postId) {
+      void refreshLock();
+      lockTimer = window.setInterval(() => {
+        void refreshLock();
+      }, 60_000);
+
+      window.addEventListener('pagehide', () => {
+        void releaseLock();
+      }, { once: true });
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const mode = form.dataset.mode;
+      const baseAdminUrl = form.dataset.baseAdminUrl ?? '';
+      const publishedAtValue = String(formData.get('publishedAt') ?? '').trim();
+      const focusKeyword = String(formData.get('focusKeyword') ?? '').trim();
+
+      const payload: Record<string, unknown> = {
+        locale: formData.get('locale'),
+        title: String(formData.get('title') ?? ''),
+        slug: String(formData.get('slug') ?? ''),
+        content: String(formData.get('content') ?? ''),
+        excerpt: String(formData.get('excerpt') ?? '').trim() || undefined,
+        metaTitle: String(formData.get('metaTitle') ?? '').trim() || undefined,
+        metaDescription: String(formData.get('metaDescription') ?? '').trim() || undefined,
+        metaKeywords: String(formData.get('metaKeywords') ?? '').trim() || undefined,
+        canonicalUrl: String(formData.get('canonicalUrl') ?? '').trim() || undefined,
+        ogTitle: String(formData.get('ogTitle') ?? '').trim() || undefined,
+        ogDescription: String(formData.get('ogDescription') ?? '').trim() || undefined,
+        status: formData.get('status'),
+        categoryIds: formData.getAll('categoryIds').map(String),
+        tagIds: formData.getAll('tagIds').map(String),
+        featuredImageId: String(formData.get('featuredImageId') ?? '').trim() || undefined,
+        ogImageId: String(formData.get('ogImageId') ?? '').trim() || undefined,
+        isFeatured: formData.get('isFeatured') === 'on',
+        isSticky: formData.get('isSticky') === 'on',
+        commentStatus: formData.get('commentStatus'),
+        allowReviews: formData.get('allowReviews') === 'on',
+        organizationId: String(formData.get('organizationId') ?? '').trim() || undefined,
+        seo: focusKeyword ? { focusKeyword } : undefined,
+      };
+
+      if (publishedAtValue) payload.publishedAt = new Date(publishedAtValue);
+      if (mode === 'edit') payload.id = String(formData.get('id') ?? '');
+
+      const result = mode === 'edit'
+        ? await actions.updateBlogPost(payload as never)
+        : await actions.createBlogPost(payload as never);
+
+      if (result.error) {
+        toast.error(result.error.message ?? form.dataset.tError ?? '');
+        return;
+      }
+
+      toast.success(mode === 'edit' ? form.dataset.tUpdated ?? '' : form.dataset.tCreated ?? '');
+      const createdId = (result.data as { id?: string } | undefined)?.id;
+      if (mode !== 'edit' && createdId) {
+        window.location.href = `${baseAdminUrl}/${createdId}/edit`;
+        return;
+      }
+
+      if (mode === 'edit') {
+        return;
+      }
+
+      window.location.reload();
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function initGalleryLinkHandlers() {
+    const galleriesList = document.getElementById('galleries-list');
+    const linksList = document.getElementById('links-list');
+    if (!galleriesList || galleriesList.dataset.bound === '1') return;
+    galleriesList.dataset.bound = '1';
+    linksList?.setAttribute('data-bound', '1');
+
+    const postId = galleriesList.dataset.postId ?? '';
+    const orgId = galleriesList.dataset.org ? String(galleriesList.dataset.org) : undefined;
+
+    const addGalleryBtn = document.getElementById('gallery-add-btn');
+    addGalleryBtn?.addEventListener('click', async () => {
+      if (!postId) {
+        toast.error('Enregistrez l\'article avant d\'ajouter une galerie.');
+        return;
+      }
+      const { error } = await actions.createBlogGallery({ postId, organizationId: orgId });
+      if (error) toast.error(error.message ?? 'Erreur');
+      else window.location.reload();
+    });
+
+    galleriesList.querySelectorAll<HTMLButtonElement>('.gallery-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.galleryId;
+        if (!id) return;
+        const { error } = await actions.deleteBlogGallery({ id, organizationId: orgId });
+        if (error) toast.error(error.message ?? 'Erreur');
+        else window.location.reload();
+      });
+    });
+
+    const addLinkBtn = document.getElementById('link-add-btn');
+    addLinkBtn?.addEventListener('click', async () => {
+      if (!postId) {
+        toast.error('Enregistrez l\'article avant d\'ajouter un lien.');
+        return;
+      }
+      const targetPostId = window.prompt('ID de l\'article cible :');
+      if (!targetPostId) return;
+      const linkType = (window.prompt('Type (RELATED, PREVIOUS, NEXT, REFERENCE) :', 'RELATED') ?? 'RELATED') as
+        | 'RELATED'
+        | 'PREVIOUS'
+        | 'NEXT'
+        | 'REFERENCE';
+      const { error } = await actions.createBlogLink({
+        sourcePostId: postId,
+        targetPostId,
+        linkType,
+        organizationId: orgId,
+      });
+      if (error) toast.error(error.message ?? 'Erreur');
+      else window.location.reload();
+    });
+
+    linksList?.querySelectorAll<HTMLButtonElement>('.link-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.linkId;
+        if (!id) return;
+        const { error } = await actions.deleteBlogLink({ id, organizationId: orgId });
+        if (error) toast.error(error.message ?? 'Erreur');
+        else window.location.reload();
+      });
+    });
+
+    const checkBtn = document.getElementById('link-check-btn');
+    const reportEl = document.getElementById('link-check-report');
+    checkBtn?.addEventListener('click', async () => {
+      if (!postId) {
+        toast.error('Enregistrez l\'article avant de vérifier les liens.');
+        return;
+      }
+      const formEl = galleriesList.closest('form') as HTMLFormElement | null;
+      const localeVal = formEl?.dataset.locale ?? 'fr';
+      if (reportEl) reportEl.innerHTML = '<p class="text-sm text-muted-foreground">Vérification…</p>';
+      const { data, error } = await actions.checkBlogPostLinks({ postId, locale: localeVal, organizationId: orgId });
+      if (error || !data) {
+        if (reportEl) reportEl.innerHTML = `<p class="text-sm text-destructive">${error?.message ?? 'Erreur'}</p>`;
+        return;
+      }
+      const deadCount = data.deadExplicit.length + data.deadInline.length;
+      if (deadCount === 0) {
+        if (reportEl) reportEl.innerHTML = '<p class="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">Aucun lien mort détecté.</p>';
+        return;
+      }
+      const items = [
+        ...data.deadExplicit.map((d: { linkType: string; targetPostId: string }) =>
+          `<li class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">Lien « ${d.linkType} » → article supprimé (${d.targetPostId})</li>`),
+        ...data.deadInline.map((d: { text: string; target: string | null; reason: string }) =>
+          `<li class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">Lien interne mort${d.target ? ` (${d.target})` : ''} : « ${d.text} »</li>`),
+      ];
+      if (reportEl) {
+        reportEl.innerHTML = `<p class="text-sm font-medium text-destructive">${deadCount} lien(s) mort(s) détecté(s) :</p><ul class="space-y-2">${items.join('')}</ul>`;
+      }
+    });
+  }
+
+  initGalleryLinkHandlers();
+  document.addEventListener('astro:after-swap', initGalleryLinkHandlers);
+</script>

@@ -100,17 +100,6 @@ function selectChain(rows: any[]) {
   };
 }
 
-function selectChainOrdered(rows: any[]) {
-  return {
-    from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(rows),
-      }),
-      orderBy: vi.fn().mockResolvedValue(rows),
-    }),
-  };
-}
-
 function insertChain(rows: any[]) {
   return { values: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue(rows) }) };
 }
@@ -176,6 +165,8 @@ describe('createMediaFolder', () => {
 describe('updateMediaFolder', () => {
   it('updates a folder via transaction', async () => {
     const updated = { id: 'f1', name: 'Renamed' };
+    // assertFolderInTenant(id) — folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f1', organizationId: null, parentId: null }]));
     mockTransaction.mockImplementation(async (cb: any) => {
       const tx = {
         select: vi.fn().mockReturnValue(selectChain([])),
@@ -189,14 +180,31 @@ describe('updateMediaFolder', () => {
   });
 
   it('throws on self-referencing parentId', async () => {
+    // assertFolderInTenant(id) → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f1', organizationId: null, parentId: null }]));
+    // assertFolderInTenant(parentId) → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f2', organizationId: null, parentId: null }]));
     mockTransaction.mockImplementation(async (cb: any) => {
-      const tx = { select: vi.fn(), update: vi.fn() };
+      // Walk: f2 → parent f1 → parent f1 (cycle back to f1, already visited)
+      const tx = {
+        select: vi.fn().mockImplementation((_cols: any) => {
+          const terminal: any = Object.assign(Promise.resolve([{ parentId: 'f1' }]), {
+            limit: vi.fn().mockResolvedValue([{ parentId: 'f1' }]),
+          });
+          return {
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue(terminal),
+            }),
+          };
+        }),
+        update: vi.fn().mockReturnValue(updateChain([])),
+      };
       return cb(tx);
     });
 
     await expect(
-      updateMediaFolder.handler({ id: 'f1', parentId: 'f1' }, adminCtx()),
-    ).rejects.toThrow('propre parent');
+      updateMediaFolder.handler({ id: 'f1', parentId: 'f2' }, adminCtx()),
+    ).rejects.toThrow('référence circulaire');
   });
 });
 
@@ -204,6 +212,8 @@ describe('updateMediaFolder', () => {
 
 describe('deleteMediaFolder', () => {
   it('deletes an empty folder', async () => {
+    // assertFolderInTenant → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f1', organizationId: null, parentId: null }]));
     // Check children → empty
     mockSelect.mockReturnValueOnce(selectChain([]));
     // Check files → empty
@@ -216,6 +226,9 @@ describe('deleteMediaFolder', () => {
   });
 
   it('rejects deleting folder with children', async () => {
+    // assertFolderInTenant → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f1', organizationId: null, parentId: null }]));
+    // Check children → has one
     mockSelect.mockReturnValueOnce(selectChain([{ id: 'child1' }]));
 
     await expect(
@@ -224,8 +237,12 @@ describe('deleteMediaFolder', () => {
   });
 
   it('rejects deleting folder with files', async () => {
-    mockSelect.mockReturnValueOnce(selectChain([])); // no children
-    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1' }])); // has files
+    // assertFolderInTenant → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f1', organizationId: null, parentId: null }]));
+    // Check children → empty
+    mockSelect.mockReturnValueOnce(selectChain([]));
+    // Check files → has one
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1' }]));
 
     await expect(
       deleteMediaFolder.handler({ id: 'f1' }, adminCtx()),
@@ -233,9 +250,8 @@ describe('deleteMediaFolder', () => {
   });
 
   it('throws NOT_FOUND for missing folder', async () => {
+    // assertFolderInTenant → not found
     mockSelect.mockReturnValueOnce(selectChain([]));
-    mockSelect.mockReturnValueOnce(selectChain([]));
-    mockDelete.mockReturnValue(deleteChain([]));
 
     await expect(
       deleteMediaFolder.handler({ id: 'nope' }, adminCtx()),
@@ -314,8 +330,10 @@ describe('renameMediaFile', () => {
 describe('moveMediaFile', () => {
   it('moves a file to a folder', async () => {
     const updated = { id: 'file1', folderId: 'f2' };
-    // Folder exists check
-    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f2' }]));
+    // assertFileInTenant → file exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1', organizationId: null }]));
+    // assertFolderInTenant → folder exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'f2', organizationId: null, parentId: null }]));
     mockUpdate.mockReturnValue(updateChain([updated]));
 
     const result = await moveMediaFile.handler({ id: 'file1', folderId: 'f2' }, adminCtx());
@@ -324,6 +342,8 @@ describe('moveMediaFile', () => {
 
   it('moves a file to root (null)', async () => {
     const updated = { id: 'file1', folderId: null };
+    // assertFileInTenant → file exists (no folder check since folderId is null)
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1', organizationId: null }]));
     mockUpdate.mockReturnValue(updateChain([updated]));
 
     const result = await moveMediaFile.handler({ id: 'file1', folderId: null }, adminCtx());
@@ -331,6 +351,9 @@ describe('moveMediaFile', () => {
   });
 
   it('throws NOT_FOUND for missing target folder', async () => {
+    // assertFileInTenant → file exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1', organizationId: null }]));
+    // assertFolderInTenant → folder not found
     mockSelect.mockReturnValueOnce(selectChain([]));
 
     await expect(
@@ -339,10 +362,12 @@ describe('moveMediaFile', () => {
   });
 
   it('throws NOT_FOUND for missing file', async () => {
-    mockUpdate.mockReturnValue(updateChain([]));
+    // assertFileInTenant → file not found
+    mockSelect.mockReturnValueOnce(selectChain([]));
 
-    const result = moveMediaFile.handler({ id: 'nope', folderId: null }, adminCtx());
-    await expect(result).rejects.toThrow('introuvable');
+    await expect(
+      moveMediaFile.handler({ id: 'nope', folderId: null }, adminCtx()),
+    ).rejects.toThrow('introuvable');
   });
 });
 
@@ -416,6 +441,8 @@ describe('upsertMediaFileAlt', () => {
 
 describe('deleteMediaFileAlt', () => {
   it('deletes an alt text', async () => {
+    // assertFileInTenant → file exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1', organizationId: null }]));
     mockDelete.mockReturnValue(deleteChain([{ id: 'alt1' }]));
 
     const result = await deleteMediaFileAlt.handler(
@@ -426,10 +453,13 @@ describe('deleteMediaFileAlt', () => {
   });
 
   it('throws NOT_FOUND for missing alt', async () => {
+    // assertFileInTenant → file exists
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'file1', organizationId: null }]));
+    // delete returns nothing → NOT_FOUND
     mockDelete.mockReturnValue(deleteChain([]));
 
     await expect(
-      deleteMediaFileAlt.handler({ fileId: 'nope', locale: 'fr' }, adminCtx()),
+      deleteMediaFileAlt.handler({ fileId: 'file1', locale: 'fr' }, adminCtx()),
     ).rejects.toThrow('introuvable');
   });
 });

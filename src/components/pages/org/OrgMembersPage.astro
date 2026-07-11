@@ -156,6 +156,7 @@ const roleLabels: Record<string, string> = {
   data-t-role-changed={t.organizations.members.roleChanged}
   data-t-cancelled={t.organizations.invitations.cancelled}
   data-t-remove-confirm={t.organizations.members.removeConfirm}
+  data-t-error={t.admin.cms.common.error}
 ></div>
 
 <script>
@@ -182,7 +183,7 @@ const roleLabels: Record<string, string> = {
         organizationId: orgId,
       });
       if (error) {
-        toast.error(error.message ?? 'Error');
+        toast.error(error.message ?? d.tError ?? '');
       } else {
         toast.success(d.tInviteSent ?? '');
         window.location.reload();
@@ -195,7 +196,7 @@ const roleLabels: Record<string, string> = {
         const invId = btn.dataset.id!;
         const { error } = await authClient.organization.cancelInvitation({ invitationId: invId });
         if (error) {
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
         } else {
           toast.success(d.tCancelled ?? '');
           btn.closest('[data-invitation-id]')?.remove();
@@ -213,7 +214,7 @@ const roleLabels: Record<string, string> = {
           organizationId: orgId,
         });
         if (error) {
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
         } else {
           toast.success(d.tRemoved ?? '');
           btn.closest('[data-member-id]')?.remove();
@@ -233,7 +234,7 @@ const roleLabels: Record<string, string> = {
           organizationId: orgId,
         });
         if (error) {
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
           (nativeSelect as HTMLSelectElement).value = select.dataset.currentRole ?? 'member';
         } else {
           toast.success(d.tRoleChanged ?? '');

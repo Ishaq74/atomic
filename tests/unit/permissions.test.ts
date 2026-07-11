@@ -15,6 +15,11 @@ describe('RBAC Permissions', () => {
       expect(resources).toContain('navigation');
       expect(resources).toContain('audit');
       expect(resources).toContain('theme');
+      expect(resources).toContain('blog');
+      expect(resources).toContain('blogCategory');
+      expect(resources).toContain('blogTag');
+      expect(resources).toContain('blogComment');
+      expect(resources).toContain('blogReview');
     });
 
     it('merges defaultStatements from better-auth admin plugin', () => {
@@ -144,6 +149,15 @@ describe('RBAC Permissions', () => {
       expect(statement.theme).toContain('read');
       expect(statement.theme).toContain('update');
     });
+
+    it('blog resources expose moderation and taxonomy actions', () => {
+      expect(statement.blog).toContain('publish');
+      expect(statement.blog).toContain('moderate');
+      expect(statement.blogCategory).toContain('delete');
+      expect(statement.blogTag).toContain('update');
+      expect(statement.blogComment).toContain('moderate');
+      expect(statement.blogReview).toContain('moderate');
+    });
   });
 
   describe('role authorization', () => {
@@ -192,6 +206,18 @@ describe('RBAC Permissions', () => {
       expect(result.success).toBe(true);
     });
 
+    it('admin role can authorize blog:moderate', () => {
+      const result = adminRole.authorize({ blog: ['moderate'] });
+      expect(result.success).toBe(true);
+    });
+
+    it('org admin role can authorize blog publish and moderation', () => {
+      const postResult = orgAdminRole.authorize({ blog: ['publish'] });
+      const commentResult = orgAdminRole.authorize({ blogComment: ['moderate'] });
+      expect(postResult.success).toBe(true);
+      expect(commentResult.success).toBe(true);
+    });
+
     it('org member role can authorize page:read', () => {
       const result = orgMemberRole.authorize({ page: ["read"] });
       expect(result.success).toBe(true);
@@ -199,6 +225,11 @@ describe('RBAC Permissions', () => {
 
     it('org member role cannot authorize page:delete', () => {
       const result = orgMemberRole.authorize({ page: ["delete"] });
+      expect(result.success).toBe(false);
+    });
+
+    it('org member role cannot authorize blog:update', () => {
+      const result = orgMemberRole.authorize({ blog: ['update'] });
       expect(result.success).toBe(false);
     });
   });

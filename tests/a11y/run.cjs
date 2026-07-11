@@ -26,7 +26,7 @@ const net = require('node:net');
 const path = require('node:path');
 
 const PORT = 4321;
-const HOST = '127.0.0.1';
+const HOST = 'localhost';
 const MAX_WAIT = 90_000; // 90s max wait for server
 const POLL_INTERVAL = 1_000;
 const REPORTS_DIR = path.resolve(__dirname, '../reports');
@@ -227,7 +227,7 @@ async function waitForServer() {
   while (Date.now() - start < MAX_WAIT) {
     try {
       const ok = await new Promise((resolve) => {
-        const req = http.get(`http://localhost:${PORT}/`, (res) => {
+        const req = http.get(`http://${HOST}:${PORT}/`, (res) => {
           resolve(res.statusCode < 400);
         });
         req.on('error', () => resolve(false));
@@ -268,14 +268,11 @@ async function main() {
   let exitCode = 0;
 
   try {
-    // 1. Check if server is already running
-    const alreadyRunning = await isPortOpen();
-
-    if (alreadyRunning) {
-      // A server is running — kill it so we can do a fresh build+preview
-      log(`Port ${PORT} is busy — killing existing server (dev or preview)...`);
-      await killPortProcess();
-    }
+    // 1. Always clear the target port first.
+    // On Windows, localhost can resolve to ::1 while stale checks hit 127.0.0.1,
+    // which leaves an old listener alive and makes audits hit the wrong app.
+    log(`Ensuring port ${PORT} is free before starting preview...`);
+    await killPortProcess();
 
     // 2. Build
     log('Building project...');
@@ -292,7 +289,7 @@ async function main() {
     weStartedServer = true;
 
     // 4. Wait for server
-    log(`Waiting for server on localhost:${PORT}...`);
+    log(`Waiting for server on ${HOST}:${PORT}...`);
     const ready = await waitForServer();
     if (!ready) {
       logError('Server did not start within 90s, aborting.');

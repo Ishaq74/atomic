@@ -13,7 +13,7 @@ export default defineConfig({
     ['json', { outputFile: 'tests/reports/playwright-results.json' }],
   ],
   use: {
-    baseURL: 'http://localhost:4321',
+    baseURL: 'http://localhost:4322',
     trace: 'on-first-retry',
   },
   projects: [
@@ -31,10 +31,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm preview',
-    url: 'http://localhost:4321',
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
+    command: 'pnpm run build && pnpm preview --host localhost --port 4322',
+    url: 'http://localhost:4322',
+    reuseExistingServer: false,
+    timeout: 180_000,
     env: { NODE_ENV: 'test' },
   },
 });

@@ -12,3 +12,4 @@ export * from "./schemas/page.schema";
 export * from "./schemas/page-version.schema";
 export * from "./schemas/media.schema";
 export * from "./schemas/consent.schema";
+export * from "./schemas/blog.schema";

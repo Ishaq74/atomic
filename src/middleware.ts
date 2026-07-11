@@ -71,24 +71,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // 'credentialless' allows loading cross-origin resources (iconify API, embeds)
     // without sending credentials, while still enabling COEP protection.
     'Cross-Origin-Embedder-Policy': 'credentialless',
-    'Content-Security-Policy': [
-      "default-src 'self'",
-      "script-src 'self'",
-      // 'unsafe-inline' is required for Tailwind CSS v4 (Vite plugin style injection)
-      // and Astro scoped <style> tags. This is acceptable per OWASP/ANSSI guidelines:
-      // CSS-only injection has limited attack surface compared to script injection.
-      // script-src remains strict ('self' only — no 'unsafe-inline', no 'unsafe-eval').
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob:",
-      "font-src 'self'",
-      "connect-src 'self' https://api.iconify.design",
-      "frame-src https://www.google.com https://www.youtube.com https://player.vimeo.com",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "object-src 'none'",
-      "upgrade-insecure-requests",
-    ].join('; '),
   };
 
   for (const [key, value] of Object.entries(securityHeaders)) {

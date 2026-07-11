@@ -168,6 +168,7 @@ describe('getAdminUrl', () => {
 
   it('generates admin URL with subpage', () => {
     expect(getAdminUrl('fr', 'users')).toBe('/fr/admin/users');
+    expect(getAdminUrl('fr', 'blog')).toBe('/fr/admin/blog');
     expect(getAdminUrl('en', 'audit')).toBe('/en/admin/audit');
     expect(getAdminUrl('es', 'theme')).toBe('/es/admin/theme');
   });
@@ -182,6 +183,7 @@ describe('getOrgUrl', () => {
 
   it('generates org URL with subpage', () => {
     expect(getOrgUrl('en', 'acme', 'members')).toBe('/en/organizations/acme/members');
+    expect(getOrgUrl('en', 'acme', 'blog')).toBe('/en/organizations/acme/admin/blog');
     expect(getOrgUrl('fr', 'acme', 'settings')).toBe('/fr/organizations/acme/settings');
   });
 });

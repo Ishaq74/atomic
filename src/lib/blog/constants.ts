@@ -1,0 +1,75 @@
+import type { Locale } from "@i18n/config";
+
+export const BLOG_POST_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"] as const;
+export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number];
+
+export const BLOG_COMMENT_STATUSES = ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] as const;
+export type BlogCommentStatus = (typeof BLOG_COMMENT_STATUSES)[number];
+
+export const BLOG_REVIEW_STATUSES = ["PENDING", "APPROVED", "REJECTED", "SPAM"] as const;
+export type BlogReviewStatus = (typeof BLOG_REVIEW_STATUSES)[number];
+
+export const BLOG_REPORT_REASONS = ["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"] as const;
+export type BlogReportReason = (typeof BLOG_REPORT_REASONS)[number];
+
+export const BLOG_REPORT_STATUSES = ["PENDING", "REVIEWED", "RESOLVED", "REJECTED"] as const;
+export type BlogReportStatus = (typeof BLOG_REPORT_STATUSES)[number];
+
+export const BLOG_REACTION_TYPES = ["LIKE", "LOVE", "FIRE", "CLAP", "LAUGH", "SAD"] as const;
+export type BlogReactionType = (typeof BLOG_REACTION_TYPES)[number];
+
+export const BLOG_LINK_TYPES = ["RELATED", "PREVIOUS", "NEXT", "REFERENCE"] as const;
+export type BlogLinkType = (typeof BLOG_LINK_TYPES)[number];
+
+export const BLOG_OG_LOCALES = {
+  fr: "fr_FR",
+  en: "en_US",
+  ar: "ar_SA",
+  es: "es_ES",
+} as const satisfies Record<Locale, string>;
+
+export type BlogOgLocale = (typeof BLOG_OG_LOCALES)[Locale];
+
+export const BLOG_DEFAULTS = {
+  postsPerPage: 9,
+  commentsPerPage: 20,
+  reviewsPerPage: 10,
+  excerptLength: 160,
+  lockDurationMinutes: 15,
+  maxFeaturedPosts: 5,
+  maxStickyPosts: 3,
+} as const;
+
+export const BLOG_RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "auth",
+  "rss",
+  "sitemap",
+  "search",
+  "category",
+  "categories",
+  "tag",
+  "tags",
+  "author",
+  "authors",
+  "page",
+  "pages",
+  "new",
+  "edit",
+  "preview",
+  "index",
+  "create",
+  "delete",
+  "moderate",
+  "stats",
+]);
+
+export const BLOG_SEO_LIMITS = {
+  titleMin: 30,
+  titleMax: 60,
+  descriptionMin: 50,
+  descriptionMax: 160,
+  contentMin: 300,
+  focusKeywordMax: 5,
+} as const;

@@ -1,9 +1,11 @@
 import type { APIRoute } from "astro";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
+import { organization } from "@database/schemas";
 import { isValidLocale } from "@i18n/utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { DEFAULT_LOCALE } from "@i18n/config";
+import { buildBlogPostUrl } from "@/lib/blog/utils";
 
 export const prerender = false;
 
@@ -46,13 +48,16 @@ function buildTsQuery(raw: string): string | null {
 /**
  * GET /api/search?q=keyword&locale=fr&limit=20
  *
- * PostgreSQL full-text search across published CMS pages.
- * Uses tsvector/tsquery with GIN index, ts_rank for relevance, ts_headline for snippets.
- * Prefix matching on the last word enables autocomplete.
+ * PostgreSQL full-text search across published CMS pages AND published global
+ * blog posts (org-scoped blogs are out of scope for this sitewide endpoint).
+ * Uses tsvector/tsquery with GIN indexes, ts_rank for relevance, ts_headline for
+ * snippets. Prefix matching on the last word enables autocomplete. Results from
+ * both sources are merged and re-ranked together.
  */
 export const GET: APIRoute = async ({ url, clientAddress }) => {
   const q = url.searchParams.get("q")?.trim();
   const locale = url.searchParams.get("locale") ?? DEFAULT_LOCALE;
+  const orgSlug = url.searchParams.get("org")?.trim() || null;
   const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "20", 10) || 20, 100);
 
   if (!q || q.length < 2) {
@@ -94,51 +99,115 @@ export const GET: APIRoute = async ({ url, clientAddress }) => {
   const db = getDrizzle();
   const regconfig = getRegconfig(locale);
 
-  const results = await db.execute<{
+  // Resolve an optional organization scope. When `org` is provided, the blog
+  // search is restricted to that organization's posts; otherwise only the
+  // global (non-org) blog is searched.
+  let orgId: string | null = null;
+  if (orgSlug) {
+    const [orgRow] = await db
+      .select({ id: organization.id })
+      .from(organization)
+      .where(eq(organization.slug, orgSlug))
+      .limit(1);
+    orgId = orgRow?.id ?? null;
+    if (!orgId) {
+      return new Response(
+        JSON.stringify({ query: q, locale, count: 0, results: [] }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }
+
+  const raw = await db.execute<{
+    type: "page" | "blog_post";
     id: string;
     slug: string;
+    category_slug: string | null;
     title: string;
-    meta_description: string | null;
+    excerpt: string | null;
     published_at: Date | null;
     rank: number;
     headline: string;
   }>(sql`
-    SELECT
-      p.id,
-      p.slug,
-      p.title,
-      p.meta_description,
-      p.published_at,
-      ts_rank(p.search_vector, to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})) AS rank,
-      ts_headline(
-        ${sql.raw(`'${regconfig}'`)},
-        coalesce(p.meta_description, p.title),
-        to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery}),
-        'MaxWords=30, MinWords=10, StartSel=<mark>, StopSel=</mark>'
-      ) AS headline
-    FROM pages p
-    WHERE p.search_vector @@ to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})
-      AND p.locale = ${locale}
-      AND p.deleted_at IS NULL
-      AND (p.is_published = true OR p.scheduled_at <= NOW())
+    SELECT * FROM (
+      SELECT
+        'page' AS type,
+        p.id,
+        p.slug,
+        NULL::text AS category_slug,
+        p.title,
+        p.meta_description AS excerpt,
+        p.published_at,
+        ts_rank(p.search_vector, to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})) AS rank,
+        ts_headline(
+          ${sql.raw(`'${regconfig}'`)},
+          coalesce(p.meta_description, p.title),
+          to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery}),
+          'MaxWords=30, MinWords=10, StartSel=<mark>, StopSel=</mark>'
+        ) AS headline
+      FROM pages p
+      WHERE p.search_vector @@ to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})
+        AND p.locale = ${locale}
+        AND p.deleted_at IS NULL
+        AND (p.is_published = true OR p.scheduled_at <= NOW())
+
+      UNION ALL
+
+      SELECT
+        'blog_post' AS type,
+        bp.id,
+        bpt.slug,
+        (
+          SELECT coalesce(bct.slug, bc.slug)
+          FROM blog_post_categories bpc
+          JOIN blog_categories bc ON bc.id = bpc.category_id
+          LEFT JOIN blog_category_translations bct
+            ON bct.category_id = bc.id AND bct.locale = ${locale}
+          WHERE bpc.post_id = bp.id
+          ORDER BY bc.sort_order ASC
+          LIMIT 1
+        ) AS category_slug,
+        bpt.title,
+        bpt.excerpt,
+        bp.published_at,
+        ts_rank(bpt.search_vector, to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})) AS rank,
+        ts_headline(
+          ${sql.raw(`'${regconfig}'`)},
+          coalesce(bpt.excerpt, bpt.title),
+          to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery}),
+          'MaxWords=30, MinWords=10, StartSel=<mark>, StopSel=</mark>'
+        ) AS headline
+      FROM blog_posts bp
+      JOIN blog_post_translations bpt ON bpt.post_id = bp.id AND bpt.locale = ${locale}
+      WHERE bpt.search_vector @@ to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})
+        AND bp.organization_id IS ${orgId ? sql.raw(`'${orgId}'`) : sql.raw("NULL")}
+        AND bp.status = 'PUBLISHED'
+    ) combined
     ORDER BY rank DESC
     LIMIT ${limit}
   `);
+
+  // drizzle's `execute` returns a driver result object; normalize to rows.
+  const results = Array.isArray(raw) ? raw : ((raw as any)?.rows ?? []);
 
   return new Response(
     JSON.stringify({
       query: q,
       locale,
-      count: (results as unknown as any[]).length,
-      results: (results as unknown as any[]).map((r: any) => ({
+      count: results.length,
+      results: results.map((r: any) => ({
         id: r.id,
+        type: r.type,
         slug: r.slug,
         title: r.title,
-        excerpt: r.meta_description ?? null,
+        excerpt: r.excerpt ?? null,
         highlight: r.headline,
         rank: r.rank,
         publishedAt: r.published_at,
-        url: `/${locale}/${r.slug}`,
+        url:
+          r.type === "blog_post"
+            ? buildBlogPostUrl(locale, orgSlug, r.slug, r.category_slug)
+            : `/${locale}/${r.slug}`,
       })),
     }),
     {

@@ -8,7 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const BASE = 'http://localhost:4321';
+const BASE = process.env.A11Y_BASE_URL || 'http://localhost:4321';
 
 // Detect Chrome executable — prefer env var, then Playwright's, then system default
 function findChrome() {
@@ -58,6 +58,9 @@ for (const lang of locales) {
   for (const [, slugs] of Object.entries(pageRoutes)) {
     publicUrls.push(`${BASE}/${lang}/${slugs[lang]}`);
   }
+  // Blog listing (route segment "blog" is not localized). Post/category/tag
+  // detail pages need seeded demo content, not run before this CI job.
+  publicUrls.push(`${BASE}/${lang}/blog`);
   for (const pageId of ['sign-in', 'sign-up', 'forgot-password']) {
     publicUrls.push(`${BASE}/${lang}/auth/${authRoutes[pageId][lang]}`);
   }
@@ -75,7 +78,7 @@ for (const lang of locales) {
 }
 
 const adminUrls = [];
-const adminPages = ['stats', 'site', 'navigation', 'theme'];
+const adminPages = ['stats', 'site', 'navigation', 'theme', 'blog'];
 for (const lang of locales) {
   for (const page of adminPages) {
     adminUrls.push(`${BASE}/${lang}/admin/${page}`);

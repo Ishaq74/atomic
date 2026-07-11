@@ -1,0 +1,254 @@
+---
+import { Icon } from "astro-icon/components";
+import type { Locale } from "@i18n/config";
+import type { BlogTranslations } from "@i18n/config";
+import { buildBlogPostHref } from "@/lib/blog/utils";
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@atoms/table";
+import { Badge } from "@atoms/badge";
+import Button from "@atoms/button/Button.astro";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@atoms/pagination";
+
+interface AdminPostRow {
+  post: {
+    id: string;
+    status: string;
+    viewCount: number;
+    seoScore: number | null;
+  };
+  translation: {
+    title: string;
+    slug: string;
+  } | null;
+  author: { id: string; name: string | null } | null;
+  categories: { id: string; slug: string; name: string | null }[];
+}
+
+interface Props {
+  locale: Locale;
+  blogT: BlogTranslations;
+  rows: AdminPostRow[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+  baseAdminUrl: string;
+  basePublicUrl: string;
+  canPublish: boolean;
+  canDelete: boolean;
+  organizationId?: string | null;
+}
+
+const { locale, blogT, rows, meta, baseAdminUrl, basePublicUrl, canPublish, canDelete, organizationId } = Astro.props;
+
+function buildPageUrl(page: number): string {
+  const url = new URL(Astro.url.href);
+  if (page === 1) url.searchParams.delete("page");
+  else url.searchParams.set("page", String(page));
+  return url.pathname + url.search;
+}
+
+function statusVariant(status: string) {
+  switch (status) {
+    case "PUBLISHED": return "success";
+    case "DRAFT": return "warning";
+    case "ARCHIVED": return "secondary";
+    case "DELETED": return "error";
+    default: return "outline";
+  }
+}
+
+const pages: number[] = [];
+for (let i = 1; i <= meta.totalPages; i++) {
+  if (i === 1 || i === meta.totalPages || (i >= meta.page - 1 && i <= meta.page + 1)) {
+    pages.push(i);
+  }
+}
+---
+
+<div class="space-y-4">
+  <div class="flex items-center justify-between gap-3 flex-wrap">
+    <h2 class="font-heading text-lg font-semibold">{blogT.admin.posts}</h2>
+    <Button size="sm" href={`${baseAdminUrl}/new`}>
+      <Icon name="mdi:plus" class="size-4" />
+      {blogT.admin.newPost}
+    </Button>
+  </div>
+
+  <Table>
+    <TableHeader>
+      <TableRow>
+        <TableHead>{blogT.admin.fields.title}</TableHead>
+        <TableHead>{blogT.admin.status}</TableHead>
+        <TableHead>{blogT.admin.seoScore}</TableHead>
+        <TableHead>{blogT.admin.views}</TableHead>
+        <TableHead>{blogT.admin.actions}</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {rows.map((row) => {
+        const editUrl = `${baseAdminUrl}/${row.post.id}/edit`;
+        const primaryCategorySlug = row.categories[0]?.slug ?? null;
+        const publicUrl = row.translation
+          ? buildBlogPostHref(basePublicUrl, row.translation.slug, primaryCategorySlug)
+          : null;
+        const publicPathLabel = row.translation
+          ? (primaryCategorySlug ? `/${primaryCategorySlug}/${row.translation.slug}` : `/${row.translation.slug}`)
+          : "—";
+        return (
+          <TableRow>
+            <TableCell>
+              <div class="space-y-0.5">
+                <p class="font-medium">{row.translation?.title ?? row.post.id}</p>
+                <p class="text-xs text-muted-foreground">{publicPathLabel}</p>
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant={statusVariant(row.post.status)} size="sm">
+                {blogT.statuses[row.post.status as keyof typeof blogT.statuses] ?? row.post.status}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {row.post.seoScore ?? "—"}
+            </TableCell>
+            <TableCell>{row.post.viewCount}</TableCell>
+            <TableCell>
+              <div class="flex items-center gap-1">
+                <Button size="icon-sm" variant="ghost" href={editUrl} aria-label={blogT.admin.editPost}>
+                  <Icon name="mdi:pencil" class="size-4" />
+                </Button>
+                {publicUrl && (
+                  <Button size="icon-sm" variant="ghost" href={publicUrl} aria-label={blogT.admin.preview}>
+                    <Icon name="mdi:open-in-new" class="size-4" />
+                  </Button>
+                )}
+                {canPublish && row.post.status !== "PUBLISHED" && (
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    class="publish-btn text-success"
+                    data-post-id={row.post.id}
+                    aria-label={blogT.admin.publish}
+                  >
+                    <Icon name="mdi:publish" class="size-4" />
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    class="delete-btn text-error"
+                    data-post-id={row.post.id}
+                    aria-label={blogT.admin.delete}
+                  >
+                    <Icon name="mdi:delete" class="size-4" />
+                  </Button>
+                )}
+              </div>
+            </TableCell>
+          </TableRow>
+        );
+      })}
+    </TableBody>
+  </Table>
+
+  {meta.totalPages > 1 && (
+    <Pagination class="mt-6">
+      <PaginationContent>
+        {meta.hasPrevPage && (
+          <PaginationItem>
+            <PaginationPrevious href={buildPageUrl(meta.page - 1)} />
+          </PaginationItem>
+        )}
+        {pages.map((p, idx) => {
+          const prev = pages[idx - 1];
+          const showEllipsis = prev && p - prev > 1;
+          return (
+            <>
+              {showEllipsis && (
+                <PaginationItem>
+                  <span class="px-2 text-muted-foreground">…</span>
+                </PaginationItem>
+              )}
+              <PaginationItem>
+                <PaginationLink href={buildPageUrl(p)} isActive={p === meta.page}>
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            </>
+          );
+        })}
+        {meta.hasNextPage && (
+          <PaginationItem>
+            <PaginationNext href={buildPageUrl(meta.page + 1)} />
+          </PaginationItem>
+        )}
+      </PaginationContent>
+    </Pagination>
+  )}
+
+  <input
+    type="hidden"
+    id="admin-post-list-data"
+    value={organizationId ?? ""}
+    data-organization-id={organizationId ?? ""}
+    data-t-error={blogT.admin.feedback.genericError}
+    data-t-published={blogT.admin.feedback.published}
+    data-t-deleted={blogT.admin.feedback.deleted}
+    data-t-confirm-delete={blogT.admin.feedback.confirmDeletePost}
+  />
+</div>
+
+<script>
+  import { actions } from 'astro:actions';
+  import { toast } from '@atoms/toast';
+
+  function init() {
+    const dataEl = document.getElementById('admin-post-list-data') as HTMLInputElement | null;
+    const orgId = dataEl?.dataset.organizationId || undefined;
+    const errorText = dataEl?.dataset.tError ?? '';
+    const publishedText = dataEl?.dataset.tPublished ?? '';
+    const deletedText = dataEl?.dataset.tDeleted ?? '';
+    const confirmDeleteText = dataEl?.dataset.tConfirmDelete ?? '';
+
+    document.querySelectorAll<HTMLButtonElement>('.publish-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.postId;
+        if (!id) return;
+        const { error } = await actions.publishBlogPost({ id, organizationId: orgId });
+        if (error) toast.error(error.message ?? errorText);
+        else { toast.success(publishedText); window.location.reload(); }
+      });
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.postId;
+        if (!id || !confirm(confirmDeleteText)) return;
+        const { error } = await actions.deleteBlogPost({ id, organizationId: orgId });
+        if (error) toast.error(error.message ?? errorText);
+        else { toast.success(deletedText); window.location.reload(); }
+      });
+    });
+  }
+
+  init();
+  document.addEventListener('astro:after-swap', init);
+</script>

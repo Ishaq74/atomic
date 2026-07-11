@@ -43,6 +43,14 @@ backUrl.searchParams.delete('edit');
   data-t-deleted={cms.deleted}
   data-t-error={t.admin.cms.common.error}
   data-t-confirm={t.admin.cms.common.confirmDelete}
+  data-t-no-versions={cms.noVersions}
+  data-t-restore-version={cms.restoreVersion}
+  data-t-restore-version-confirm={cms.restoreVersionConfirm}
+  data-t-version-restored={cms.versionRestored}
+  data-t-snapshot-note-prompt={cms.snapshotNotePrompt}
+  data-t-snapshot-created={cms.snapshotCreated}
+  data-t-show-versions={cms.showVersions}
+  data-t-hide-versions={cms.hideVersions}
 >
   <!-- Back link -->
   <a href={backUrl.pathname + backUrl.search} class="text-sm text-muted-foreground hover:underline mb-4 inline-block">
@@ -87,16 +95,16 @@ backUrl.searchParams.delete('edit');
   <Card class="mb-6">
     <CardHeader>
       <div class="flex items-center justify-between">
-        <CardTitle class="text-sm">Historique des versions</CardTitle>
+        <CardTitle class="text-sm">{cms.versionHistoryTitle}</CardTitle>
         <div class="flex gap-2">
-          <Button id="create-version-btn" size="sm" variant="outline">Créer un snapshot</Button>
-          <Button id="toggle-versions-btn" size="sm" variant="ghost">Afficher</Button>
+          <Button id="create-version-btn" size="sm" variant="outline">{cms.createSnapshot}</Button>
+          <Button id="toggle-versions-btn" size="sm" variant="ghost">{cms.showVersions}</Button>
         </div>
       </div>
     </CardHeader>
     <CardContent>
       <div id="versions-list" class="hidden space-y-2">
-        <p class="text-xs text-muted-foreground" id="versions-loading">Chargement…</p>
+        <p class="text-xs text-muted-foreground" id="versions-loading">{cms.loadingVersions}</p>
       </div>
     </CardContent>
   </Card>
@@ -147,7 +155,7 @@ backUrl.searchParams.delete('edit');
               </div>
               <div class="mt-2 flex justify-end gap-2">
                 <Button size="sm" variant="outline" class="insert-media-btn" data-id={section.id}>
-                  Insérer un média
+                  {cms.insertMedia}
                 </Button>
                 <Button size="sm" variant="outline" class="save-section-btn" data-id={section.id}>
                   {cms.save}
@@ -176,10 +184,18 @@ backUrl.searchParams.delete('edit');
   class SectionsEditor extends HTMLElement {
     connectedCallback() {
       const pageId = this.dataset.pageId!;
-      const tSaved = this.dataset.tSaved ?? 'Saved.';
-      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
-      const tError = this.dataset.tError ?? 'Error.';
-      const tConfirm = this.dataset.tConfirm ?? 'Delete?';
+      const tSaved = this.dataset.tSaved ?? '';
+      const tDeleted = this.dataset.tDeleted ?? '';
+      const tError = this.dataset.tError ?? '';
+      const tConfirm = this.dataset.tConfirm ?? '';
+      const tNoVersions = this.dataset.tNoVersions ?? '';
+      const tRestoreVersion = this.dataset.tRestoreVersion ?? '';
+      const tRestoreVersionConfirm = this.dataset.tRestoreVersionConfirm ?? '';
+      const tVersionRestored = this.dataset.tVersionRestored ?? '';
+      const tSnapshotNotePrompt = this.dataset.tSnapshotNotePrompt ?? '';
+      const tSnapshotCreated = this.dataset.tSnapshotCreated ?? '';
+      const tShowVersions = this.dataset.tShowVersions ?? '';
+      const tHideVersions = this.dataset.tHideVersions ?? '';
 
       // ─── Save page metadata ───
       this.querySelector('#page-meta-form')?.addEventListener('submit', async (e) => {
@@ -309,7 +325,7 @@ backUrl.searchParams.delete('edit');
         const { data, error } = await actions.listPageVersions({ pageId });
         if (error) { toast.error(error.message ?? tError); return; }
         if (!data || data.length === 0) {
-          versionsList.innerHTML = '<p class="text-xs text-muted-foreground">Aucune version enregistrée.</p>';
+          versionsList.innerHTML = `<p class="text-xs text-muted-foreground">${esc(tNoVersions)}</p>`;
           return;
         }
         versionsList.innerHTML = data.map((v: any) => `
@@ -320,30 +336,30 @@ backUrl.searchParams.delete('edit');
               ${v.note ? `<span class="text-muted-foreground ml-2">— ${esc(String(v.note))}</span>` : ''}
             </div>
             <button class="restore-version-btn text-xs underline text-primary hover:text-primary/80" data-version-id="${esc(String(v.id))}">
-              Restaurer
+              ${esc(tRestoreVersion)}
             </button>
           </div>
         `).join('');
         // Bind restore buttons
         versionsList.querySelectorAll<HTMLElement>('.restore-version-btn').forEach((btn) => {
           btn.addEventListener('click', async () => {
-            if (!confirm('Restaurer cette version ? Un snapshot de l\'état actuel sera créé automatiquement.')) return;
+            if (!confirm(tRestoreVersionConfirm)) return;
             const versionId = btn.dataset.versionId!;
             const { error: restoreErr } = await actions.restorePageVersion({ versionId });
-            if (!restoreErr) { toast.success('Version restaurée.'); location.reload(); }
+            if (!restoreErr) { toast.success(tVersionRestored); location.reload(); }
             else toast.error(restoreErr.message ?? tError);
           });
         });
       };
 
       createVersionBtn?.addEventListener('click', async () => {
-        const note = prompt('Note optionnelle pour ce snapshot :');
+        const note = prompt(tSnapshotNotePrompt);
         const { error } = await actions.createPageVersion({
           pageId,
           ...(note ? { note } : {}),
         });
         if (!error) {
-          toast.success('Snapshot créé.');
+          toast.success(tSnapshotCreated);
           if (versionsList && !versionsList.classList.contains('hidden')) {
             await loadVersions();
           }
@@ -356,7 +372,7 @@ backUrl.searchParams.delete('edit');
         if (!versionsList) return;
         const isHidden = versionsList.classList.contains('hidden');
         versionsList.classList.toggle('hidden');
-        toggleVersionsBtn.textContent = isHidden ? 'Masquer' : 'Afficher';
+        toggleVersionsBtn.textContent = isHidden ? tHideVersions : tShowVersions;
         if (isHidden) await loadVersions();
       });
     }

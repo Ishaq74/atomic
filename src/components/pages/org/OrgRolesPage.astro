@@ -277,6 +277,7 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
   data-t-edit-title={tr.editRole}
   data-t-no-custom={tr.noCustomRoles}
   data-t-member-role-updated={tr.memberRoleUpdated}
+  data-t-error={t.admin.cms.common.error}
 ></div>
 
 <script>
@@ -367,15 +368,15 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
             <div class="flex flex-wrap gap-1">${badges}</div>
           </div>
           <div class="flex gap-1.5 shrink-0 pt-0.5">
-            <button type="button" class="org-role-edit-btn inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors" data-role-id="${r.id}">${d.tEdit ?? 'Edit'}</button>
-            <button type="button" class="org-role-delete-btn inline-flex items-center rounded-md border border-red-200 dark:border-red-900 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors" data-role-id="${r.id}">${d.tDelete ?? 'Delete'}</button>
+            <button type="button" class="org-role-edit-btn inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors" data-role-id="${r.id}">${d.tEdit ?? ''}</button>
+            <button type="button" class="org-role-delete-btn inline-flex items-center rounded-md border border-red-200 dark:border-red-900 px-2.5 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors" data-role-id="${r.id}">${d.tDelete ?? ''}</button>
           </div>
         `;
 
         card.querySelector('.org-role-edit-btn')?.addEventListener('click', () => {
           if (editIdInput) editIdInput.value = r.id;
           if (nameInput) nameInput.value = r.role;
-          if (dialogTitle) dialogTitle.textContent = d.tEditTitle ?? 'Edit';
+          if (dialogTitle) dialogTitle.textContent = d.tEditTitle ?? '';
           setPermissionCheckboxes(r.permission as Record<string, string[]>);
           openDialog(roleDialogEl);
         });
@@ -416,7 +417,7 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
         const { data, error } = await actions.orgListRoles({ organizationId: orgId });
         if (error) {
           loadingEl?.classList.add('hidden');
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
           return;
         }
         const roles = Array.isArray(data) ? data : (data as { data: unknown[] })?.data ?? [];
@@ -430,7 +431,7 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
     // + Create
     addBtn?.addEventListener('click', () => {
       resetForm();
-      if (dialogTitle) dialogTitle.textContent = d.tCreate ?? 'Create Role';
+      if (dialogTitle) dialogTitle.textContent = d.tCreate ?? '';
       openDialog(roleDialogEl);
       setTimeout(() => nameInput?.focus(), 100);
     });
@@ -450,16 +451,16 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
             roleId: editId,
             data: { roleName, permission: perms },
           });
-          if (error) { toast.error(error.message ?? 'Error'); return; }
-          toast.success(d.tUpdated ?? 'Updated.');
+          if (error) { toast.error(error.message ?? d.tError ?? ''); return; }
+          toast.success(d.tUpdated ?? '');
         } else {
           const { error } = await actions.orgCreateRole({
             organizationId: orgId,
             role: roleName,
             permission: perms,
           });
-          if (error) { toast.error(error.message ?? 'Error'); return; }
-          toast.success(d.tCreated ?? 'Created.');
+          if (error) { toast.error(error.message ?? d.tError ?? ''); return; }
+          toast.success(d.tCreated ?? '');
         }
         closeDialog(roleDialogEl);
         resetForm();
@@ -480,8 +481,8 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
           organizationId: orgId,
           roleId,
         });
-        if (error) { toast.error(error.message ?? 'Error'); return; }
-        toast.success(d.tDeleted ?? 'Deleted.');
+        if (error) { toast.error(error.message ?? d.tError ?? ''); return; }
+        toast.success(d.tDeleted ?? '');
         closeDialog(deleteDialogEl);
         await loadRoles();
       } finally {
@@ -500,11 +501,11 @@ function hasAction(role: RoleDef, resource: string, action: string): boolean {
           organizationId: orgId,
         });
         if (!error) {
-          toast.success(d.tMemberRoleUpdated ?? 'Role updated.');
+          toast.success(d.tMemberRoleUpdated ?? '');
           const row = select.closest('[data-member-role]');
           if (row) row.setAttribute('data-member-role', select.value);
         } else {
-          toast.error(error.message ?? 'Error');
+          toast.error(error.message ?? d.tError ?? '');
         }
       });
     });

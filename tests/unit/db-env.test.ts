@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+vi.mock('dotenv', () => ({
+  config: vi.fn(),
+}));
+
 /**
  * Tests the REAL DB_POOL_MAX clamping logic from src/database/env.ts.
  * Uses vi.resetModules() + dynamic import so the module-level POOL_CONFIGS

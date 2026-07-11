@@ -113,6 +113,14 @@ const cms = t.admin.cms.site;
           <!-- One form per locale -->
           {LOCALES.map((l) => {
             const s = allSettings[l];
+            const fieldIds = {
+              siteName: `site-name-${l}`,
+              siteDescription: `site-description-${l}`,
+              siteSlogan: `site-slogan-${l}`,
+              metaTitle: `meta-title-${l}`,
+              metaDescription: `meta-description-${l}`,
+            };
+
             return (
               <form
                 class="grid gap-4 locale-settings-form"
@@ -120,25 +128,25 @@ const cms = t.admin.cms.site;
                 style={l !== locale ? 'display:none' : ''}
               >
                 <div class="grid gap-2">
-                  <Label>{cms.siteName}</Label>
-                  <Input name="siteName" value={s?.siteName ?? ''} required />
+                  <Label for={fieldIds.siteName}>{cms.siteName}</Label>
+                  <Input id={fieldIds.siteName} name="siteName" value={s?.siteName ?? ''} required />
                 </div>
                 <div class="grid gap-2">
-                  <Label>{cms.siteDescription}</Label>
-                  <Textarea name="siteDescription" defaultValue={s?.siteDescription ?? ''} />
+                  <Label for={fieldIds.siteDescription}>{cms.siteDescription}</Label>
+                  <Textarea id={fieldIds.siteDescription} name="siteDescription" defaultValue={s?.siteDescription ?? ''} />
                 </div>
                 <div class="grid gap-2">
-                  <Label>{cms.siteSlogan}</Label>
-                  <Input name="siteSlogan" value={s?.siteSlogan ?? ''} />
+                  <Label for={fieldIds.siteSlogan}>{cms.siteSlogan}</Label>
+                  <Input id={fieldIds.siteSlogan} name="siteSlogan" value={s?.siteSlogan ?? ''} />
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div class="grid gap-2">
-                    <Label>{cms.metaTitle}</Label>
-                    <Input name="metaTitle" value={s?.metaTitle ?? ''} />
+                    <Label for={fieldIds.metaTitle}>{cms.metaTitle}</Label>
+                    <Input id={fieldIds.metaTitle} name="metaTitle" value={s?.metaTitle ?? ''} />
                   </div>
                   <div class="grid gap-2">
-                    <Label>{cms.metaDescription}</Label>
-                    <Input name="metaDescription" value={s?.metaDescription ?? ''} />
+                    <Label for={fieldIds.metaDescription}>{cms.metaDescription}</Label>
+                    <Input id={fieldIds.metaDescription} name="metaDescription" value={s?.metaDescription ?? ''} />
                   </div>
                 </div>
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -510,8 +518,8 @@ const cms = t.admin.cms.site;
   function init() {
     const root = document.getElementById('cms-site-data');
     if (!root) return;
-    const tSaved = root.dataset.tSaved ?? 'Saved.';
-    const tError = root.dataset.tError ?? 'Error.';
+    const tSaved = root.dataset.tSaved ?? '';
+    const tError = root.dataset.tError ?? '';
 
     // ─── Site Upload Fields ───
     document.querySelectorAll<HTMLElement>('.site-upload-field').forEach((field) => {
@@ -694,11 +702,11 @@ const cms = t.admin.cms.site;
       const tSelectPlatform = root.dataset.tSelectPlatform ?? '';
       const tOtherPlatform = root.dataset.tOtherPlatform ?? '';
       const tCustomPlatform = root.dataset.tCustomPlatform ?? '';
-      const tUrl = root.dataset.tUrl ?? 'URL';
-      const tLabel = root.dataset.tLabel ?? 'Label';
-      const tSaveBtn = root.dataset.tSave ?? 'Save';
-      const tDeleteBtn = root.dataset.tDelete ?? 'Delete';
-      const tPlatform = root.dataset.tPlatform ?? 'Platform';
+      const tUrl = root.dataset.tUrl ?? '';
+      const tLabel = root.dataset.tLabel ?? '';
+      const tSaveBtn = root.dataset.tSave ?? '';
+      const tDeleteBtn = root.dataset.tDelete ?? '';
+      const tPlatform = root.dataset.tPlatform ?? '';
 
       const options = platforms.map((p) =>
         `<option value="${p.key}">${p.label}</option>`

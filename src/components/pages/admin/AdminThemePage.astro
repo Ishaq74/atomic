@@ -578,11 +578,11 @@ function tokenLabel(key: string): string {
 
   class ThemeManager extends HTMLElement {
     connectedCallback() {
-      const tSaved = this.dataset.tSaved ?? 'Saved.';
-      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
-      const tError = this.dataset.tError ?? 'Error.';
-      const tCannotDelete = this.dataset.tCannotDelete ?? 'Cannot delete active theme.';
-      const tConfirmDelete = this.dataset.tConfirmDelete ?? 'Are you sure you want to delete this item?';
+      const tSaved = this.dataset.tSaved ?? '';
+      const tDeleted = this.dataset.tDeleted ?? '';
+      const tError = this.dataset.tError ?? '';
+      const tCannotDelete = this.dataset.tCannotDelete ?? '';
+      const tConfirmDelete = this.dataset.tConfirmDelete ?? '';
 
       // ─── Initialise color pickers: convert OKLCH → hex for native input ───
       this.querySelectorAll<HTMLInputElement>('.color-picker').forEach((picker) => {

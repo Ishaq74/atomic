@@ -27,3 +27,16 @@ ALTER TABLE pages ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
 CREATE INDEX IF NOT EXISTS pages_search_vector_idx
 ON pages USING GIN (search_vector);
+--> statement-breakpoint
+
+-- Same pattern for blog post translations (see 00-functions.sql / 01-triggers.sql).
+ALTER TABLE blog_post_translations ADD COLUMN IF NOT EXISTS search_vector tsvector;
+--> statement-breakpoint
+
+CREATE INDEX IF NOT EXISTS blog_post_translations_search_vector_idx
+ON blog_post_translations USING GIN (search_vector);
+--> statement-breakpoint
+
+-- One-time backfill for rows inserted before the trigger existed (no-op SET
+-- fires the `OF title` trigger, which recomputes search_vector from all fields).
+UPDATE blog_post_translations SET title = title WHERE search_vector IS NULL;

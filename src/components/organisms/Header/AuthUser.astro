@@ -36,13 +36,14 @@ const initials = user?.name
 
 {user ? (
   <Dropdown>
-    <DropdownTrigger asChild>
-      <button type="button" class="cursor-pointer rounded-full outline-none focus-visible:ring-3 focus-visible:ring-outline/50">
+    <DropdownTrigger
+      class="cursor-pointer rounded-full outline-none focus-visible:ring-3 focus-visible:ring-outline/50"
+      aria-label={user.name ?? authT.userMenu.dashboard}
+    >
         <Avatar size="sm">
           {user.image && safeUrl(user.image) && <AvatarImage src={safeUrl(user.image)} alt={user.name ?? ''} />}
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
-      </button>
     </DropdownTrigger>
     <DropdownContent align="end" class="min-w-48">
       <div class="px-3 py-2">

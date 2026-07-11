@@ -31,6 +31,22 @@ export function safeEmbedUrl(url: unknown): string {
   return trimmed.startsWith('https://') ? trimmed : '';
 }
 
+/**
+ * Escapes a pre-serialized JSON string for safe embedding inside a
+ * `<script type="application/ld+json">` element via `set:html`.
+ *
+ * `JSON.stringify()` alone does NOT escape `<`, so a JSON-LD payload built
+ * from CMS/user content (e.g. a blog post title or FAQ answer containing the
+ * literal text `</script>`) can prematurely close the script tag and inject
+ * arbitrary markup — the browser's HTML tokenizer looks for that byte
+ * sequence regardless of JSON string-escaping. Replacing every `<` with its
+ * unicode escape neutralizes `</script>`, `<!--` and any other tag-like
+ * sequence while remaining valid, semantically identical JSON.
+ */
+export function safeJsonLd(json: string): string {
+  return json.replace(/</g, '\\u003c');
+}
+
 const MAX_SANITIZE_LENGTH = 500_000; // 500 KB
 
 export function sanitizeHtml(dirty: unknown): string {

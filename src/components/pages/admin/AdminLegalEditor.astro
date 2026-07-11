@@ -75,6 +75,14 @@ const parsedSections = sections
   data-t-error={t.admin.cms.common.error}
   data-t-confirm-tab={legal.confirmDeleteTab}
   data-t-confirm-item={legal.confirmDeleteItem}
+  data-t-new-tab-title={legal.newTabTitle}
+  data-t-question={legal.question}
+  data-t-answer={legal.answer}
+  data-t-variable-unknown={legal.variableUnknown}
+  data-t-variable-empty={legal.variableEmpty}
+  data-t-variable-trimmed-spaces={legal.variableTrimmedSpaces}
+  data-t-variable-spaces-in-name={legal.variableSpacesInName}
+  data-t-variable-invalid-braces={legal.variableInvalidBraces}
   data-template-vars={JSON.stringify(templateVarEntries)}
 >
   <!-- Back link -->
@@ -83,6 +91,7 @@ const parsedSections = sections
   </a>
 
   <!-- Autocomplete dropdown (positioned absolutely, hidden by default) -->
+  {/* eslint-disable-next-line astro/jsx-a11y/prefer-tag-over-role -- WAI-ARIA "listbox" is the correct role for a combobox-autocomplete popup that inserts {{variable}} tokens at the cursor position inside a textarea; native <select>/<datalist> cannot do that */}
   <div
     id="var-autocomplete"
     class="fixed z-9999 hidden rounded-lg border bg-popover text-popover-foreground shadow-lg overflow-hidden"
@@ -257,11 +266,19 @@ const parsedSections = sections
   class LegalEditor extends HTMLElement {
     connectedCallback() {
       const pageId = this.dataset.pageId!;
-      const tSaved = this.dataset.tSaved ?? 'Saved.';
-      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
-      const tError = this.dataset.tError ?? 'Error.';
-      const tConfirmTab = this.dataset.tConfirmTab ?? 'Delete this tab?';
-      const tConfirmItem = this.dataset.tConfirmItem ?? 'Delete this item?';
+      const tSaved = this.dataset.tSaved ?? '';
+      const tDeleted = this.dataset.tDeleted ?? '';
+      const tError = this.dataset.tError ?? '';
+      const tConfirmTab = this.dataset.tConfirmTab ?? '';
+      const tConfirmItem = this.dataset.tConfirmItem ?? '';
+      const tNewTabTitle = this.dataset.tNewTabTitle ?? '';
+      const tQuestion = this.dataset.tQuestion ?? '';
+      const tAnswer = this.dataset.tAnswer ?? '';
+      const tVariableUnknown = this.dataset.tVariableUnknown ?? '';
+      const tVariableEmpty = this.dataset.tVariableEmpty ?? '';
+      const tVariableTrimmedSpaces = this.dataset.tVariableTrimmedSpaces ?? '';
+      const tVariableSpacesInName = this.dataset.tVariableSpacesInName ?? '';
+      const tVariableInvalidBraces = this.dataset.tVariableInvalidBraces ?? '';
 
       // ─── Inline autocomplete for {{variables}} ───
       interface VarEntry { key: string; label: string; syntax: string; value: string; }
@@ -279,6 +296,7 @@ const parsedSections = sections
       /** Escape HTML entities */
       const escapeHtml = (text: string) =>
         text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const esc = escapeHtml;
 
       /** Map of valid variable keys for quick lookup */
       const varMap = new Map(vars.map((v) => [v.key, v]));
@@ -304,14 +322,14 @@ const parsedSections = sections
                 return `<span class="var-pill var-valid" title="${escapeHtml(v.syntax)}">${escapeHtml(v.value || v.label)}</span>`;
               }
               // Broken: spaces, unknown key, multi-word, empty, etc.
-              let reason = '⚠ variable inconnue';
-              if (!trimmed) reason = '⚠ vide';
-              else if (trimmed !== doubleBrace) reason = '⚠ espaces en trop';
-              else if (/\s/.test(trimmed)) reason = '⚠ espaces dans le nom';
+              let reason = tVariableUnknown;
+              if (!trimmed) reason = tVariableEmpty;
+              else if (trimmed !== doubleBrace) reason = tVariableTrimmedSpaces;
+              else if (/\s/.test(trimmed)) reason = tVariableSpacesInName;
               return `<span class="var-pill var-broken" title="${reason}">${match}</span>`;
             }
             // Case 2-4: malformed braces
-            return `<span class="var-pill var-broken" title="⚠ accolades incorrectes">${match}</span>`;
+            return `<span class="var-pill var-broken" title="${tVariableInvalidBraces}">${match}</span>`;
           },
         );
       };
@@ -534,7 +552,7 @@ const parsedSections = sections
         const { error } = await actions.createSection({
           pageId,
           type: 'faq',
-          content: JSON.stringify({ title: 'New Tab', items: [] }),
+          content: JSON.stringify({ title: tNewTabTitle, items: [] }),
           sortOrder: existingCards.length,
           isVisible: true,
         });
@@ -645,8 +663,8 @@ const parsedSections = sections
               <button type="button" class="remove-item-btn inline-flex items-center justify-center rounded-md text-sm font-medium h-8 px-3 border bg-error text-error-foreground hover:bg-error/90" data-section-id="${sectionId}" data-item-index="${index}">×</button>
             </div>
             <div class="space-y-2">
-              <input class="item-question flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="Question" />
-              <textarea class="item-answer flex min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm" placeholder="Answer"></textarea>
+              <input class="item-question flex h-9 w-full rounded-md border bg-transparent px-3 py-1 text-sm" placeholder="${esc(tQuestion)}" />
+              <textarea class="item-answer flex min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-sm" placeholder="${esc(tAnswer)}"></textarea>
             </div>
           `;
           itemsList.appendChild(itemDiv);

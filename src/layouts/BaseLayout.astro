@@ -8,6 +8,7 @@ import { Toaster } from "@atoms/toast";
 import { CookieConsent } from "@organisms/CookieConsent";
 import { getSiteSettings, getSocialLinks, getActiveThemeCss } from "@database/loaders/site.loader";
 import { getConsentSettings } from "@database/loaders/consent.loader";
+import { safeJsonLd } from "@/lib/sanitize";
 import { getMenu, getMenuMeta, type NavTreeItem } from "@database/loaders/navigation.loader";
 
 interface Props {
@@ -118,7 +119,8 @@ const canonicalUrl = Astro.url.pathname;
     <meta name="twitter:title" content={metaTitle} />
     <meta name="twitter:description" content={metaDesc} />
     {(ogImageOverride || siteData?.ogImage) && <meta name="twitter:image" content={ogImageOverride ?? siteData!.ogImage!} />}
-    {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
+    {/* eslint-disable-next-line astro/no-set-html-directive -- jsonLd is pre-escaped via safeJsonLd() (neutralizes </script> breakout); it is structured data (JSON.stringify output), not arbitrary HTML */}
+    {jsonLd && <script type="application/ld+json" set:html={safeJsonLd(jsonLd)} />}
     {/* eslint-disable-next-line astro/no-set-html-directive -- theme CSS is generated server-side from validated OKLCH tokens */}
     {themeCss && <style set:html={themeCss} />}
 </head>

@@ -53,6 +53,7 @@ const childItems = items.filter((i) => !!i.parentId);
   data-t-confirm-delete-menu={cms.confirmDeleteMenu}
   data-t-save-all={cms.saveAll}
   data-t-menu-visible={cms.menuVisible}
+  data-t-add-item-label={cms.addItem}
   class="grid gap-6"
 >
   <!-- ═══════════════════════════════════════════════════════
@@ -427,13 +428,14 @@ const childItems = items.filter((i) => !!i.parentId);
     if (!root) return;
     const menuId = root.dataset.selectedMenu!;
     const navLocale = root.dataset.selectedLocale!;
-    const tSaved = root.dataset.tSaved ?? 'Saved.';
-    const tDeleted = root.dataset.tDeleted ?? 'Deleted.';
-    const tMenuSaved = root.dataset.tMenuSaved ?? 'Menu saved.';
-    const tMenuDeleted = root.dataset.tMenuDeleted ?? 'Menu deleted.';
-    const tError = root.dataset.tError ?? 'Error.';
-    const tConfirmDelete = root.dataset.tConfirmDelete ?? 'Delete?';
-    const tConfirmDeleteMenu = root.dataset.tConfirmDeleteMenu ?? 'Delete this menu?';
+    const tSaved = root.dataset.tSaved ?? '';
+    const tDeleted = root.dataset.tDeleted ?? '';
+    const tMenuSaved = root.dataset.tMenuSaved ?? '';
+    const tMenuDeleted = root.dataset.tMenuDeleted ?? '';
+    const tError = root.dataset.tError ?? '';
+    const tConfirmDelete = root.dataset.tConfirmDelete ?? '';
+    const tConfirmDeleteMenu = root.dataset.tConfirmDeleteMenu ?? '';
+    const tAddItemLabel = root.dataset.tAddItemLabel ?? '';
 
     // ─── Menu Select ───
     document.querySelectorAll<HTMLElement>('[data-menu-select]').forEach((el) => {
@@ -626,7 +628,7 @@ const childItems = items.filter((i) => !!i.parentId);
       actions.createNavigationItem({
         menuId,
         locale: navLocale as 'fr' | 'en' | 'es' | 'ar',
-        label: 'New',
+        label: tAddItemLabel,
         url: '/',
         parentId: null,
         icon: null,

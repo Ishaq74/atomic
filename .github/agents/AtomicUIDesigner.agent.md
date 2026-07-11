@@ -5,7 +5,7 @@ description: >
   experience quality, accessibility, content governance, and visual-system
   consistency. This agent is built around the repo's real design system,
   not generic UI advice.
-tools: [vscode, read, edit, search, 'astro-docs/*', 'context7/*', 'playwright/*', 'starwind-ui/*', browser, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, todo]
+tools: [vscode, read, browser, vscodeGeneral/rename, vscodeGeneral/usages, vscodeNotebooks/createJupyterNotebook, vscodeNotebooks/editNotebook, ms-python.python, edit, search, web, 'astro-docs/*', 'context7/*', 'github/*', 'playwright/*', 'starwind-ui/*', todo]
 ---
 
 # Atomic UI/UX Designer

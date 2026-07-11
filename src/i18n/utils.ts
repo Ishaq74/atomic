@@ -5,6 +5,7 @@ import {
   type AboutTranslations,
   type ContactTranslations,
   type AuthTranslations,
+  type BlogTranslations,
   type AuthPageId,
   type PageId,
   LOCALES,
@@ -131,14 +132,20 @@ export function resolveAuthSlug(slug: string, authTranslations: AuthTranslations
 
 // ─── Admin & Org direct routes ──────────────────────────────────────
 
-export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit' | 'roles' | 'site' | 'navigation' | 'pages' | 'media' | 'theme';
-export type OrgSubpage = 'members' | 'roles' | 'settings';
+export type AdminSubpage = 'stats' | 'users' | 'organizations' | 'audit' | 'roles' | 'blog' | 'site' | 'navigation' | 'pages' | 'media' | 'theme';
+export type OrgSubpage = 'members' | 'roles' | 'blog' | 'media' | 'settings';
 
 export function getAdminUrl(locale: Locale, subpage?: AdminSubpage): string {
   return subpage ? `/${locale}/admin/${subpage}` : `/${locale}/admin`;
 }
 
 export function getOrgUrl(locale: Locale, orgSlug: string, subpage?: OrgSubpage): string {
+  if (subpage === 'blog') {
+    return `/${locale}/organizations/${orgSlug}/admin/blog`;
+  }
+  if (subpage === 'media') {
+    return `/${locale}/organizations/${orgSlug}/admin/media`;
+  }
   return subpage
     ? `/${locale}/organizations/${orgSlug}/${subpage}`
     : `/${locale}/organizations/${orgSlug}`;
@@ -148,6 +155,52 @@ export function getOrgUrl(locale: Locale, orgSlug: string, subpage?: OrgSubpage)
 
 export function getPageUrl(locale: Locale, pageId: PageId, commonTranslations: CommonTranslations): string {
   return `/${locale}/${commonTranslations.pageRoutes[pageId]}`;
+}
+
+// ─── Blog ───────────────────────────────────────────────────────────
+
+const blogModules: Record<Locale, () => Promise<{ default: BlogTranslations }>> = {
+  fr: () => import('./blog/fr'),
+  en: () => import('./blog/en'),
+  es: () => import('./blog/es'),
+  ar: () => import('./blog/ar'),
+};
+
+export async function getBlogTranslations(locale: Locale): Promise<BlogTranslations> {
+  try {
+    const mod = await blogModules[locale]();
+    return mod.default;
+  } catch (err) {
+    if (locale !== DEFAULT_LOCALE) {
+      console.error(`[i18n] Failed to load blog translations for "${locale}", falling back to "${DEFAULT_LOCALE}":`, err);
+      const fallback = await blogModules[DEFAULT_LOCALE]();
+      return fallback.default;
+    }
+    throw err;
+  }
+}
+
+export function getBlogUrl(locale: Locale, blogT: BlogTranslations): string {
+  return `/${locale}/${blogT.routes.blog}`;
+}
+
+export function getBlogCategoryUrl(locale: Locale, blogT: BlogTranslations, slug: string): string {
+  return `/${locale}/${blogT.routes.blog}/${slug}`;
+}
+
+export function getBlogTagUrl(locale: Locale, blogT: BlogTranslations, slug: string): string {
+  return `/${locale}/${blogT.routes.blog}/${blogT.routes.tags}/${slug}`;
+}
+
+export function getBlogPostUrl(
+  locale: Locale,
+  blogT: BlogTranslations,
+  slug: string,
+  categorySlug?: string | null,
+): string {
+  return categorySlug
+    ? `/${locale}/${blogT.routes.blog}/${categorySlug}/${slug}`
+    : `/${locale}/${blogT.routes.blog}/${slug}`;
 }
 
 export function resolvePageSlug(slug: string, commonTranslations: CommonTranslations): PageId | null {

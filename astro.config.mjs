@@ -72,8 +72,22 @@ export default defineConfig({
   // providing CSRF protection for all API endpoints and Astro Actions.
   security: {
     checkOrigin: true,
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data: blob:",
+        "font-src 'self'",
+        "connect-src 'self' https://api.iconify.design",
+        "frame-src https://www.google.com https://www.youtube.com https://player.vimeo.com",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+        'upgrade-insecure-requests',
+      ],
+    },
   },
 
-  // CSP is managed exclusively in src/middleware.ts to avoid duplication.
-  // Astro's security.csp was removed — the middleware sets all directives.
+  // Astro manages CSP hashes for bundled scripts/styles.
+  // Additional security headers are set in src/middleware.ts.
 });

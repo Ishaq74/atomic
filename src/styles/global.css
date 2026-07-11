@@ -211,3 +211,18 @@
     @apply cursor-pointer;
   }
 }
+
+/* Dead internal links (target no longer exists) — visible warning. */
+.rich-content a.dead-link,
+.prose a.dead-link {
+  color: var(--destructive, #dc2626);
+  text-decoration: line-through;
+  cursor: not-allowed;
+  position: relative;
+}
+.rich-content a.dead-link::after,
+.prose a.dead-link::after {
+  content: " ⚠";
+  font-size: 0.8em;
+  vertical-align: super;
+}

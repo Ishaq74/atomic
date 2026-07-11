@@ -57,6 +57,7 @@ function isoDate(d: Date | string | null) {
   data-t-deleted={cms.deleted}
   data-t-error={t.admin.cms.common.error}
   data-t-confirm={cms.confirmDelete}
+  data-t-create-title={cms.createPage}
 >
   <div class="mb-4 flex items-center justify-between">
     <div>
@@ -247,16 +248,17 @@ function isoDate(d: Date | string | null) {
   class PagesManager extends HTMLElement {
     connectedCallback() {
       const locale = this.dataset.locale!;
-      const tDeleted = this.dataset.tDeleted ?? 'Deleted.';
-      const tError = this.dataset.tError ?? 'Error.';
-      const tConfirm = this.dataset.tConfirm ?? 'Delete?';
+      const tDeleted = this.dataset.tDeleted ?? '';
+      const tError = this.dataset.tError ?? '';
+      const tConfirm = this.dataset.tConfirm ?? '';
+      const tCreateTitle = this.dataset.tCreateTitle ?? '';
 
       // ─── Create page ───
       this.querySelector('#create-page-btn')?.addEventListener('click', async () => {
         const { error } = await actions.createPage({
           locale: locale as 'fr' | 'en' | 'es' | 'ar',
           slug: 'new-page-' + Date.now(),
-          title: 'New Page',
+          title: tCreateTitle,
         });
         if (!error) location.reload();
         else toast.error(error.message ?? tError);

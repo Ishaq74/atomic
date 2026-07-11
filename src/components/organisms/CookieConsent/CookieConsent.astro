@@ -17,6 +17,7 @@ interface Props {
 const { consent } = Astro.props;
 ---
 
+{/* eslint-disable-next-line astro/jsx-a11y/prefer-tag-over-role -- non-modal banner toggled via a CSS class + localStorage (see script below); native <dialog> requires showModal()/close() JS calls and top-layer semantics that don't fit this always-in-DOM, class-toggled consent banner */}
 <div
   id="cookie-consent"
   class="fixed inset-x-0 bottom-0 z-9999 hidden"
@@ -41,10 +42,10 @@ const { consent } = Astro.props;
   })}
 >
   <!-- Banner (initial view) -->
-  <div id="cc-banner" class="border-border bg-background mx-auto max-w-2xl border-t p-4 shadow-lg sm:mb-4 sm:mx-4 sm:rounded-lg sm:border md:mx-auto">
+  <div id="cc-banner" class="border-border mx-auto max-w-2xl border-t bg-white p-4 text-stone-950 shadow-lg sm:mb-4 sm:mx-4 sm:rounded-lg sm:border md:mx-auto dark:bg-stone-950 dark:text-stone-50">
     <div class="mb-3">
-      <h2 class="text-foreground text-base font-semibold">{consent.title}</h2>
-      <p class="text-muted-foreground mt-1 text-sm leading-relaxed">{consent.description}</p>
+      <h2 class="text-base font-semibold">{consent.title}</h2>
+      <p class="mt-1 bg-white text-sm leading-relaxed text-stone-800 dark:bg-stone-950 dark:text-stone-200">{consent.description}</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <button
@@ -64,7 +65,7 @@ const { consent } = Astro.props;
       <button
         type="button"
         id="cc-customize"
-        class="text-muted-foreground hover:text-foreground inline-flex h-9 items-center rounded-md px-4 text-sm font-medium underline-offset-4 transition-colors hover:underline"
+        class="inline-flex h-9 items-center rounded-md px-4 text-sm font-medium text-stone-700 underline-offset-4 transition-colors hover:text-stone-950 hover:underline dark:text-stone-300 dark:hover:text-stone-50"
       >
         {consent.customize}
       </button>
@@ -72,7 +73,7 @@ const { consent } = Astro.props;
     {consent.privacyPolicyUrl && (
       <a
         href={consent.privacyPolicyUrl}
-        class="text-muted-foreground mt-2 inline-block text-xs underline hover:text-foreground"
+        class="mt-2 inline-block text-xs text-stone-700 underline hover:text-stone-950 dark:text-stone-300 dark:hover:text-stone-50"
       >
         {consent.privacyPolicyLabel}
       </a>
@@ -80,14 +81,14 @@ const { consent } = Astro.props;
   </div>
 
   <!-- Preferences panel (hidden by default) -->
-  <div id="cc-preferences" class="border-border bg-background mx-auto hidden max-w-2xl border-t p-4 shadow-lg sm:mb-4 sm:mx-4 sm:rounded-lg sm:border md:mx-auto">
-    <h2 class="text-foreground mb-4 text-base font-semibold">{consent.customize}</h2>
+  <div id="cc-preferences" class="border-border mx-auto hidden max-w-2xl border-t bg-white p-4 text-stone-950 shadow-lg sm:mb-4 sm:mx-4 sm:rounded-lg sm:border md:mx-auto dark:bg-stone-950 dark:text-stone-50">
+    <h2 class="mb-4 text-base font-semibold">{consent.customize}</h2>
 
     <!-- Necessary (always on) -->
     <div class="mb-3 flex items-start justify-between gap-4">
       <div>
-        <p class="text-foreground text-sm font-medium">{consent.necessaryLabel}</p>
-        <p class="text-muted-foreground text-xs">{consent.necessaryDescription}</p>
+        <p class="text-sm font-medium">{consent.necessaryLabel}</p>
+        <p class="text-xs text-stone-700 dark:text-stone-300">{consent.necessaryDescription}</p>
       </div>
       <button
         type="button"
@@ -103,8 +104,8 @@ const { consent } = Astro.props;
     <!-- Analytics -->
     <div class="mb-3 flex items-start justify-between gap-4">
       <div>
-        <p class="text-foreground text-sm font-medium">{consent.analyticsLabel}</p>
-        <p class="text-muted-foreground text-xs">{consent.analyticsDescription}</p>
+        <p class="text-sm font-medium">{consent.analyticsLabel}</p>
+        <p class="text-xs text-stone-700 dark:text-stone-300">{consent.analyticsDescription}</p>
       </div>
       <button
         type="button"
@@ -121,8 +122,8 @@ const { consent } = Astro.props;
     <!-- Marketing -->
     <div class="mb-3 flex items-start justify-between gap-4">
       <div>
-        <p class="text-foreground text-sm font-medium">{consent.marketingLabel}</p>
-        <p class="text-muted-foreground text-xs">{consent.marketingDescription}</p>
+        <p class="text-sm font-medium">{consent.marketingLabel}</p>
+        <p class="text-xs text-stone-700 dark:text-stone-300">{consent.marketingDescription}</p>
       </div>
       <button
         type="button"

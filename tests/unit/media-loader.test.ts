@@ -10,8 +10,8 @@ vi.mock('@database/drizzle', () => ({
 }));
 
 vi.mock('@database/schemas', () => ({
-  mediaFolders: { id: 'id', parentId: 'parentId', sortOrder: 'sortOrder', name: 'name' },
-  mediaFiles: { id: 'id', folderId: 'folderId', createdAt: 'createdAt' },
+  mediaFolders: { id: 'id', organizationId: 'organizationId', parentId: 'parentId', sortOrder: 'sortOrder', name: 'name' },
+  mediaFiles: { id: 'id', organizationId: 'organizationId', folderId: 'folderId', createdAt: 'createdAt', size: 'size' },
   mediaFileAlts: { id: 'id', fileId: 'fileId' },
 }));
 
@@ -36,6 +36,7 @@ import {
 function selectChain(rows: any[]) {
   const terminal: any = Object.assign(Promise.resolve(rows), {
     limit: vi.fn().mockResolvedValue(rows),
+    groupBy: vi.fn().mockResolvedValue(rows),
     orderBy: vi.fn().mockReturnValue(Object.assign(Promise.resolve(rows), { limit: vi.fn().mockResolvedValue(rows) })),
   });
   const fromResult: any = Object.assign(Promise.resolve(rows), {

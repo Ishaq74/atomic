@@ -4,6 +4,8 @@
  * Includes a "Back to Dashboard" link.
  */
 import type { AuthTranslations, Locale } from '@i18n/config';
+import { LOCALES, LOCALE_LABELS } from '@i18n/config';
+import { getRelativeLocaleUrl } from 'astro:i18n';
 import { getAuthUrl, getAdminUrl } from '@i18n/utils';
 import type { AdminSubpage } from '@i18n/utils';
 
@@ -43,6 +45,13 @@ interface Props {
 const { t, locale, activeItem } = Astro.props;
 
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
+const pathWithoutLocale = Astro.url.pathname.replace(new RegExp(`^/${locale}(?=/|$)`), '') || '/';
+const localeSwitcherT = t.admin.localeSwitcher ?? { title: 'Languages' };
+const contentGroupLabel = t.admin.contentGroup ?? 'Content';
+
+function buildLocaleHref(targetLocale: Locale) {
+  return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`;
+}
 
 const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof ChartBarIcon }[] = [
   { id: 'stats', title: t.admin.tabs.stats, url: getAdminUrl(locale, 'stats'), icon: ChartBarIcon },
@@ -53,6 +62,7 @@ const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof Cha
 ];
 
 const cmsItems: { id: AdminSubpage; title: string; url: string; icon: typeof SettingsIcon }[] = [
+  { id: 'blog', title: t.admin.tabs.blog, url: getAdminUrl(locale, 'blog'), icon: FileTextIcon },
   { id: 'site', title: t.admin.tabs.site, url: getAdminUrl(locale, 'site'), icon: SettingsIcon },
   { id: 'navigation', title: t.admin.tabs.navigation, url: getAdminUrl(locale, 'navigation'), icon: MenuIcon },
   { id: 'pages', title: t.admin.tabs.pages, url: getAdminUrl(locale, 'pages'), icon: LayoutIcon },
@@ -111,7 +121,7 @@ const cmsItems: { id: AdminSubpage; title: string; url: string; icon: typeof Set
     </SidebarGroup>
 
     <SidebarGroup>
-      <SidebarGroupLabel>CMS</SidebarGroupLabel>
+      <SidebarGroupLabel>{contentGroupLabel}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {cmsItems.map((item) => (
@@ -123,6 +133,32 @@ const cmsItems: { id: AdminSubpage; title: string; url: string; icon: typeof Set
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+
+    <SidebarGroup>
+      <SidebarGroupLabel>{localeSwitcherT.title}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <div class="flex flex-wrap gap-2 px-2 pb-2">
+          {LOCALES.map((targetLocale) => {
+            const isActive = targetLocale === locale;
+            return (
+              <a
+                href={buildLocaleHref(targetLocale)}
+                class:list={[
+                  'inline-flex min-w-9 items-center justify-center rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                  {
+                    'border-primary bg-primary text-primary-foreground': isActive,
+                    'border-border text-muted-foreground hover:border-foreground/20 hover:bg-muted hover:text-foreground': !isActive,
+                  },
+                ]}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {LOCALE_LABELS[targetLocale]}
+              </a>
+            );
+          })}
+        </div>
       </SidebarGroupContent>
     </SidebarGroup>
   </SidebarContent>

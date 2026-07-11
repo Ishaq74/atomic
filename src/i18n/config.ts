@@ -292,12 +292,17 @@ export interface AuthTranslations {
   };
   admin: {
     title: string;
+    contentGroup: string;
+    localeSwitcher: {
+      title: string;
+    };
     tabs: {
       stats: string;
       users: string;
       organizations: string;
       auditLog: string;
       roles: string;
+      blog: string;
       site: string;
       navigation: string;
       pages: string;
@@ -551,6 +556,18 @@ export interface AuthTranslations {
         description: string;
         createPage: string;
         editPage: string;
+        versionHistoryTitle: string;
+        createSnapshot: string;
+        showVersions: string;
+        hideVersions: string;
+        loadingVersions: string;
+        noVersions: string;
+        restoreVersion: string;
+        restoreVersionConfirm: string;
+        versionRestored: string;
+        snapshotNotePrompt: string;
+        snapshotCreated: string;
+        insertMedia: string;
         noPages: string;
         slug: string;
         pageTitle: string;
@@ -600,6 +617,7 @@ export interface AuthTranslations {
         legal: {
           tabTitle: string;
           tabIntro: string;
+          newTabTitle: string;
           question: string;
           answer: string;
           addItem: string;
@@ -616,6 +634,11 @@ export interface AuthTranslations {
           variablesDescription: string;
           variableInserted: string;
           noFieldFocused: string;
+          variableUnknown: string;
+          variableEmpty: string;
+          variableTrimmedSpaces: string;
+          variableSpacesInName: string;
+          variableInvalidBraces: string;
           varSiteName: string;
           varEmail: string;
           varPhone: string;
@@ -624,6 +647,66 @@ export interface AuthTranslations {
           varPostalCode: string;
           varCountry: string;
         };
+      };
+      media: {
+        title: string;
+        description: string;
+        counts: {
+          file: string;
+          files: string;
+          folder: string;
+          folders: string;
+          subfolder: string;
+          subfolders: string;
+        };
+        usedSpace: string;
+        root: string;
+        newFolder: string;
+        upload: string;
+        uploadFile: string;
+        folderName: string;
+        folderNamePlaceholder: string;
+        parentFolder: string;
+        create: string;
+        cancel: string;
+        fileDetails: string;
+        close: string;
+        type: string;
+        size: string;
+        dimensions: string;
+        date: string;
+        fileName: string;
+        rename: string;
+        renameHint: string;
+        url: string;
+        copyUrl: string;
+        copiedUrl: string;
+        moveTo: string;
+        deleteFile: string;
+        deleteFolder: string;
+        foldersHeading: string;
+        filesHeading: string;
+        noFilesInFolder: string;
+        noSelection: string;
+        altTexts: string;
+        altTextsDescription: string;
+        altMissing: string;
+        altPlaceholder: string;
+        titlePlaceholder: string;
+        saveAltTexts: string;
+        confirmDeleteFile: string;
+        confirmDeleteFolder: string;
+        saved: string;
+        deleted: string;
+        uploaded: string;
+        renamed: string;
+        error: string;
+        pickerTitle: string;
+        pickerSearchPlaceholder: string;
+        pickerAllFolders: string;
+        pickerEmpty: string;
+        pickerSelect: string;
+        pickerCancel: string;
       };
       theme: {
         title: string;
@@ -782,6 +865,14 @@ export interface AuthTranslations {
       rolesTab: string;
       settingsTab: string;
     };
+    blog: {
+      title: string;
+      description: string;
+    };
+    media: {
+      title: string;
+      description: string;
+    };
     roles: {
       title: string;
       description: string;
@@ -869,4 +960,254 @@ export interface AuthTranslations {
     signIn: string;
   };
   errors: Record<string, string>;
+}
+
+export interface BlogTranslations {
+  meta: {
+    title: string;
+    description: string;
+    postTitle: (title: string) => string;
+    categoryTitle: (name: string) => string;
+    tagTitle: (name: string) => string;
+  };
+  routes: {
+    blog: string;
+    categories: string;
+    tags: string;
+    author: string;
+  };
+  labels: {
+    readMore: string;
+    publishedOn: string;
+    byAuthor: string;
+    readingTime: string;
+    categories: string;
+    category: string;
+    tags: string;
+    tag: string;
+    relatedPosts: string;
+    comments: string;
+    reviews: string;
+    writeComment: string;
+    submitComment: string;
+    yourRating: string;
+    submitReview: string;
+    loadMore: string;
+    search: string;
+    noResults: string;
+    noComments: string;
+    writeReview: string;
+    noReviews: string;
+    share: string;
+    bookmark: string;
+    reactions: string;
+    featured: string;
+    sticky: string;
+    pending: string;
+    articles: string;
+    page: string;
+    of: string;
+    next: string;
+    previous: string;
+    allArticles: string;
+    relatedArticles: string;
+    categoryArticles: string;
+    tagArticles: string;
+    authorArticles: string;
+    reset: string;
+    aboutTag: string;
+    aboutAuthor: string;
+    featuredPosts: string;
+    noCategories: string;
+    noTags: string;
+    newsletterTitle: string;
+    newsletterDescription: string;
+    newsletterEmail: string;
+    newsletterPlaceholder: string;
+    newsletterSubscribe: string;
+    newsletterError: string;
+    newsletterSuccess: string;
+    genericError: string;
+    guestNameLabel: string;
+    guestEmailLabel: string;
+    commentSubmitted: string;
+    reviewTitleLabel: string;
+    reviewTitlePlaceholder: string;
+    recommendLabel: string;
+    reviewSubmitted: string;
+    reactionUpdated: string;
+    shareOnX: string;
+    shareOnFacebook: string;
+    shareOnLinkedIn: string;
+    copyLink: string;
+    linkCopied: string;
+    copyLinkError: string;
+    gridView: string;
+    listView: string;
+    displayMode: string;
+    notifications: string;
+    noNotifications: string;
+    markAllRead: string;
+    media: string;
+  };
+  admin: {
+    title: string;
+    posts: string;
+    categories: string;
+    tags: string;
+    comments: string;
+    reviews: string;
+    reports: string;
+    moderation: string;
+    stats: string;
+    newPost: string;
+    editPost: string;
+    saveDraft: string;
+    publish: string;
+    archive: string;
+    delete: string;
+    preview: string;
+    seoScore: string;
+    views: string;
+    status: string;
+    actions: string;
+    lockWarning: string;
+    tabs: {
+      content: string;
+      seo: string;
+      galleries: string;
+      links: string;
+      settings: string;
+    };
+    fields: {
+      title: string;
+      slug: string;
+      excerpt: string;
+      content: string;
+      featuredImage: string;
+      ogImage: string;
+      metaTitle: string;
+      metaKeywords: string;
+      metaDescription: string;
+      canonicalUrl: string;
+      focusKeyword: string;
+      ogTitle: string;
+      ogDescription: string;
+      commentStatus: string;
+      publishedAt: string;
+      galleryTitle: string;
+    };
+    commentStatuses: {
+      OPEN: string;
+      CLOSED: string;
+      DISABLED: string;
+    };
+    actionLabels: {
+      chooseMedia: string;
+      cancel: string;
+      save: string;
+      approve: string;
+      reject: string;
+      trash: string;
+      spam: string;
+      resolve: string;
+      review: string;
+      addGallery: string;
+      addLink: string;
+      checkLinks: string;
+    };
+    editor: {
+      toolbarLabel: string;
+      bold: string;
+      italic: string;
+      heading: string;
+      list: string;
+      link: string;
+      image: string;
+      preview: string;
+      hint: string;
+      linkDialogTitle: string;
+      linkInternal: string;
+      linkExternal: string;
+      linkSearchPlaceholder: string;
+      linkText: string;
+      linkUrl: string;
+      linkInsert: string;
+      linkNoResult: string;
+      imageAlt: string;
+    };
+    feedback: {
+      created: string;
+      updated: string;
+      genericError: string;
+      saved: string;
+      deleted: string;
+      published: string;
+      confirmDeletePost: string;
+    };
+    sidebar: {
+      statusTitle: string;
+      currentState: string;
+      published: string;
+      recentRevisions: string;
+      noRevisions: string;
+      unknownAuthor: string;
+    };
+    empty: {
+      galleries: string;
+      links: string;
+    };
+    localeSwitcher: {
+      title: string;
+      available: string;
+      missing: string;
+    };
+    taxonomy: {
+      createCategory: string;
+      createTag: string;
+      editCategory: string;
+      editTag: string;
+      deleteCategory: string;
+      deleteTag: string;
+      dialogDescriptionCategory: string;
+      dialogDescriptionTag: string;
+      name: string;
+      parentCategory: string;
+      none: string;
+      icon: string;
+      color: string;
+      sortOrder: string;
+      description: string;
+      confirmDelete: string;
+    };
+    moderationQueue: {
+      noPendingComments: string;
+      noPendingReviews: string;
+      noPendingReports: string;
+      ratingLabel: string;
+    };
+    reportReasons: Record<"SPAM" | "ABUSIVE" | "OFF_TOPIC" | "HATE_SPEECH" | "OTHER", string>;
+    notificationTypes: Record<
+      | "NEW_COMMENT"
+      | "COMMENT_APPROVED"
+      | "COMMENT_REJECTED"
+      | "NEW_REVIEW"
+      | "REVIEW_APPROVED"
+      | "POST_PUBLISHED"
+      | "POST_MENTION"
+      | "REPLY_TO_COMMENT",
+      string
+    >;
+  };
+  statuses: Record<
+    "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED" | "PENDING" | "APPROVED" | "REJECTED" | "SPAM" | "TRASH",
+    string
+  >;
+  errors: {
+    slugReserved: string;
+    titleRequired: string;
+    contentRequired: string;
+    commentDisabled: string;
+    reviewDisabled: string;
+  };
 }

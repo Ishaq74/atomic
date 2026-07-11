@@ -91,15 +91,10 @@ const {
             if (link.children && link.children.length > 0) {
               return (
                 <Dropdown>
-                  <DropdownTrigger asChild>
-                    <button
-                      type="button"
-                      class="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 rounded-md px-3 py-2 transition-colors"
-                    >
+                  <DropdownTrigger class="text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-1 rounded-md px-3 py-2 transition-colors">
                       {link.icon && <Icon name={link.icon} class="size-4 shrink-0" />}
                       {link.label}
                       <IconChevronDown class="size-4" />
-                    </button>
                   </DropdownTrigger>
                   <DropdownContent align="start">
                     {link.children.map((child) => (

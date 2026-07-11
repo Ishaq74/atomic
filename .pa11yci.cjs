@@ -8,7 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const BASE = 'http://localhost:4321';
+const BASE = process.env.A11Y_BASE_URL || 'http://localhost:4321';
 const COOKIES_PATH = path.resolve(__dirname, '.a11y-cookies.json');
 
 // Detect Chrome executable — prefer env var, then Playwright's, then Puppeteer default
@@ -61,6 +61,10 @@ for (const lang of locales) {
   for (const [, slugs] of Object.entries(pageRoutes)) {
     publicUrls.push(`${BASE}/${lang}/${slugs[lang]}`);
   }
+  // Blog listing (route segment "blog" is not localized — same in all 4 locales).
+  // Post/category/tag detail pages are excluded here: they depend on seeded demo
+  // content (pnpm db:seed-blog-demo) that CI does not run before this job.
+  publicUrls.push(`${BASE}/${lang}/blog`);
   // Guest auth pages
   for (const pageId of ['sign-in', 'sign-up', 'forgot-password']) {
     publicUrls.push(`${BASE}/${lang}/auth/${authRoutes[pageId][lang]}`);
@@ -80,7 +84,7 @@ for (const lang of locales) {
 
 // Admin pages (admin cookie) — all admin routes
 const adminUrls = [];
-const adminPages = ['stats', 'site', 'navigation', 'theme'];
+const adminPages = ['stats', 'site', 'navigation', 'theme', 'blog'];
 for (const lang of locales) {
   for (const page of adminPages) {
     adminUrls.push({
