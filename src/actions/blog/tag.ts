@@ -97,6 +97,7 @@ export const createBlogTag = defineAction({
 
     await db.insert(blogTagTranslations).values({
       tagId: tag.id,
+      organizationId: tenant.organizationId,
       locale: input.locale,
       name: input.name,
       slug: input.slug,
@@ -162,6 +163,7 @@ export const updateBlogTag = defineAction({
       } else {
         await db.insert(blogTagTranslations).values({
           tagId: id,
+          organizationId: tenant.organizationId,
           locale: data.locale,
           name: data.name!,
           slug: data.slug!,
@@ -182,7 +184,7 @@ export const updateBlogTag = defineAction({
 
 export const deleteBlogTag = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {

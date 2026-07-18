@@ -1,5 +1,4 @@
 import { defineAction, ActionError } from "astro:actions";
-import { z } from "astro/zod";
 import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { user } from "@database/schemas";

@@ -16,10 +16,9 @@
 import type { Locale } from '@i18n/config';
 import { getAuthTranslations } from '@i18n/utils';
 import { getAllMediaFiles, getMediaFolders } from '@database/loaders/media.loader';
-import type { MediaFolderNode, MediaFileWithAlts } from '@database/loaders/media.loader';
+import type { MediaFolderNode } from '@database/loaders/media.loader';
 import { Input } from '@atoms/input';
 import Button from '@atoms/button/Button.astro';
-import { Badge } from '@atoms/badge';
 
 interface Props {
   id: string;
@@ -146,23 +145,8 @@ const folders = flattenFolderIds(folderTree);
 <script>
   class MediaPickerElement extends HTMLElement {
     private selectedFileId: string | null = null;
-    private files: Array<{
-      id: string;
-      folderId: string | null;
-      filename: string;
-      url: string;
-      mimeType: string;
-      size: number;
-      width: number | null;
-      height: number | null;
-      alts: { locale: string; alt: string; title: string | null }[];
-    }> = [];
 
     connectedCallback() {
-      try {
-        this.files = JSON.parse(this.dataset.files ?? '[]');
-      } catch { this.files = []; }
-
       // Close handlers
       this.querySelectorAll('[data-action="close"]').forEach(el =>
         el.addEventListener('click', () => this.close())
@@ -192,6 +176,10 @@ const folders = flattenFolderIds(folderTree);
       document.querySelectorAll<HTMLElement>(`[data-media-picker="${this.id}"]`).forEach(btn => {
         btn.addEventListener('click', () => this.open());
       });
+
+      // Programmatic open/close (used by ContentEditor via CustomEvent)
+      this.addEventListener('open', () => this.open());
+      this.addEventListener('close', () => this.close());
     }
 
     open() {

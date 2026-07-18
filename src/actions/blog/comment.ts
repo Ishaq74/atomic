@@ -1,6 +1,5 @@
-import { assertBlogPermission, resolveBlogTenant, assertPostInTenant, auditBlog, blogOrganizationIdSchema, blogPublicRateLimit, invalidateBlogCache } from "./_helpers";
+import { assertBlogPermission, resolveBlogTenant, auditBlog, blogOrganizationIdSchema, blogPublicRateLimit, invalidateBlogCache } from "./_helpers";
 import { defineAction, ActionError } from "astro:actions";
-import { z } from "astro/zod";
 import { eq, and, isNull } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogComments, blogCommentModerations, blogPosts, blogNotifications } from "@database/schemas";
@@ -26,6 +25,10 @@ export const createBlogComment = defineAction({
 
     const user = context.locals.user;
     const content = sanitizeHtml(input.content);
+    // Guest identity fields are rendered in the UI (moderation queue, author
+    // label) and must be stripped of any markup — sanitizeHtml escapes tags.
+    const guestName = input.guestName ? sanitizeHtml(input.guestName) : undefined;
+    const guestEmail = input.guestEmail ? sanitizeHtml(input.guestEmail) : undefined;
 
     const [comment] = await db
       .insert(blogComments)
@@ -33,8 +36,8 @@ export const createBlogComment = defineAction({
         postId: input.postId,
         authorId: user?.id ?? null,
         parentId: input.parentId,
-        guestName: user ? null : input.guestName,
-        guestEmail: user ? null : input.guestEmail,
+        guestName: user ? null : guestName,
+        guestEmail: user ? null : guestEmail,
         content,
         status: "PENDING",
         ipAddress: extractIp(context.request.headers, context.clientAddress),
@@ -42,25 +45,11 @@ export const createBlogComment = defineAction({
       })
       .returning();
 
-    // Notify post author
-    const [author] = await db
-      .select({ authorId: blogPosts.authorId })
-      .from(blogPosts)
-      .where(eq(blogPosts.id, input.postId))
-      .limit(1);
-
-    if (author?.authorId && author.authorId !== user?.id) {
-      await db.insert(blogNotifications).values({
-        userId: author.authorId,
-        type: input.parentId ? "REPLY_TO_COMMENT" : "NEW_COMMENT",
-        postId: input.postId,
-        commentId: comment.id,
-        fromUserId: user?.id ?? null,
-        metadata: { content: content.slice(0, 200) },
-      });
-    }
-
-    invalidateBlogCache();
+    // A PENDING comment is not yet public, so it must NOT invalidate the public
+    // blog cache (that would thrash the whole listing on every submission), and
+    // it must NOT notify the author yet — the author would receive a link to a
+    // comment that is not visible until approved. Notification is sent on
+    // approval in moderateBlogComment.
     return { id: comment.id, status: comment.status };
   },
 });
@@ -76,7 +65,7 @@ export const moderateBlogComment = defineAction({
     const db = getDrizzle();
 
     const [comment] = await db
-      .select({ id: blogComments.id, postId: blogComments.postId, content: blogComments.content, status: blogComments.status })
+      .select({ id: blogComments.id, postId: blogComments.postId, parentId: blogComments.parentId, content: blogComments.content, status: blogComments.status })
       .from(blogComments)
       .innerJoin(blogPosts, eq(blogComments.postId, blogPosts.id))
       .where(
@@ -121,7 +110,10 @@ export const moderateBlogComment = defineAction({
       previousValues: { status: comment.status, content: comment.content },
     });
 
-    // Notify comment author
+    // Notify comment author. A NEW_COMMENT notification is only sent once
+    // the comment is APPROVED (it is not public before then); a rejection
+    // notifies the author it was declined. The author is never notified
+    // for a still-pending comment.
     const [commentAuthor] = await db
       .select({ authorId: blogComments.authorId })
       .from(blogComments)
@@ -129,13 +121,24 @@ export const moderateBlogComment = defineAction({
       .limit(1);
 
     if (commentAuthor?.authorId && commentAuthor.authorId !== user.id) {
-      await db.insert(blogNotifications).values({
-        userId: commentAuthor.authorId,
-        type: newStatus === "APPROVED" ? "COMMENT_APPROVED" : "COMMENT_REJECTED",
-        postId: comment.postId,
-        commentId: comment.id,
-        fromUserId: user.id,
-      });
+      if (newStatus === "APPROVED") {
+        await db.insert(blogNotifications).values({
+          userId: commentAuthor.authorId,
+          type: comment.parentId ? "REPLY_TO_COMMENT" : "NEW_COMMENT",
+          postId: comment.postId,
+          commentId: comment.id,
+          fromUserId: user.id,
+          metadata: { content: newContent.slice(0, 200) },
+        });
+      } else if (newStatus === "REJECTED") {
+        await db.insert(blogNotifications).values({
+          userId: commentAuthor.authorId,
+          type: "COMMENT_REJECTED",
+          postId: comment.postId,
+          commentId: comment.id,
+          fromUserId: user.id,
+        });
+      }
     }
 
     auditBlog(context, user.id, "BLOG_COMMENT_MODERATE", {

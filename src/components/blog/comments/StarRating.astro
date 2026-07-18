@@ -52,7 +52,7 @@ const sizeClasses = {
   ) : (
     /* Interactive */
     <>
-      {stars.reverse().map((n) => (
+      {[...stars].reverse().map((n) => (
         <>
           <input
             type="radio"

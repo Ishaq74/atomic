@@ -6,9 +6,17 @@ import { logAuditEvent, extractIp } from '@/lib/audit';
 
 export const prerender = false;
 
-export const GET: APIRoute = async ({ url, request, clientAddress, locals }) => {
+export const GET: APIRoute = async ({ url, request, clientAddress, site }) => {
   const token = url.searchParams.get('token');
   if (!token) {
+    return new Response(renderMessage(false, 'Lien de désinscription invalide.'), {
+      status: 400,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
+  // Anti-phishing: only honor the link on the trusted site origin.
+  if (site && url.origin !== site.origin) {
     return new Response(renderMessage(false, 'Lien de désinscription invalide.'), {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -29,10 +37,18 @@ export const GET: APIRoute = async ({ url, request, clientAddress, locals }) => 
     });
   }
 
+  // Reject a token that was already consumed (confirm or unsubscribe).
+  if (subscriber[0].tokenUsedAt !== null) {
+    return new Response(renderMessage(false, 'Ce lien a déjà été utilisé.'), {
+      status: 400,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
   if (subscriber[0].status !== 'UNSUBSCRIBED') {
     await db
       .update(blogSubscribers)
-      .set({ status: 'UNSUBSCRIBED', unsubscribedAt: new Date(), updatedAt: new Date() })
+      .set({ status: 'UNSUBSCRIBED', unsubscribedAt: new Date(), tokenUsedAt: new Date(), updatedAt: new Date() })
       .where(eq(blogSubscribers.token, token));
 
     await logAuditEvent({

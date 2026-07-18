@@ -29,8 +29,15 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(input)).toBe(input);
   });
 
-  it('preserves links with valid href', () => {
+  it('preserves links with valid href and forces rel="noopener noreferrer" on target=_blank', () => {
     const input = '<a href="https://example.com" target="_blank" rel="noopener">Link</a>';
+    // The sanitizer hardens target="_blank" links against reverse-tabnabbing by
+    // always adding rel="noopener noreferrer" (see sanitize.ts afterSanitizeAttributes hook).
+    expect(sanitizeHtml(input)).toBe('<a href="https://example.com" target="_blank" rel="noopener noreferrer">Link</a>');
+  });
+
+  it('does not add rel to links without target=_blank', () => {
+    const input = '<a href="https://example.com">Link</a>';
     expect(sanitizeHtml(input)).toBe(input);
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { getBlogPostSlugs } from '@database/loaders/blog.loader';
+import { getBlogValidLinkTargets } from '@database/loaders/blog.loader';
 import { blogInternalLinkResolver } from '@/lib/blog/blog-internal-link';
 import { detectDeadInternalLinks, markDeadInternalLinks } from '@/lib/content/editor-helpers';
 import type { Locale } from '@i18n/config';
@@ -12,26 +12,26 @@ describe('blog internal link resolver (integration)', () => {
   let slugs: Set<string>;
 
   beforeAll(async () => {
-    slugs = await getBlogPostSlugs(null, 'fr' as Locale);
+    slugs = await getBlogValidLinkTargets(null, 'fr' as Locale);
   });
 
   it('lists published blog post slugs for the global tenant', () => {
     expect(slugs.size).toBeGreaterThan(0);
-    // The demo seed includes a French post "annecy-week-end-48h".
-    expect(slugs.has('annecy-week-end-48h')).toBe(true);
+    // The demo seed includes a French post "week-end-annecy".
+    expect(slugs.has('week-end-annecy')).toBe(true);
   });
 
-  it('resolver.listValidTargets matches getBlogPostSlugs', async () => {
+  it('resolver.listValidTargets matches getBlogValidLinkTargets', async () => {
     const targets = await blogInternalLinkResolver.listValidTargets({
       locale: 'fr' as Locale,
       organizationId: null,
     });
     expect(targets instanceof Set).toBe(true);
-    expect(targets.has('annecy-week-end-48h')).toBe(true);
+    expect(targets.has('week-end-annecy')).toBe(true);
   });
 
   it('resolver.resolve returns a published URL', async () => {
-    const res = await blogInternalLinkResolver.resolve('annecy-week-end-48h', {
+    const res = await blogInternalLinkResolver.resolve('week-end-annecy', {
       locale: 'fr' as Locale,
       organizationId: null,
     });
@@ -71,7 +71,7 @@ describe('blog internal link resolver (integration)', () => {
   });
 
   it('valid internal links are not flagged', () => {
-    const html = '<a href="/fr/blog/annecy-week-end-48h" data-internal-link="annecy-week-end-48h">OK</a>';
+    const html = '<a href="/fr/blog/week-end-annecy" data-internal-link="week-end-annecy">OK</a>';
     const reports = detectDeadInternalLinks(html, slugs);
     expect(reports).toHaveLength(0);
   });

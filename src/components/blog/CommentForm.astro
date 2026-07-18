@@ -17,7 +17,7 @@ interface Props {
   parentId?: string;
 }
 
-const { locale, blogT, postId, user, parentId } = Astro.props;
+const { blogT, postId, user, parentId } = Astro.props;
 ---
 
 <Card data-post-id={postId}>
@@ -106,7 +106,10 @@ const { locale, blogT, postId, user, parentId } = Astro.props;
       } else {
         toast.success(submittedText);
         form.reset();
-        window.location.reload();
+        // The comment is queued for moderation (PENDING) and is not shown
+        // publicly until approved, so a full page reload would be wasteful
+        // (lost scroll position, re-downloaded JS/CSS, re-triggered view
+        // counter). The success toast is the only required feedback.
       }
     });
   }

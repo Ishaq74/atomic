@@ -24,12 +24,7 @@ import type {
 import type { Locale } from "@i18n/config";
 import type {
   BlogPostStatus,
-  BlogCommentStatus,
-  BlogReviewStatus,
-  BlogReportReason,
-  BlogReportStatus,
   BlogReactionType,
-  BlogLinkType,
 } from "./constants";
 
 export type BlogPost = typeof blogPosts.$inferSelect;

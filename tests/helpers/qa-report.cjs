@@ -44,7 +44,6 @@ const TEXT_PATH = path.join(REPORTS_DIR, 'qa-report.txt');
 const GLOBAL_JSON_PATH = path.join(REPORTS_DIR, 'qa-report.json');
 
 const hr = '═'.repeat(82);
-const hr2 = '─'.repeat(82);
 const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
 
 const lines = [];

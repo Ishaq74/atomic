@@ -49,6 +49,14 @@ export function safeJsonLd(json: string): string {
 
 const MAX_SANITIZE_LENGTH = 500_000; // 500 KB
 
+// Force rel="noopener noreferrer" on any anchor that opens a new tab, to
+// prevent reverse-tabnabbing (window.opener) from user-authored content.
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
+    node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
 export function sanitizeHtml(dirty: unknown): string {
   if (typeof dirty !== "string") return "";
   if (dirty.length > MAX_SANITIZE_LENGTH) {

@@ -22,7 +22,7 @@
 const { execSync, spawn } = require('node:child_process');
 const fs = require('node:fs');
 const http = require('node:http');
-const net = require('node:net');
+
 const path = require('node:path');
 
 const PORT = 4321;
@@ -207,18 +207,6 @@ function copyLighthouseReports() {
   } catch (e) {
     logError(`Lighthouse report generator failed: ${e.message}`);
   }
-}
-
-/** Check if something is listening on PORT */
-function isPortOpen() {
-  return new Promise((resolve) => {
-    const sock = new net.Socket();
-    sock.setTimeout(2000);
-    sock.once('connect', () => { sock.destroy(); resolve(true); });
-    sock.once('timeout', () => { sock.destroy(); resolve(false); });
-    sock.once('error', () => { sock.destroy(); resolve(false); });
-    sock.connect(PORT, HOST);
-  });
 }
 
 /** Wait until server responds with HTTP 2xx/3xx */

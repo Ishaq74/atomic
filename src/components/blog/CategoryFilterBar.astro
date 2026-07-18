@@ -1,9 +1,8 @@
 ---
 import { Icon } from "astro-icon/components";
-import { Badge } from "@atoms/badge";
 import type { Locale } from "@i18n/config";
 import type { BlogTranslations } from "@i18n/config";
-import { buildBlogCategoryUrl } from "@lib/blog/utils";
+import { buildBlogCategoryUrl, extractOrgSlugFromBaseUrl } from "@lib/blog/utils";
 
 interface CategoryItem {
   id: string;
@@ -26,7 +25,6 @@ interface Props {
 
 const {
   locale,
-  blogT,
   categories,
   baseUrl,
   activeSlug,
@@ -36,6 +34,7 @@ const {
 
 const visibleCategories = showAll ? categories : categories.slice(0, maxVisible);
 const hasMore = !showAll && categories.length > maxVisible;
+const organizationSlug = extractOrgSlugFromBaseUrl(baseUrl);
 ---
 
 <nav
@@ -59,7 +58,7 @@ const hasMore = !showAll && categories.length > maxVisible;
     const isActive = cat.slug === activeSlug;
     return (
       <a
-        href={buildBlogCategoryUrl(locale, null, cat.slug)}
+        href={buildBlogCategoryUrl(locale, organizationSlug, cat.slug)}
         aria-current={isActive ? "page" : undefined}
         class:list={[
           "inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 px-3.5 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",

@@ -5,7 +5,7 @@ import type { BlogCommentWithAuthor, BlogReviewWithAuthor } from "@lib/blog/type
 import type { BlogPostListItem } from "@lib/blog/types";
 import type { BlogReactionType } from "@lib/blog/constants";
 import { extractHeadings } from "@/lib/blog/utils";
-import { getBlogPostSlugs } from "@database/loaders/blog.loader";
+import { getBlogValidLinkTargets } from "@database/loaders/blog.loader";
 import ArticleProgressBar from "@/components/blog/ArticleProgressBar.astro";
 import AuthorCard from "@/components/blog/AuthorCard.astro";
 import PostContent from "@/components/blog/PostContent.astro";
@@ -36,23 +36,6 @@ interface PostContentData {
     sortOrder: number;
     media: { id: string; altText: string; caption: string | null; sortOrder: number; file: { id: string; url: string } }[];
   }[];
-}
-
-interface SidebarCategory {
-  id: string;
-  slug: string;
-  name: string;
-  postCount: number;
-  color?: string | null;
-  icon?: string | null;
-}
-
-interface SidebarTag {
-  id: string;
-  slug: string;
-  name: string;
-  postCount: number;
-  color?: string | null;
 }
 
 interface Props {
@@ -88,7 +71,7 @@ const {
 if (!data.translation) return null;
 
 const { html: articleHtml, headings } = extractHeadings(data.translation.content);
-const validTargets = Array.from(await getBlogPostSlugs(organizationId ?? null, locale));
+const validTargets = Array.from(await getBlogValidLinkTargets(organizationId ?? null, locale));
 const tocHeadings = headings.filter((h) => h.depth <= 3);
 const hasToc = tocHeadings.length >= 2;
 ---

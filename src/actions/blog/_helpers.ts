@@ -53,6 +53,13 @@ export async function assertBlogPermission(
   }
 
   // Global admin bypass
+  // NOTE (governance): a global admin is treated as a superuser and may act on
+  // ANY tenant, including creating/editing posts in an organization they are
+  // not a member of. This is a deliberate privilege escalation path for
+  // platform operators — it is NOT a bug. If stricter isolation is required,
+  // replace this early-return with an explicit assertOrgMembership() check
+  // even for admins (see createBlogPost / updateBlogPost which pass an
+  // organizationId supplied by the client).
   if (user.role === "admin") return user;
 
   // Org context: must be owner or admin of the org

@@ -5,7 +5,6 @@ import { getDrizzle } from "@database/drizzle";
 import {
   blogPostGalleries,
   blogPostGalleryMedia,
-  blogPosts,
   mediaFiles,
 } from "@database/schemas";
 import {
@@ -19,7 +18,7 @@ import {
 
 export const createBlogGallery = defineAction({
   input: z.object({
-    postId: z.string().uuid(),
+    postId: z.uuid(),
     title: z.string().trim().max(200).optional(),
     description: z.string().trim().max(500).optional(),
     sortOrder: z.number().int().min(0).default(0),
@@ -55,7 +54,7 @@ export const createBlogGallery = defineAction({
 
 export const updateBlogGallery = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     title: z.string().trim().max(200).optional(),
     description: z.string().trim().max(500).optional(),
     sortOrder: z.number().int().min(0).optional(),
@@ -97,7 +96,7 @@ export const updateBlogGallery = defineAction({
 
 export const deleteBlogGallery = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {
@@ -129,8 +128,8 @@ export const deleteBlogGallery = defineAction({
 
 export const addGalleryMedia = defineAction({
   input: z.object({
-    galleryId: z.string().uuid(),
-    mediaId: z.string().uuid(),
+    galleryId: z.uuid(),
+    mediaId: z.uuid(),
     altText: z.string().trim().min(1).max(500),
     caption: z.string().trim().max(500).optional(),
     sortOrder: z.number().int().min(0).default(0),
@@ -181,8 +180,8 @@ export const addGalleryMedia = defineAction({
 
 export const removeGalleryMedia = defineAction({
   input: z.object({
-    galleryId: z.string().uuid(),
-    mediaId: z.string().uuid(),
+    galleryId: z.uuid(),
+    mediaId: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {

@@ -33,6 +33,7 @@ interface Props {
     reviewCount?: number | null;
   };
   baseUrl: string;
+  organizationSlug?: string | null;
   priority?: "eager" | "lazy";
   showCategory?: boolean;
   showAuthor?: boolean;
@@ -55,6 +56,7 @@ const {
   showViews = true,
   showComments = true,
   showRating = true,
+  organizationSlug = null,
 } = Astro.props;
 
 const translation = post.translation;
@@ -62,7 +64,7 @@ if (!translation) return null;
 
 const excerpt = translation.excerpt || generateExcerpt(translation.content, 160);
 const primaryCategorySlug = post.categories[0]?.slug ?? null;
-const postUrl = buildBlogPostUrl(locale, null, translation.slug, primaryCategorySlug);
+const postUrl = buildBlogPostUrl(locale, organizationSlug, translation.slug, primaryCategorySlug);
 const publishedAt = post.post.publishedAt;
 const primaryCategory = post.categories[0];
 const readingTime = formatReadingTime(translation.content);
@@ -125,7 +127,7 @@ const loadingAttr = priority === "eager" ? ("eager" as const) : ("lazy" as const
           variant="ghost"
           size="sm"
           class="relative z-10 rounded-md"
-          href={buildBlogCategoryUrl(locale, null, primaryCategory.slug)}
+          href={buildBlogCategoryUrl(locale, organizationSlug, primaryCategory.slug)}
         >
           {primaryCategory.name ?? primaryCategory.slug}
         </Badge>
@@ -148,7 +150,8 @@ const loadingAttr = priority === "eager" ? ("eager" as const) : ("lazy" as const
     {/* Stars */}
     {showRating && post.rating != null && (
       <div class="flex items-center gap-1.5">
-        <div class="flex items-center gap-0.5" aria-label={`${post.rating.toFixed(1)} / 5`}>
+        {/* eslint-disable-next-line astro/jsx-a11y/prefer-tag-over-role -- visual star rating built from icon components; role="img" + aria-label exposes the numeric value to AT without a redundant <img> per star */}
+        <div class="flex items-center gap-0.5" role="img" aria-label={`${post.rating.toFixed(1)} / 5`}>
           {Array.from({ length: 5 }, (_, i) => {
             const pos = i + 1;
             const full = ratingValue >= pos;

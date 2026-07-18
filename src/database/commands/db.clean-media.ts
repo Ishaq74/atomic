@@ -12,7 +12,7 @@ async function cleanMedia() {
   await confirmProd('clean-media');
 
   const db = getDrizzle();
-  const deleted = await db.delete(mediaFiles);
+  await db.delete(mediaFiles);
   await db.delete(mediaFolders);
   console.log(c.green('  ✔ Tables media_files + media_folders vidées.\n'));
   await shutdownDb();

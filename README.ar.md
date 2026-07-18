@@ -154,6 +154,34 @@ atoms/
   toggle/
   tooltip/
   video/
+blog/
+  AdminModerationQueue.astro
+  AdminPostForm.astro
+  AdminPostList.astro
+  AdminTaxonomyManager.astro
+  ArticleProgressBar.astro
+  AuthorCard.astro
+  BlogAdminPage.astro
+  cards/
+  CategoryFilterBar.astro
+  CommentForm.astro
+  comments/
+  CommentSection.astro
+  CommentThreadItem.astro
+  grids/
+  NotificationBell.astro
+  PostCard.astro
+  PostContent.astro
+  PostGridToggle.astro
+  ReactionBar.astro
+  ReviewForm.astro
+  ReviewSection.astro
+  ShareBar.astro
+  sidebars/
+  TagCloud.astro
+content/
+  ContentEditor.astro
+  RichContent.astro
 molecules/
   AdminPagination/
   DataView/
@@ -171,12 +199,15 @@ pages/
   AboutPage/
   admin/
   auth/
+  blog/
   cms/
   CmsPage.astro
   ContactPage/
   HomePage/
   LegalPage.astro
   org/
+starwind/
+  blog/
 wow/
   AsyncButton.astro
   FallingParticles.astro
@@ -200,7 +231,7 @@ images/
 - **atoms/** — 48 components
 - **molecules/** — 2 components
 - **organisms/** — 9 components
-- **pages/** — 9 components
+- **pages/** — 10 components
 - **wow/** — 9 components
 
 ### الأنماط والرموز
@@ -247,6 +278,12 @@ commands/
   db.sync.ts
   _utils.ts
 data/
+  00-media.data.ts
+  00b-media-files.data.ts
+  01-users.data.ts
+  01b-user-accounts.data.ts
+  02-organizations.data.ts
+  02b-organization-members.data.ts
   03-site-settings.data.ts
   04-social-links.data.ts
   05-contact-info.data.ts
@@ -257,6 +294,29 @@ data/
   09-legal-pages.data.ts
   09b-legal-sections.data.ts
   10-consent-settings.data.ts
+  11-blog-categories.data.ts
+  11b-blog-category-translations.data.ts
+  12-blog-tags.data.ts
+  12b-blog-tag-translations.data.ts
+  13-blog-posts.data.ts
+  13b-blog-post-translations.data.ts
+  14-blog-post-categories.data.ts
+  14b-blog-post-tags.data.ts
+  15-blog-post-seo.data.ts
+  15b-blog-post-revisions.data.ts
+  16-blog-comments.data.ts
+  16b-blog-comment-moderations.data.ts
+  17-blog-reviews.data.ts
+  17b-blog-review-helpful.data.ts
+  18-blog-reactions.data.ts
+  18b-blog-favorites.data.ts
+  19-blog-reports.data.ts
+  20-blog-post-links.data.ts
+  20b-blog-post-locks.data.ts
+  21-blog-notifications.data.ts
+  22-blog-subscribers.data.ts
+  23-blog-post-galleries.data.ts
+  23b-blog-post-gallery-media.data.ts
   manifest.ts
 drizzle.ts
 env.ts
@@ -266,6 +326,7 @@ infra/
   02-indexes.sql
   03-constraints.sql
 loaders/
+  blog.loader.ts
   consent.loader.ts
   media.loader.ts
   navigation.loader.ts
@@ -273,12 +334,21 @@ loaders/
   site.loader.ts
 migrations/
   0000_plain_old_lace.sql
+  0001_numerous_ken_ellis.sql
+  0002_sticky_blazing_skull.sql
+  0003_brief_senator_kelly.sql
+  0004_flashy_ezekiel_stane.sql
   meta/
     0000_snapshot.json
+    0001_snapshot.json
+    0002_snapshot.json
+    0003_snapshot.json
+    0004_snapshot.json
     _journal.json
 schemas/
   audit-log.schema.ts
   auth.schema.ts
+  blog.schema.ts
   consent.schema.ts
   media.schema.ts
   navigation.schema.ts
@@ -291,7 +361,7 @@ schemas.ts
 ### المخططات والجداول
 
 **auth.schema.ts**
-- `user`: `id`, `name`, `email`, `emailVerified`, `image`, `createdAt`, `updatedAt`, `username`, `displayUsername`, `role`, `banned`, `banReason`, `banExpires` _(sessions: many, accounts: many, members: many, invitations: many)_
+- `user`: `id`, `name`, `email`, `emailVerified`, `image`, `createdAt`, `updatedAt`, `username`, `displayUsername`, `bio`, `website`, `twitter`, `linkedin`, `role`, `banned`, `banReason`, `banExpires` _(sessions: many, accounts: many, members: many, invitations: many)_
 - `session`: `id`, `expiresAt`, `token`, `createdAt`, `updatedAt`, `ipAddress`, `userAgent`, `userId`, `impersonatedBy`, `activeOrganizationId` _(user: one)_
 - `account`: `id`, `accountId`, `providerId`, `userId`, `accessToken`, `refreshToken`, `idToken`, `accessTokenExpiresAt`, `refreshTokenExpiresAt`, `scope`, `password`, `createdAt`, `updatedAt` _(user: one)_
 - `verification`: `id`, `identifier`, `value`, `expiresAt`, `createdAt`, `updatedAt`
@@ -322,16 +392,46 @@ schemas.ts
 - `page_versions`: `id`, `pageId`, `versionNumber`, `snapshot`, `createdBy`, `note`, `createdAt` _(page: one, author: one)_
 
 **media.schema.ts**
-- `media_folders`: `id`, `name`, `parentId`, `sortOrder`, `createdAt`, `updatedAt` _(parent: one, children: many, files: many)_
-- `media_files`: `id`, `folderId`, `filename`, `url`, `mimeType`, `size`, `width`, `height`, `createdAt`, `updatedAt` _(folder: one, alts: many)_
+- `media_folders`: `id`, `organizationId`, `name`, `parentId`, `sortOrder`, `createdAt`, `updatedAt` _(organization: one, parent: one, children: many, files: many)_
+- `media_files`: `id`, `organizationId`, `folderId`, `filename`, `url`, `mimeType`, `size`, `width`, `height`, `createdAt`, `updatedAt` _(organization: one, folder: one, alts: many)_
 - `media_file_alts`: `id`, `fileId`, `locale`, `alt`, `title` _(file: one)_
 
 **consent.schema.ts**
 - `consent_settings`: `id`, `locale`, `title`, `description`, `acceptAll`, `rejectAll`, `customize`, `savePreferences`, `necessaryLabel`, `necessaryDescription`, `analyticsLabel`, `analyticsDescription`, `marketingLabel`, `marketingDescription`, `privacyPolicyLabel`, `privacyPolicyUrl`, `isActive`, `createdAt`, `updatedAt`
 
+**blog.schema.ts**
+- `blog_posts`: `id`, `organizationId`, `authorId`, `slug`, `status`, `featuredImageId`, `viewCount`, `isFeatured`, `isSticky`, `commentStatus`, `allowReviews`, `seoScore`, `publishedAt`, `createdAt`, `updatedAt`, `updatedBy`, `lockedBy`, `lockedAt` _(organization: one, author: one, updatedByUser: one, lockedByUser: one, featuredImage: one, translations: many, categories: many, tags: many, comments: many, revisions: many, galleries: many, reviews: many, favorites: many, reactions: many, seo: many, viewStats: many, links: many, linkedTo: many, locks: one)_
+- `blog_post_translations`: `id`, `postId`, `organizationId`, `locale`, `title`, `slug`, `content`, `excerpt`, `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalUrl`, `ogTitle`, `ogDescription`, `ogImageId`, `createdAt`, `updatedAt` _(post: one, ogImage: one)_
+- `blog_categories`: `id`, `organizationId`, `parentId`, `slug`, `icon`, `color`, `sortOrder`, `createdAt`, `updatedAt` _(organization: one, parent: one, children: many, translations: many, posts: many)_
+- `blog_category_translations`: `id`, `categoryId`, `organizationId`, `locale`, `name`, `slug`, `description`, `metaTitle`, `metaDescription`, `createdAt`, `updatedAt` _(category: one)_
+- `blog_tags`: `id`, `organizationId`, `slug`, `color`, `createdAt`, `updatedAt` _(organization: one, translations: many, posts: many)_
+- `blog_tag_translations`: `id`, `tagId`, `organizationId`, `locale`, `name`, `slug`, `createdAt`, `updatedAt` _(tag: one)_
+- `blog_post_categories`: `postId`, `categoryId` _(post: one, category: one)_
+- `blog_post_tags`: `postId`, `tagId` _(post: one, tag: one)_
+- `blog_comments`: `id`, `postId`, `authorId`, `parentId`, `guestName`, `guestEmail`, `content`, `status`, `karma`, `ipAddress`, `userAgent`, `isEdited`, `createdAt`, `updatedAt` _(post: one, author: one, parent: one, replies: many, moderations: many)_
+- `blog_comment_moderations`: `id`, `commentId`, `moderatorId`, `action`, `reason`, `previousValues`, `createdAt` _(comment: one, moderator: one)_
+- `blog_post_revisions`: `id`, `postId`, `authorId`, `locale`, `title`, `slug`, `content`, `excerpt`, `status`, `revisionNote`, `createdAt` _(post: one, author: one)_
+- `blog_post_galleries`: `id`, `postId`, `title`, `description`, `sortOrder`, `createdAt`, `updatedAt` _(post: one, media: many)_
+- `blog_post_gallery_media`: `galleryId`, `mediaId`, `altText`, `caption`, `sortOrder` _(gallery: one, file: one)_
+- `blog_post_reviews`: `id`, `postId`, `authorId`, `rating`, `title`, `content`, `status`, `isRecommended`, `helpfulCount`, `ipAddress`, `createdAt`, `updatedAt` _(post: one, author: one, helpfulVotes: many)_
+- `blog_post_review_helpful`: `reviewId`, `userId`, `isHelpful`, `createdAt` _(review: one, user: one)_
+- `blog_reports`: `id`, `postId`, `commentId`, `reviewId`, `reporterId`, `reason`, `description`, `status`, `resolvedBy`, `resolvedAt`, `createdAt` _(post: one, comment: one, review: one, reporter: one, resolver: one)_
+- `blog_post_favorites`: `postId`, `userId`, `createdAt` _(post: one, user: one)_
+- `blog_post_reactions`: `postId`, `userId`, `reactionType`, `createdAt`, `updatedAt` _(post: one, user: one)_
+- `blog_post_seo`: `id`, `postId`, `locale`, `focusKeyword`, `focusKeywordScore`, `readabilityScore`, `metaRobots`, `metaOgType`, `metaOgLocale`, `metaTwitterCard`, `schemaMarkup`, `createdAt`, `updatedAt` _(post: one)_
+- `blog_post_view_stats`: `id`, `postId`, `viewedAt`, `date`, `hour`, `referrer`, `country`, `deviceType`, `sessionId` _(post: one)_
+- `blog_notifications`: `id`, `userId`, `type`, `postId`, `commentId`, `reviewId`, `fromUserId`, `isRead`, `metadata`, `createdAt` _(user: one, post: one, comment: one, review: one, fromUser: one)_
+- `blog_post_locks`: `id`, `postId`, `userId`, `sessionId`, `lockedAt`, `expiresAt` _(post: one, user: one)_
+- `blog_post_links`: `id`, `sourcePostId`, `targetPostId`, `linkType`, `sortOrder`, `createdAt` _(sourcePost: one, targetPost: one)_
+- `blog_subscribers`: `id`, `organizationId`, `email`, `locale`, `token`, `tokenUsedAt`, `status`, `confirmedAt`, `unsubscribedAt`, `createdAt`, `updatedAt`
+
 ### الترحيلات
 
 - `0000_plain_old_lace.sql`
+- `0001_numerous_ken_ellis.sql`
+- `0002_sticky_blazing_skull.sql`
+- `0003_brief_senator_kelly.sql`
+- `0004_flashy_ezekiel_stane.sql`
 
 ### الأوامر
 
@@ -378,6 +478,7 @@ src/lib/ (auth)
   sanitize.ts
 src/actions/
   admin/
+  blog/
   index.ts
   org/
 src/middleware.ts
@@ -437,6 +538,8 @@ api/
   audit-export.ts
   auth/
     [...all].ts
+  blog/
+    newsletter/
   contact.ts
   content-export.ts
   content-import.ts
@@ -451,11 +554,13 @@ api/
 index.astro
 robots.txt.ts
 rss.xml.ts
+sitemap-blog-org.xml.ts
 sitemap-cms.xml.ts
 [lang]/
   a-propos.astro
   admin/
     audit.astro
+    blog/
     index.astro
     media.astro
     navigation.astro
@@ -468,6 +573,9 @@ sitemap-cms.xml.ts
     users.astro
   auth/
     [slug].astro
+  blog/
+    index.astro
+    [...slug].astro
   contact.astro
   index.astro
   organizations/
@@ -565,6 +673,7 @@ providers/
   resend.ts
 send.ts
 templates/
+  blog-newsletter.ts
   contact-form.ts
   delete-account.ts
   i18n.ts
@@ -614,6 +723,11 @@ ar/
   common.ts
   contact.ts
   home.ts
+blog/
+  ar.ts
+  en.ts
+  es.ts
+  fr.ts
 config.ts
 en/
   about.ts
@@ -709,6 +823,7 @@ workflows/
 | `pnpm test:e2e` |
 | `pnpm test:e2e:ui` |
 | `pnpm test:e2e:report` |
+| `pnpm qa:report` |
 | `pnpm a11y:setup` |
 | `pnpm a11y:teardown` |
 | `pnpm a11y:pa11y` |

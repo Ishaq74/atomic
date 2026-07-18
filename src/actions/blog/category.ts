@@ -105,6 +105,7 @@ export const createBlogCategory = defineAction({
 
     await db.insert(blogCategoryTranslations).values({
       categoryId: category.id,
+      organizationId: tenant.organizationId,
       locale: input.locale,
       name: input.name,
       slug: input.slug,
@@ -182,6 +183,7 @@ export const updateBlogCategory = defineAction({
       } else {
         await db.insert(blogCategoryTranslations).values({
           categoryId: id,
+          organizationId: tenant.organizationId,
           locale: data.locale,
           name: data.name!,
           slug: data.slug!,
@@ -205,9 +207,9 @@ export const updateBlogCategory = defineAction({
 
 export const deleteBlogCategory = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
-    reassignToId: z.string().uuid().optional(),
+    reassignToId: z.uuid().optional(),
   }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);

@@ -6,7 +6,7 @@ import { blogNotifications } from "@database/schemas";
 
 /** Marks a single notification as read. Scoped to the requesting user — cannot mark another user's notification. */
 export const markBlogNotificationRead = defineAction({
-  input: z.object({ id: z.string().uuid() }),
+  input: z.object({ id: z.uuid() }),
   handler: async (input, context) => {
     const user = context.locals.user;
     if (!user) throw new ActionError({ code: "UNAUTHORIZED", message: "Connexion requise." });

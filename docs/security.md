@@ -250,6 +250,28 @@ Voir [audit.md](audit.md) pour le détail complet.
 
 ---
 
+## 8b. Escalade de privilège — admin global vs. organisations
+
+**Comportement par conception** (voir `src/actions/blog/_helpers.ts` → `assertBlogPermission`) :
+
+> Un utilisateur avec `role === "admin"` (admin **global** de la plateforme) est traité comme **superuser** et peut agir sur **n'importe quel tenant**, y compris créer/éditer/supprimer/modérer le contenu d'une organisation dont il **n'est pas membre**. `createBlogPost` / `updateBlogPost` acceptent un `organizationId` fourni par le client et l'admin global peut cibler n'importe quelle org.
+
+**Menace associée** : si la session d'un admin global est compromise (vol de cookie, XSS sur l'admin), l'attaquant pilote le contenu de **toutes** les organisations. Il n'y a pas de séparation des devoirs entre « admin plateforme » et « admin contenu d'org ».
+
+**Mitigations en place** :
+- Le bypass est **précédé** de la vérification `user.banned` (compte suspendu → `FORBIDDEN`).
+- Toute action passe par `assertBlogPermission` (RBAC) + `blogRateLimit` + `auditBlog` (traçabilité).
+- Les écritures sont auditées (`BLOG_POST_*`, `BLOG_COMMENT_*`, etc.) → détection a posteriori.
+
+**Recommandations (si le modèle de menace évolue)** :
+- Remplacer le `if (user.role === "admin") return user;` par un `assertOrgMembership()` **même pour les admins** si une isolation stricte org↔org est requise.
+- Ou introduire un rôle dédié `platform-operator` distinct de `admin` (owner/admin d'org), avec permissions explicites et non héritées.
+- Ajouter une alerte/notification sur les mutations de contenu d'org par un admin global (surveillance).
+
+> Ce comportement est **délibéré** (opérateurs de plateforme devant intervenir sur n'importe quelle org) et **documenté ici** pour ne pas être confondu avec un bug. Toute modification doit être validée par le threat model.
+
+---
+
 ## 9. Validation des entrées
 
 ### Zod schemas (Astro Actions)

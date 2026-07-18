@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, desc, and, asc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { pages, pageSections, pageVersions } from "@database/schemas";
 import { invalidateCache } from "@database/cache";

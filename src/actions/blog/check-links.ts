@@ -17,7 +17,7 @@ import { blogInternalLinkResolver } from "@/lib/blog/blog-internal-link";
  */
 export const checkBlogPostLinks = defineAction({
   input: z.object({
-    postId: z.string().uuid(),
+    postId: z.uuid(),
     locale: z.string().min(2).max(5),
     organizationId: blogOrganizationIdSchema,
   }),

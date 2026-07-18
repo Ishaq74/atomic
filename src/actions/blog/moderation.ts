@@ -33,7 +33,7 @@ export const createBlogReport = defineAction({
 
 export const updateBlogReport = defineAction({
   input: z.object({
-    reportId: z.string().uuid(),
+    reportId: z.uuid(),
     status: blogReportStatusSchema,
     organizationId: blogOrganizationIdSchema,
   }),

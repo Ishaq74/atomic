@@ -41,6 +41,8 @@ const { blogT, postId, reactionCounts, userReaction } = Astro.props;
         size="sm"
         class="reaction-btn gap-1.5"
         data-reaction-type={type}
+        aria-label={`${blogT.labels.reactions} : ${type} (${count})`}
+        aria-pressed={isActive ? "true" : "false"}
       >
         <Icon name={icon} class="size-4" />
         <span>{count}</span>
@@ -78,7 +80,18 @@ const { blogT, postId, reactionCounts, userReaction } = Astro.props;
           toast.error(error.message ?? errorText);
         } else {
           toast.success(updatedText);
-          window.location.reload();
+          // Update the button state locally instead of reloading the whole
+          // page (preserves scroll, avoids re-downloading JS/CSS and a second
+          // view-count hit). Toggle active styling and adjust the count.
+          const wasActive = btn.getAttribute('aria-pressed') === 'true';
+          btn.setAttribute('aria-pressed', wasActive ? 'false' : 'true');
+          btn.classList.toggle('variant-primary', !wasActive);
+          btn.classList.toggle('variant-outline', wasActive);
+          const countEl = btn.querySelector('span');
+          if (countEl) {
+            const current = parseInt(countEl.textContent ?? '0', 10) || 0;
+            countEl.textContent = String(wasActive ? Math.max(0, current - 1) : current + 1);
+          }
         }
       });
     });

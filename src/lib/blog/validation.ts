@@ -56,14 +56,14 @@ export const blogPostFormSchema = z.object({
   metaTitle: z.string().trim().max(70).optional(),
   metaDescription: z.string().trim().max(160).optional(),
   metaKeywords: z.string().trim().max(300).optional(),
-  canonicalUrl: z.string().url().max(500).optional(),
+  canonicalUrl: z.url().max(500).optional(),
   ogTitle: z.string().trim().max(70).optional(),
   ogDescription: z.string().trim().max(200).optional(),
   status: blogPostStatusSchema,
-  categoryIds: z.array(z.string().uuid()).max(10).optional(),
-  tagIds: z.array(z.string().uuid()).max(20).optional(),
-  featuredImageId: z.string().uuid().optional(),
-  ogImageId: z.string().uuid().optional(),
+  categoryIds: z.array(z.uuid()).max(10).optional(),
+  tagIds: z.array(z.uuid()).max(20).optional(),
+  featuredImageId: z.uuid().optional(),
+  ogImageId: z.uuid().optional(),
   isFeatured: z.boolean().optional(),
   isSticky: z.boolean().optional(),
   commentStatus: z.enum(["OPEN", "CLOSED", "DISABLED"]).optional(),
@@ -73,7 +73,7 @@ export const blogPostFormSchema = z.object({
 });
 
 export const blogPostUpdateSchema = blogPostFormSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
   locale: localeEnum.optional(),
 });
 
@@ -82,7 +82,7 @@ export const blogCategoryFormSchema = z.object({
   name: z.string().trim().min(1).max(100),
   slug: blogSlugSchema,
   description: z.string().trim().max(500).optional(),
-  parentId: z.string().uuid().optional(),
+  parentId: z.uuid().optional(),
   icon: z.string().trim().max(50).optional(),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   sortOrder: z.number().int().min(0).optional(),
@@ -91,7 +91,7 @@ export const blogCategoryFormSchema = z.object({
 });
 
 export const blogCategoryUpdateSchema = blogCategoryFormSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export const blogTagFormSchema = z.object({
@@ -102,26 +102,26 @@ export const blogTagFormSchema = z.object({
 });
 
 export const blogTagUpdateSchema = blogTagFormSchema.partial().extend({
-  id: z.string().uuid(),
+  id: z.uuid(),
 });
 
 export const blogCommentFormSchema = z.object({
-  postId: z.string().uuid(),
-  parentId: z.string().uuid().optional(),
+  postId: z.uuid(),
+  parentId: z.uuid().optional(),
   content: z.string().trim().min(1, "Le commentaire est requis.").max(5000),
   guestName: z.string().trim().min(1).max(100).optional(),
-  guestEmail: z.string().email().max(200).optional(),
+  guestEmail: z.email().max(200).optional(),
 });
 
 export const blogCommentModerationSchema = z.object({
-  commentId: z.string().uuid(),
+  commentId: z.uuid(),
   moderationAction: z.enum(["APPROVE", "REJECT", "DELETE", "RESTORE", "EDIT"]),
   reason: z.string().trim().max(500).optional(),
   content: z.string().trim().max(5000).optional(),
 });
 
 export const blogReviewFormSchema = z.object({
-  postId: z.string().uuid(),
+  postId: z.uuid(),
   rating: z.number().int().min(1).max(5),
   title: z.string().trim().max(100).optional(),
   content: z.string().trim().min(1).max(3000),
@@ -129,15 +129,15 @@ export const blogReviewFormSchema = z.object({
 });
 
 export const blogReviewModerationSchema = z.object({
-  reviewId: z.string().uuid(),
+  reviewId: z.uuid(),
   status: blogReviewStatusSchema,
   reason: z.string().trim().max(500).optional(),
 });
 
 export const blogReportFormSchema = z.object({
-  postId: z.string().uuid().optional(),
-  commentId: z.string().uuid().optional(),
-  reviewId: z.string().uuid().optional(),
+  postId: z.uuid().optional(),
+  commentId: z.uuid().optional(),
+  reviewId: z.uuid().optional(),
   reason: blogReportReasonSchema,
   description: z.string().trim().max(1000).optional(),
 }).refine((data) => {
@@ -146,7 +146,7 @@ export const blogReportFormSchema = z.object({
 }, "Un seul élément peut être signalé à la fois.");
 
 export const blogReactionFormSchema = z.object({
-  postId: z.string().uuid(),
+  postId: z.uuid(),
   reactionType: blogReactionTypeSchema,
 });
 
@@ -155,7 +155,7 @@ export const blogPostFiltersSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(9),
   categorySlug: z.string().trim().max(200).optional(),
   tagSlug: z.string().trim().max(200).optional(),
-  authorId: z.string().uuid().optional(),
+  authorId: z.uuid().optional(),
   status: blogPostStatusSchema.optional(),
   searchQuery: z.string().trim().max(200).optional(),
   sortBy: z.enum(["publishedAt", "viewCount", "title", "createdAt"]).default("publishedAt"),
@@ -164,21 +164,21 @@ export const blogPostFiltersSchema = z.object({
 });
 
 export const blogLinkFormSchema = z.object({
-  sourcePostId: z.string().uuid(),
-  targetPostId: z.string().uuid(),
+  sourcePostId: z.uuid(),
+  targetPostId: z.uuid(),
   linkType: blogLinkTypeSchema,
   sortOrder: z.number().int().min(0).default(0),
 });
 
 export const blogLinkUpdateSchema = z.object({
-  id: z.string().uuid(),
+  id: z.uuid(),
   linkType: blogLinkTypeSchema.optional(),
   sortOrder: z.number().int().min(0).optional(),
 });
 
 export const userProfileSchema = z.object({
   bio: z.string().trim().max(500).optional(),
-  website: z.string().trim().max(500).url().optional().or(z.literal("")),
+  website: z.url().trim().max(500).optional().or(z.literal("")),
   twitter: z.string().trim().max(100).optional(),
   linkedin: z.string().trim().max(200).optional(),
 });

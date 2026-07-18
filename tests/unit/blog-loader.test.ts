@@ -141,7 +141,8 @@ describe('getBlogCategories', () => {
           { category: { id: 'cat-1', slug: 'voyage', organizationId: null }, translation: null },
         ]),
       )
-      .mockReturnValueOnce(makeChain([{ value: 7 }]));
+      // grouped post-count subquery: one row per categoryId with its count
+      .mockReturnValueOnce(makeChain([{ categoryId: 'cat-1', value: 7 }]));
 
     const result = await getBlogCategories(null, 'fr');
 
@@ -162,7 +163,8 @@ describe('getBlogTags', () => {
       .mockReturnValueOnce(
         makeChain([{ tag: { id: 'tag-1', slug: 'lac', organizationId: null }, translation: { name: 'Lac', slug: 'lac' } }]),
       )
-      .mockReturnValueOnce(makeChain([{ value: 4 }]));
+      // grouped post-count subquery: one row per tagId with its count
+      .mockReturnValueOnce(makeChain([{ tagId: 'tag-1', value: 4 }]));
 
     const result = await getBlogTags(null, 'fr');
 

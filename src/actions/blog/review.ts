@@ -120,7 +120,7 @@ export const moderateBlogReview = defineAction({
 
 export const voteBlogReviewHelpful = defineAction({
   input: z.object({
-    reviewId: z.string().uuid(),
+    reviewId: z.uuid(),
     isHelpful: z.boolean(),
   }),
   handler: async (input, context) => {

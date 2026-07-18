@@ -1,8 +1,8 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
-import { blogPostLinks, blogPosts } from "@database/schemas";
+import { blogPostLinks } from "@database/schemas";
 import { blogLinkFormSchema, blogLinkUpdateSchema } from "@/lib/blog/validation";
 import {
   assertBlogPermission,
@@ -86,7 +86,7 @@ export const updateBlogLink = defineAction({
 
 export const deleteBlogLink = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {

@@ -2,7 +2,7 @@
 import { Icon } from "astro-icon/components";
 import type { Locale } from "@i18n/config";
 import type { BlogTranslations } from "@i18n/config";
-import { buildBlogCategoryUrl } from "@lib/blog/utils";
+import { buildBlogCategoryUrl, extractOrgSlugFromBaseUrl } from "@lib/blog/utils";
 import { Card, CardHeader, CardTitle, CardContent } from "@atoms/card";
 
 interface CategoryItem {
@@ -20,7 +20,8 @@ interface Props {
   activeSlug?: string;
 }
 
-const { locale, blogT, categories, baseUrl, activeSlug } = Astro.props;
+const { locale, blogT, categories, activeSlug, baseUrl } = Astro.props;
+const organizationSlug = extractOrgSlugFromBaseUrl(baseUrl);
 ---
 
 <Card>
@@ -40,7 +41,7 @@ const { locale, blogT, categories, baseUrl, activeSlug } = Astro.props;
           return (
             <li>
               <a
-                href={buildBlogCategoryUrl(locale, null, cat.slug)}
+                href={buildBlogCategoryUrl(locale, organizationSlug, cat.slug)}
                 class={`sidebar-cat-link ${isActive ? 'active' : ''}`}
                 aria-current={isActive ? "page" : undefined}
               >

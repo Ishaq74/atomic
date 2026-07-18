@@ -22,7 +22,6 @@
     "db:migrate": "npx tsx src/database/commands/db.migrate.ts",
     "db:reset": "npx tsx src/database/commands/db.reset.ts",
     "db:seed": "npx tsx src/database/commands/db.seed.ts",
-    "db:seed-blog-demo": "npx tsx scripts/seed-blog-demo.ts",
     "db:seed-media": "npx tsx src/database/commands/db.seed-media.ts",
     "db:sync": "npx tsx src/database/commands/db.sync.ts",
     "db:cleanup-audit": "npx tsx src/database/commands/db.cleanup-audit.ts",
@@ -94,5 +93,10 @@
     "tsx": "^4.21.0",
     "vitest": "^4.1.2",
     "wait-on": "^9.0.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "axe-core": "4.12.1"
+    }
   }
 }

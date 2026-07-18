@@ -15,7 +15,6 @@ export const prerender = false;
  * RSS feed of an organization-scoped blog, across all locales.
  */
 export const GET: APIRoute = async (context) => {
-  const locale = (context.params.lang as Locale) ?? DEFAULT_LOCALE;
   const orgSlug = context.params.slug;
   if (!orgSlug) {
     return new Response("Not found", { status: 404 });
@@ -54,7 +53,7 @@ export const GET: APIRoute = async (context) => {
           if (!item.translation) continue;
           const categorySlug = item.categories[0]?.slug ?? null;
           allItems.push({
-            title: `[${loc.toUpperCase()}] ${item.translation.title}`,
+            title: item.translation.title,
             link: buildBlogPostUrl(loc as Locale, org.slug, item.translation.slug, categorySlug),
             pubDate: item.post.publishedAt ?? undefined,
             description: item.translation.excerpt ?? undefined,
@@ -73,6 +72,6 @@ export const GET: APIRoute = async (context) => {
     description: common.rss.description,
     site: context.site!,
     items: allItems,
-    customData: `<language>${DEFAULT_LOCALE}</language>`,
+    customData: LOCALES.map((loc) => `<language>${loc}</language>`).join(""),
   });
 };

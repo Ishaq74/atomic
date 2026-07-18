@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import {
   blogPosts,
@@ -30,8 +30,6 @@ import {
   blogOrganizationIdSchema,
 } from "./_helpers";
 
-const localeEnum = z.enum(LOCALES);
-
 function toRevisionStatus(status: BlogPostStatus | undefined): "DRAFT" | "PUBLISHED" | "ARCHIVED" {
   if (status === "PUBLISHED" || status === "ARCHIVED") return status;
   if (status === "DELETED") return "ARCHIVED";
@@ -44,6 +42,12 @@ export const createBlogPost = defineAction({
   }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
+    // SECURITY/GOVERNANCE: `input.organizationId` is supplied by the client.
+    // For a non-admin caller, assertBlogPermission already verified org
+    // membership. For a global admin, the early-return in assertBlogPermission
+    // allows targeting ANY organization (superuser privilege — see _helpers.ts).
+    // This is intentional; document it explicitly so it is never "fixed" by
+    // accident and so reviews can flag it as a deliberate platform-operator path.
     const user = await assertBlogPermission(context, tenant, {
       blog: tenant.isOrgContext ? ["create", "publish"] : ["create"],
     });
@@ -63,26 +67,41 @@ export const createBlogPost = defineAction({
       focusKeyword: input.seo?.focusKeyword,
     });
 
-    const [post] = await db
-      .insert(blogPosts)
-      .values({
-        organizationId: tenant.organizationId,
-        authorId: user.id,
-        slug: input.slug,
-        status: input.status,
-        featuredImageId: input.featuredImageId,
-        isFeatured: input.isFeatured ?? false,
-        isSticky: input.isSticky ?? false,
-        commentStatus: input.commentStatus ?? "OPEN",
-        allowReviews: input.allowReviews ?? true,
-        seoScore,
-        publishedAt,
-        updatedBy: user.id,
-      })
-      .returning();
+    let post: typeof blogPosts.$inferSelect & { id: string };
+    try {
+      [post] = await db
+        .insert(blogPosts)
+        .values({
+          organizationId: tenant.organizationId,
+          authorId: user.id,
+          slug: input.slug,
+          status: input.status,
+          featuredImageId: input.featuredImageId,
+          isFeatured: input.isFeatured ?? false,
+          isSticky: input.isSticky ?? false,
+          commentStatus: input.commentStatus ?? "OPEN",
+          allowReviews: input.allowReviews ?? true,
+          seoScore,
+          publishedAt,
+          updatedBy: user.id,
+        })
+        .returning();
+    } catch (err) {
+      // Unique index on (organization_id, slug) / (organization_id, locale, slug)
+      // rejects a duplicate slug with a DB constraint violation — surface it as
+      // a clean 4xx instead of a raw 500.
+      if (err instanceof Error && /duplicate|unique/i.test(err.message)) {
+        throw new ActionError({
+          code: "CONFLICT",
+          message: "Un article avec ce slug existe déjà pour ce tenant/locale.",
+        });
+      }
+      throw err;
+    }
 
     await db.insert(blogPostTranslations).values({
       postId: post.id,
+      organizationId: tenant.organizationId,
       locale: input.locale,
       title: input.title,
       slug: input.slug,
@@ -149,8 +168,8 @@ export const createBlogPost = defineAction({
 export const updateBlogPost = defineAction({
   input: blogPostUpdateSchema.extend({
     organizationId: blogOrganizationIdSchema,
-    categoryIds: z.array(z.string().uuid()).max(10).optional(),
-    tagIds: z.array(z.string().uuid()).max(20).optional(),
+    categoryIds: z.array(z.uuid()).max(10).optional(),
+    tagIds: z.array(z.uuid()).max(20).optional(),
   }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
@@ -184,6 +203,41 @@ export const updateBlogPost = defineAction({
           .limit(1)
           .then((r) => r[0])
       : null;
+
+    // Pre-check slug uniqueness before any write so a duplicate slug surfaces
+    // as a clean 4xx instead of a raw 500 from the unique index.
+    if (data.slug) {
+      const orgCond = tenant.organizationId === null
+        ? isNull(blogPosts.organizationId)
+        : eq(blogPosts.organizationId, tenant.organizationId);
+      const [dupPost] = await db
+        .select({ id: blogPosts.id })
+        .from(blogPosts)
+        .where(and(eq(blogPosts.slug, data.slug), orgCond))
+        .limit(1);
+      if (dupPost && dupPost.id !== id) {
+        throw new ActionError({
+          code: "CONFLICT",
+          message: "Un article avec ce slug existe déjà pour ce tenant.",
+        });
+      }
+      if (locale) {
+        const transOrgCond = tenant.organizationId === null
+          ? isNull(blogPostTranslations.organizationId)
+          : eq(blogPostTranslations.organizationId, tenant.organizationId);
+        const [dupTrans] = await db
+          .select({ id: blogPostTranslations.id })
+          .from(blogPostTranslations)
+          .where(and(eq(blogPostTranslations.slug, data.slug), eq(blogPostTranslations.locale, locale), transOrgCond))
+          .limit(1);
+        if (dupTrans) {
+          throw new ActionError({
+            code: "CONFLICT",
+            message: "Une traduction avec ce slug existe déjà pour cette locale/tenant.",
+          });
+        }
+      }
+    }
 
     const content = data.content ? sanitizeHtml(data.content) : undefined;
     const excerpt = data.excerpt?.trim() || (content ? generateExcerpt(content) : undefined);
@@ -239,6 +293,7 @@ export const updateBlogPost = defineAction({
       } else {
         await db.insert(blogPostTranslations).values({
           postId: id,
+          organizationId: tenant.organizationId,
           locale,
           title: data.title!,
           slug: data.slug!,
@@ -324,7 +379,7 @@ export const updateBlogPost = defineAction({
 
 export const deleteBlogPost = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
     permanent: z.boolean().default(false),
   }),
@@ -358,7 +413,7 @@ export const deleteBlogPost = defineAction({
 
 export const publishBlogPost = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {
@@ -385,7 +440,7 @@ export const publishBlogPost = defineAction({
 
 export const lockBlogPost = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {
@@ -429,7 +484,7 @@ export const lockBlogPost = defineAction({
 
 export const unlockBlogPost = defineAction({
   input: z.object({
-    id: z.string().uuid(),
+    id: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {
@@ -446,7 +501,7 @@ export const unlockBlogPost = defineAction({
 
 export const listBlogPostRevisions = defineAction({
   input: z.object({
-    postId: z.string().uuid(),
+    postId: z.uuid(),
     organizationId: blogOrganizationIdSchema,
   }),
   handler: async (input, context) => {

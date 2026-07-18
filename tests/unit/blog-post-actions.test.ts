@@ -214,6 +214,8 @@ describe('updateBlogPost', () => {
     mockSelect
       .mockReturnValueOnce(makeChain([{ id: 'post-1', organizationId: null }])) // assertPostInTenant
       .mockReturnValueOnce(makeChain([{ postId: 'post-1', userId: 'admin-1', expiresAt: new Date(Date.now() + 60_000) }])) // lock check (own lock)
+      .mockReturnValueOnce(makeChain([])) // slug pre-check on blogPosts (no duplicate)
+      .mockReturnValueOnce(makeChain([])) // slug pre-check on blogPostTranslations (no duplicate)
       .mockReturnValueOnce(makeChain([])); // existing translation lookup (none)
     mockUpdate.mockReturnValue(makeMutationChain());
     mockInsert.mockReturnValue(makeMutationChain());

@@ -19,6 +19,7 @@
 10. [Tests](#10-tests)
 11. [Fonctionnalités connues comme incomplètes](#11-fonctionnalités-connues-comme-incomplètes)
 12. [Ajouter une fonctionnalité](#12-ajouter-une-fonctionnalité)
+13. [Audit (clôture)](#13-audit-clôture)
 
 ---
 
@@ -229,3 +230,11 @@ _(Aucune fonctionnalité majeure du blog n'est connue comme incomplète à ce jo
 2. **Nouvelle action** → fichier dédié dans `src/actions/blog/`, en réutilisant `assertBlogPermission`/`resolveBlogTenant`/`assertPostInTenant` de `_helpers.ts`. Rate-limiter systématiquement (`blogRateLimit` si authentifié, `blogPublicRateLimit` si accessible aux invités). Sanitizer tout contenu HTML utilisateur avant stockage. Exporter depuis `actions/blog/index.ts` **et** `actions/index.ts`.
 3. **Nouveau champ de traduction** → ajouter la clé à l'interface `BlogTranslations` (`src/i18n/config.ts`) **et** aux 4 fichiers `src/i18n/blog/*.ts` dans le même mouvement (le typage `satisfies` échouera sinon à la compilation).
 4. **Nouvelle page publique** → penser à l'ajouter à `sitemap-cms.xml.ts`, `rss.xml.ts` si pertinent, et à `.pa11yci.cjs`/`lighthouserc.cjs` pour rester couvert par les gates a11y/perf.
+
+---
+
+## 13. Audit (clôture)
+
+> **Statut** : ✅ Clôturé — 30 findings traités, 0 régression (`pnpm check` 0 erreur, `pnpm lint` 0 erreur, `pnpm test` 1155/1155).
+
+L'audit statique du module Blog (sécurité, performance/loaders, UX/composants, données/schéma, SEO/RSS, observabilité) est consigné et clôturé dans **[`docs/blog/audit.md`](./audit.md)**, avec pour chaque finding : statut de résolution et preuve dans le code/tests. Toute nouvelle itération sur le blog doit y être reportée pour garder la traçabilité.

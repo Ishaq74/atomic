@@ -56,7 +56,7 @@ interface Props {
   organizationId?: string | null;
 }
 
-const { locale, blogT, rows, meta, baseAdminUrl, basePublicUrl, canPublish, canDelete, organizationId } = Astro.props;
+const { blogT, rows, meta, baseAdminUrl, basePublicUrl, canPublish, canDelete, organizationId } = Astro.props;
 
 function buildPageUrl(page: number): string {
   const url = new URL(Astro.url.href);

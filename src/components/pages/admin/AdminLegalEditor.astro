@@ -313,7 +313,7 @@ const parsedSections = sections
         // 1. {{anything}}  2. {word}}  3. {{word}  4. {word}
         return escapeHtml(text).replace(
           /\{\{([^}]*)\}\}|\{(\w[\w\s]*)\}\}|\{\{(\w[\w\s]*)\}(?!\})|\{(\w[\w\s]*)\}(?!\{)/g,
-          (match, doubleBrace, singleOpen, missingClose, singleBrace) => {
+          (match, doubleBrace) => {
             // Case 1: {{...}} — check if content is a valid key
             if (doubleBrace !== undefined) {
               const trimmed = doubleBrace.trim();

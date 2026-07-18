@@ -1,6 +1,6 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, asc, desc, isNull } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { rename } from "node:fs/promises";
 import { join, resolve, extname } from "node:path";
 import { getDrizzle } from "@database/drizzle";
@@ -136,7 +136,7 @@ export const createMediaFolder = defineAction({
       .min(1, "Le nom du dossier est requis.")
       .max(200, "Le nom ne peut pas dépasser 200 caractères."),
     parentId: z.string().nullable().optional(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -188,7 +188,7 @@ export const updateMediaFolder = defineAction({
       .max(200, "Le nom ne peut pas dépasser 200 caractères.")
       .optional(),
     parentId: z.string().nullable().optional(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -258,7 +258,7 @@ export const updateMediaFolder = defineAction({
 export const deleteMediaFolder = defineAction({
   input: z.object({
     id: z.string().min(1, "L'identifiant est requis."),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -324,7 +324,7 @@ export const uploadMediaFile = defineAction({
   input: z.object({
     file: z.instanceof(File),
     folderId: z.string().nullable().optional(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -399,7 +399,7 @@ export const renameMediaFile = defineAction({
         (name) => /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(name),
         "Le nom ne peut contenir que des lettres, chiffres, tirets, underscores et points.",
       ),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -474,7 +474,7 @@ export const moveMediaFile = defineAction({
   input: z.object({
     id: z.string().min(1, "L'identifiant est requis."),
     folderId: z.string().nullable(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -513,7 +513,7 @@ export const moveMediaFile = defineAction({
 export const deleteMediaFile = defineAction({
   input: z.object({
     id: z.string().min(1, "L'identifiant est requis."),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -555,7 +555,7 @@ export const upsertMediaFileAlt = defineAction({
     locale: localeEnum,
     alt: z.string().trim().min(1, "Le texte alternatif est requis.").max(500, "500 caractères maximum."),
     title: z.string().trim().max(500, "500 caractères maximum.").nullable().optional(),
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);
@@ -613,7 +613,7 @@ export const deleteMediaFileAlt = defineAction({
   input: z.object({
     fileId: z.string().min(1),
     locale: localeEnum,
-    organizationId: z.string().uuid().optional().nullable(),
+    organizationId: z.uuid().optional().nullable(),
   }),
   handler: async (input, context) => {
     const tenant = resolveMediaTenant(input);

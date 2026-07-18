@@ -40,7 +40,7 @@ Tu dois te baser en priorité sur :
 - `.github/workflows/codeql.yml`
 - `docs/**`
 - `src/**`
-- `database/**`
+- `src/database/**`
 - `tests/**`
 - `.env.example`
 - `astro.config.mjs`

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 
 // `astro:actions` is a virtual module resolved only by the Astro build pipeline.
 // In tests we provide the minimal shim (defineAction passthrough + ActionError).
@@ -15,12 +15,14 @@ vi.mock('astro:actions', () => {
 });
 
 import { getDrizzle } from '@database/drizzle';
-import { eq, and, desc, isNull } from 'drizzle-orm';
-import { blogPosts, blogPostRevisions, blogReports, blogComments, blogPostReviews, blogPostTranslations, user } from '@database/schemas';
+import { eq, and, isNull, sql } from 'drizzle-orm';
+import { blogPosts, blogReports, blogPostTranslations, blogPostViewStats, user } from '@database/schemas';
 import { listBlogPostRevisions } from '@/actions/blog/post';
 import { updateBlogReport, getBlogModerationQueue } from '@/actions/blog/moderation';
 import { resolveBlogInternalLink } from '@/actions/blog/internal-link';
 import { checkBlogPostLinks } from '@/actions/blog/check-links';
+import { recordBlogPostView } from '@/actions/blog/view';
+import { resetRateLimiter } from '@/lib/rate-limit';
 import type { Locale } from '@i18n/config';
 
 // `defineAction` returns a typed callable; in tests we invoke `.handler` directly.
@@ -29,6 +31,7 @@ const updateReport = (updateBlogReport as any).handler as (i: any, c: any) => Pr
 const getQueue = (getBlogModerationQueue as any).handler as (i: any, c: any) => Promise<any>;
 const resolveLink = (resolveBlogInternalLink as any).handler as (i: any, c: any) => Promise<any>;
 const checkLinks = (checkBlogPostLinks as any).handler as (i: any, c: any) => Promise<any>;
+const recordView = (recordBlogPostView as any).handler as (i: any, c: any) => Promise<any>;
 
 /**
  * Real integration tests against the seeded test database.
@@ -151,5 +154,82 @@ describe('blog actions — integration (real DB)', () => {
     expect(res).toHaveProperty('deadInline');
     expect(Array.isArray(res.deadExplicit)).toBe(true);
     expect(Array.isArray(res.deadInline)).toBe(true);
+  });
+
+  describe('recordBlogPostView (real DB, real cookies)', () => {
+    beforeEach(() => {
+      // The rate limiter uses an in-memory store shared across the test process;
+      // reset it so each test starts from a clean dedupe window.
+      resetRateLimiter();
+    });
+
+    function anonCtx() {
+      const cookies = new Map<string, string>();
+      return {
+        locals: {},
+        request: { headers: new Headers({ 'user-agent': 'Mozilla/5.0' }) },
+        clientAddress: '127.0.0.1',
+        cookies: {
+          get: (name: string) => (cookies.has(name) ? { value: cookies.get(name) } : undefined),
+          set: (name: string, value: string) => {
+            cookies.set(name, value);
+          },
+        },
+      } as any;
+    }
+    function userCtx(userId: string) {
+      return {
+        locals: { user: { id: userId, role: 'user', email: 'user@test.com', banned: false }, session: { id: 'sess-real' } },
+        request: { headers: new Headers({ 'user-agent': 'Mozilla/5.0' }) },
+        clientAddress: '127.0.0.1',
+        cookies: {
+          get: () => undefined,
+          set: () => {},
+        },
+      } as any;
+    }
+
+    it('increments viewCount and writes a view stat row for an anonymous visitor', async () => {
+      const [before] = await db
+        .select({ viewCount: blogPosts.viewCount })
+        .from(blogPosts)
+        .where(eq(blogPosts.id, globalPostId))
+        .limit(1);
+
+      const ctx = anonCtx();
+      const res = await recordView({ postId: globalPostId, referrer: 'https://example.com' }, ctx);
+      expect(res).toEqual({ recorded: true });
+
+      const [after] = await db
+        .select({ viewCount: blogPosts.viewCount })
+        .from(blogPosts)
+        .where(eq(blogPosts.id, globalPostId))
+        .limit(1);
+      expect(after.viewCount).toBe(before.viewCount + 1);
+
+      const [stat] = await db
+        .select({ sessionId: blogPostViewStats.sessionId, referrer: blogPostViewStats.referrer })
+        .from(blogPostViewStats)
+        .where(eq(blogPostViewStats.postId, globalPostId))
+        .orderBy(sql`${blogPostViewStats.date} DESC, ${blogPostViewStats.hour} DESC`)
+        .limit(1);
+      expect(stat).toBeDefined();
+      expect(stat.sessionId).toMatch(/^anon:/);
+      expect(stat.referrer).toBe('https://example.com');
+    });
+
+    it('attributes a logged-in view to the session id, not an anon cookie', async () => {
+      const ctx = userCtx(realUserId);
+      const res = await recordView({ postId: globalPostId }, ctx);
+      expect(res).toEqual({ recorded: true });
+
+      const [stat] = await db
+        .select({ sessionId: blogPostViewStats.sessionId })
+        .from(blogPostViewStats)
+        .where(eq(blogPostViewStats.postId, globalPostId))
+        .orderBy(sql`${blogPostViewStats.date} DESC, ${blogPostViewStats.hour} DESC`)
+        .limit(1);
+      expect(stat.sessionId).toBe('sess-real');
+    });
   });
 });

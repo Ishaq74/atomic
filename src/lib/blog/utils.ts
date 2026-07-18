@@ -30,6 +30,23 @@ export function buildBlogHref(baseUrl: string, ...segments: (string | null | und
   return path ? `${baseUrl}/${path}` : baseUrl;
 }
 
+/**
+ * Derive the organization slug from a blog `baseUrl`.
+ *
+ * Blog listing/detail pages build `baseUrl` as either `/{locale}/blog`
+ * (global tenant) or `/{locale}/organizations/{slug}/blog` (org tenant).
+ * Components that render category/tag/post links receive `baseUrl` but not the
+ * org slug directly; deriving it here keeps URL construction consistent with
+ * the page that rendered the component (an org post must link to org-scoped
+ * category URLs, never to the global blog).
+ *
+ * Returns `null` for the global tenant.
+ */
+export function extractOrgSlugFromBaseUrl(baseUrl: string): string | null {
+  const match = baseUrl.match(/\/organizations\/([^/]+)\/blog(?:\/|$)/);
+  return match ? match[1] : null;
+}
+
 export function buildBlogPostUrl(
   locale: Locale,
   organizationSlug: string | null,
@@ -172,7 +189,7 @@ export function generateSchemaMarkup(
 }
 
 export function buildBreadcrumbSchema(
-  locale: Locale,
+  _locale: Locale,
   items: { name: string; item?: string }[],
 ): Record<string, unknown> {
   return generateSchemaMarkup("BreadcrumbList", {

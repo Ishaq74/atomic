@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, or, ilike, inArray, isNull, sql, count, gte, lte } from "drizzle-orm";
+import { eq, and, desc, asc, or, ilike, inArray, isNull, sql, count, gte } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { cached } from "@database/cache";
 import {
@@ -11,14 +11,12 @@ import {
   blogPostCategories,
   blogPostTags,
   blogComments,
-  blogCommentModerations,
   blogPostRevisions,
   blogPostGalleries,
   blogPostGalleryMedia,
   blogPostReviews,
   blogPostReviewHelpful,
   blogReports,
-  blogPostFavorites,
   blogPostReactions,
   blogPostSeo,
   blogPostViewStats,
@@ -36,7 +34,6 @@ import type {
   BlogPostFilters,
   BlogPaginationMeta,
   BlogPostListItem,
-  BlogScope,
   BlogTag,
   BlogTagTranslation,
 } from "@/lib/blog/types";
@@ -54,7 +51,13 @@ export function orgScope(
 }
 
 export function publishedScope(table: typeof blogPosts) {
-  return and(eq(table.status, "PUBLISHED"), isNull(table.lockedBy));
+  // A post is publicly visible when PUBLISHED and either not locked, or locked
+  // by an edit lease that has already expired (stale locks from crashed editors
+  // must not hide a published post forever — see blogPostLocks.expiresAt, 15 min).
+  return and(
+    eq(table.status, "PUBLISHED"),
+    or(isNull(table.lockedBy), sql`${table.lockedAt} < now() - interval '15 minutes'`),
+  );
 }
 
 type BlogPostListRow = {
@@ -294,23 +297,10 @@ export const getBlogPostBySlug = cached(
       .where(eq(blogPostGalleries.postId, post.id))
       .orderBy(asc(blogPostGalleries.sortOrder));
 
-    const galleriesWithMedia = await Promise.all(
-      galleries.map(async (gallery) => {
-        const media = await db
-          .select({
-            id: blogPostGalleryMedia.mediaId,
-            altText: blogPostGalleryMedia.altText,
-            caption: blogPostGalleryMedia.caption,
-            sortOrder: blogPostGalleryMedia.sortOrder,
-            file: { id: mediaFiles.id, url: mediaFiles.url },
-          })
-          .from(blogPostGalleryMedia)
-          .innerJoin(mediaFiles, eq(blogPostGalleryMedia.mediaId, mediaFiles.id))
-          .where(eq(blogPostGalleryMedia.galleryId, gallery.id))
-          .orderBy(asc(blogPostGalleryMedia.sortOrder));
-        return { ...gallery, media };
-      }),
-    );
+    const galleriesWithMedia = await (async () => {
+      const mediaByGallery = await getBlogGalleriesWithMedia(galleries.map((g) => g.id));
+      return galleries.map((gallery) => ({ ...gallery, media: mediaByGallery.get(gallery.id) ?? [] }));
+    })();
 
     const seo = await db
       .select()
@@ -684,6 +674,9 @@ export const getBlogCategories = cached(
     if (!isValidLocale(locale)) return [];
     const db = getDrizzle();
 
+    // Single round-trip: join categories → translations, then resolve published
+    // post counts via one grouped subquery (avoids the previous N+1 of one
+    // COUNT per category).
     const categories = await db
       .select({
         category: blogCategories,
@@ -700,26 +693,26 @@ export const getBlogCategories = cached(
       .where(orgScope(blogCategories, organizationId))
       .orderBy(asc(blogCategories.sortOrder), asc(blogCategoryTranslations.name));
 
-    return Promise.all(
-      categories.map(async ({ category, translation }) => {
-        const [{ value: postCount }] = await db
-          .select({ value: count() })
-          .from(blogPostCategories)
-          .innerJoin(blogPosts, eq(blogPostCategories.postId, blogPosts.id))
-          .where(
-            and(
-              eq(blogPostCategories.categoryId, category.id),
-              eq(blogPosts.status, "PUBLISHED"),
-            ),
-          );
-        return {
-          ...category,
-          slug: translation?.slug ?? category.slug,
-          translation,
-          postCount: Number(postCount),
-        };
-      }),
-    );
+    const categoryIds = categories.map((c) => c.category.id);
+    const postCounts = new Map<string, number>();
+    if (categoryIds.length > 0) {
+      const counts = await db
+        .select({ categoryId: blogPostCategories.categoryId, value: count() })
+        .from(blogPostCategories)
+        .innerJoin(blogPosts, eq(blogPostCategories.postId, blogPosts.id))
+        .where(
+          and(inArray(blogPostCategories.categoryId, categoryIds), eq(blogPosts.status, "PUBLISHED")),
+        )
+        .groupBy(blogPostCategories.categoryId);
+      for (const row of counts) postCounts.set(row.categoryId, Number(row.value));
+    }
+
+    return categories.map(({ category, translation }) => ({
+      ...category,
+      slug: translation?.slug ?? category.slug,
+      translation,
+      postCount: postCounts.get(category.id) ?? 0,
+    }));
   },
 );
 
@@ -767,6 +760,8 @@ export const getBlogTags = cached(
     if (!isValidLocale(locale)) return [];
     const db = getDrizzle();
 
+    // Single round-trip: join tags → translations → published post counts via
+    // a grouped subquery (avoids the previous N+1 of one COUNT per tag).
     const tags = await db
       .select({ tag: blogTags, translation: blogTagTranslations })
       .from(blogTags)
@@ -777,21 +772,24 @@ export const getBlogTags = cached(
       .where(orgScope(blogTags, organizationId))
       .orderBy(asc(blogTagTranslations.name));
 
-    return Promise.all(
-      tags.map(async ({ tag, translation }) => {
-        const [{ value: postCount }] = await db
-          .select({ value: count() })
-          .from(blogPostTags)
-          .innerJoin(blogPosts, eq(blogPostTags.postId, blogPosts.id))
-          .where(and(eq(blogPostTags.tagId, tag.id), eq(blogPosts.status, "PUBLISHED")));
-        return {
-          ...tag,
-          slug: translation?.slug ?? tag.slug,
-          translation,
-          postCount: Number(postCount),
-        };
-      }),
-    );
+    const tagIds = tags.map((t) => t.tag.id);
+    const postCounts = new Map<string, number>();
+    if (tagIds.length > 0) {
+      const counts = await db
+        .select({ tagId: blogPostTags.tagId, value: count() })
+        .from(blogPostTags)
+        .innerJoin(blogPosts, eq(blogPostTags.postId, blogPosts.id))
+        .where(and(inArray(blogPostTags.tagId, tagIds), eq(blogPosts.status, "PUBLISHED")))
+        .groupBy(blogPostTags.tagId);
+      for (const row of counts) postCounts.set(row.tagId, Number(row.value));
+    }
+
+    return tags.map(({ tag, translation }) => ({
+      ...tag,
+      slug: translation?.slug ?? tag.slug,
+      translation,
+      postCount: postCounts.get(tag.id) ?? 0,
+    }));
   },
 );
 
@@ -1014,6 +1012,44 @@ export async function getBlogPostStats(postId: string, days = 30) {
 
 // ─── Admin helpers ───────────────────────────────────────────────────────────
 
+/**
+/**
+ * Loads gallery media for many galleries in a single round-trip (IN query)
+ * instead of one query per gallery. Returns a Map keyed by galleryId so the
+ * caller can attach media to each gallery without an N+1 loop.
+ */
+export async function getBlogGalleriesWithMedia(galleryIds: string[]) {
+  const result = new Map<string, Array<{ mediaId: string; altText: string; caption: string | null; sortOrder: number; file: { id: string; url: string } }>>();
+  if (galleryIds.length === 0) return result;
+
+  const db = getDrizzle();
+  const rows = await db
+    .select({
+      galleryId: blogPostGalleryMedia.galleryId,
+      mediaId: blogPostGalleryMedia.mediaId,
+      altText: blogPostGalleryMedia.altText,
+      caption: blogPostGalleryMedia.caption,
+      sortOrder: blogPostGalleryMedia.sortOrder,
+      file: { id: mediaFiles.id, url: mediaFiles.url },
+    })
+    .from(blogPostGalleryMedia)
+    .innerJoin(mediaFiles, eq(blogPostGalleryMedia.mediaId, mediaFiles.id))
+    .where(inArray(blogPostGalleryMedia.galleryId, galleryIds))
+    .orderBy(asc(blogPostGalleryMedia.sortOrder));
+
+  for (const row of rows) {
+    const list = result.get(row.galleryId) ?? [];
+    list.push({
+      mediaId: row.mediaId,
+      altText: row.altText,
+      caption: row.caption,
+      sortOrder: row.sortOrder,
+      file: row.file,
+    });
+    result.set(row.galleryId, list);
+  }
+  return result;
+}
 export async function getBlogPostForAdmin(postId: string) {
   const db = getDrizzle();
   const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, postId)).limit(1);
@@ -1069,21 +1105,10 @@ export async function getBlogPostForAdmin(postId: string) {
     .where(eq(blogPostGalleries.postId, postId))
     .orderBy(asc(blogPostGalleries.sortOrder));
 
-  const galleriesWithMedia = await Promise.all(
-    galleries.map(async (gallery) => {
-      const media = await db
-        .select({
-          mediaId: blogPostGalleryMedia.mediaId,
-          altText: blogPostGalleryMedia.altText,
-          caption: blogPostGalleryMedia.caption,
-          sortOrder: blogPostGalleryMedia.sortOrder,
-        })
-        .from(blogPostGalleryMedia)
-        .where(eq(blogPostGalleryMedia.galleryId, gallery.id))
-        .orderBy(asc(blogPostGalleryMedia.sortOrder));
-      return { ...gallery, media };
-    }),
-  );
+  const galleriesWithMedia = await (async () => {
+    const mediaByGallery = await getBlogGalleriesWithMedia(galleries.map((g) => g.id));
+    return galleries.map((gallery) => ({ ...gallery, media: mediaByGallery.get(gallery.id) ?? [] }));
+  })();
 
   const links = await db
     .select({
@@ -1322,21 +1347,47 @@ export async function getUnreadBlogNotificationCount(userId: string): Promise<nu
  * Used by the content layer to detect dead internal links without N+1 queries
  * (one query returns every valid target for the whole blog).
  */
-export async function getBlogPostSlugs(
-  organizationId: string | null,
-  locale: Locale,
-): Promise<Set<string>> {
-  const db = getDrizzle();
-  const rows = await db
-    .select({ slug: blogPostTranslations.slug })
-    .from(blogPostTranslations)
-    .innerJoin(blogPosts, eq(blogPosts.id, blogPostTranslations.postId))
-    .where(
-      and(
-        eq(blogPostTranslations.locale, locale),
-        orgScope(blogPosts, organizationId),
-        publishedScope(blogPosts),
-      ),
-    );
-  return new Set(rows.map((r) => r.slug));
-}
+export const getBlogPostSlugs = cached(
+  (organizationId: string | null, locale: Locale) =>
+    `blog:slugs:${organizationId ?? "global"}:${locale}`,
+  async (organizationId: string | null, locale: Locale): Promise<Set<string>> => {
+    if (!isValidLocale(locale)) return new Set();
+    const db = getDrizzle();
+    const rows = await db
+      .select({ slug: blogPostTranslations.slug })
+      .from(blogPostTranslations)
+      .innerJoin(blogPosts, eq(blogPosts.id, blogPostTranslations.postId))
+      .where(
+        and(
+          eq(blogPostTranslations.locale, locale),
+          orgScope(blogPosts, organizationId),
+          publishedScope(blogPosts),
+        ),
+      );
+    return new Set(rows.map((r) => r.slug));
+  },
+);
+
+/**
+ * Set of all valid internal-link targets for a tenant+locale: post slugs,
+ * category slugs and tag slugs. Used by RichContent to flag dead links so a
+ * broken internal link is shown as a warning instead of silently navigating
+ * nowhere. Previously only post slugs were returned, causing valid category/tag
+ * links to be falsely flagged as dead.
+ */
+export const getBlogValidLinkTargets = cached(
+  (organizationId: string | null, locale: Locale) =>
+    `blog:link-targets:${organizationId ?? "global"}:${locale}`,
+  async (organizationId: string | null, locale: Locale): Promise<Set<string>> => {
+    if (!isValidLocale(locale)) return new Set();
+    const [postSlugs, categories, tags] = await Promise.all([
+      getBlogPostSlugs(organizationId, locale),
+      getBlogCategories(organizationId, locale),
+      getBlogTags(organizationId, locale),
+    ]);
+    const targets = new Set<string>(postSlugs);
+    for (const c of categories) targets.add(c.slug);
+    for (const t of tags) targets.add(t.slug);
+    return targets;
+  },
+);

@@ -18,12 +18,17 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 
 vi.mock('@database/drizzle', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: mockSelect,
-    insert: mockInsert,
-    update: mockUpdate,
-    delete: mockDelete,
-  })),
+  getDrizzle: vi.fn(() => {
+    const db = {
+      select: mockSelect,
+      insert: mockInsert,
+      update: mockUpdate,
+      delete: mockDelete,
+    };
+    // Simulate a transactional context: run the callback with the same
+    // mocked query methods so read-after-write isolation is exercised.
+    return { ...db, transaction: (cb: (tx: typeof db) => Promise<any>) => cb(db) };
+  }),
 }));
 
 vi.mock('@database/schemas', () => ({
@@ -55,7 +60,7 @@ vi.mock('@/lib/auth', () => ({
 
 // ── Imports ─────────────────────────────────────────────────────────
 import { createBlogComment, moderateBlogComment } from '@/actions/blog/comment';
-import { createBlogReview, moderateBlogReview, voteBlogReviewHelpful } from '@/actions/blog/review';
+import { createBlogReview, voteBlogReviewHelpful } from '@/actions/blog/review';
 import { toggleBlogReaction, toggleBlogFavorite } from '@/actions/blog/reaction';
 import { createBlogReport } from '@/actions/blog/moderation';
 import { recordBlogPostView } from '@/actions/blog/view';
@@ -65,7 +70,6 @@ import { checkRateLimit } from '@/lib/rate-limit';
 const createComment = createBlogComment as unknown as { handler: (...a: any[]) => Promise<any> };
 const moderateComment = moderateBlogComment as unknown as { handler: (...a: any[]) => Promise<any> };
 const createReview = createBlogReview as unknown as { handler: (...a: any[]) => Promise<any> };
-const moderateReview = moderateBlogReview as unknown as { handler: (...a: any[]) => Promise<any> };
 const voteHelpful = voteBlogReviewHelpful as unknown as { handler: (...a: any[]) => Promise<any> };
 const toggleReaction = toggleBlogReaction as unknown as { handler: (...a: any[]) => Promise<any> };
 const toggleFavorite = toggleBlogFavorite as unknown as { handler: (...a: any[]) => Promise<any> };
@@ -75,7 +79,18 @@ const markRead = markBlogNotificationRead as unknown as { handler: (...a: any[])
 const markAllRead = markAllBlogNotificationsRead as unknown as { handler: (...a: any[]) => Promise<any> };
 
 function guestCtx() {
-  return { locals: {}, request: { headers: new Headers() }, clientAddress: '203.0.113.7' } as any;
+  const cookies = new Map<string, string>();
+  return {
+    locals: {},
+    request: { headers: new Headers() },
+    clientAddress: '203.0.113.7',
+    cookies: {
+      get: (name: string) => (cookies.has(name) ? { value: cookies.get(name) } : undefined),
+      set: (name: string, value: string) => {
+        cookies.set(name, value);
+      },
+    },
+  } as any;
 }
 function userCtx(id = 'user-1') {
   return {

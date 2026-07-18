@@ -44,7 +44,7 @@ interface Props {
   activeOrgRole: string | null;
 }
 
-const { t, locale, user, activeOrg, activeOrgRole } = Astro.props;
+const { t, user, activeOrg } = Astro.props;
 const tr = t.organizations.roles;
 
 type RoleDef = { name: string; statements: Record<string, readonly string[]> };

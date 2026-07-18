@@ -1,8 +1,8 @@
 import type { Locale } from "@i18n/config";
 import { getDrizzle } from "@database/drizzle";
-import { eq, and, ilike, sql } from "drizzle-orm";
+import { eq, and, ilike } from "drizzle-orm";
 import { blogPosts, blogPostTranslations } from "@database/schemas";
-import { getBlogPostBySlug, getBlogPostSlugs } from "@database/loaders/blog.loader";
+import { getBlogPostBySlug, getBlogValidLinkTargets } from "@database/loaders/blog.loader";
 import { buildBlogPostUrl } from "@/lib/blog/utils";
 import { orgScope, publishedScope } from "@database/loaders/blog.loader";
 import type { InternalLinkResolver, InternalLinkResolution } from "@/lib/content/internal-link-resolver";
@@ -34,7 +34,7 @@ export const blogInternalLinkResolver: InternalLinkResolver = {
   },
 
   async listValidTargets(ctx: Ctx): Promise<Set<string>> {
-    return getBlogPostSlugs(ctx.organizationId ?? null, ctx.locale as Locale);
+    return getBlogValidLinkTargets(ctx.organizationId ?? null, ctx.locale as Locale);
   },
 
   async search(query: string, ctx: Ctx) {

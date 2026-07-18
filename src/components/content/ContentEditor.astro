@@ -103,7 +103,7 @@ const orgAttr = organizationId ?? "";
   data-resolver={resolverAttr}
   data-org={orgAttr}
   data-locale={locale}
-  data-media-picker={mediaPickerId ?? ""}
+  data-media-picker-target={mediaPickerId ?? ""}
   data-t-noresult={t.linkNoResult}
 >
   <div class="flex items-center justify-between gap-3">
@@ -181,7 +181,7 @@ const orgAttr = organizationId ?? "";
     const resolverName = root.getAttribute('data-resolver') ?? '';
     const orgId = root.getAttribute('data-org') ?? '';
     const locale = root.getAttribute('data-locale') ?? 'fr';
-    const mediaPickerId = root.getAttribute('data-media-picker') ?? '';
+    const mediaPickerId = root.getAttribute('data-media-picker-target') ?? '';
 
     function refreshPreview() {
       if (preview) preview.innerHTML = previewHtml(textarea!.value);

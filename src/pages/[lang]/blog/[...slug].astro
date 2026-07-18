@@ -103,14 +103,21 @@ let postState: PostState | null = null;
 let authorState: AuthorState | null = null;
 
 async function getAlternateCategorySlugs(categoryId: string | null): Promise<Record<string, string | null>> {
-  const entries = await Promise.all(
+  // Resolve the category slug per locale in a single pass: fetch all categories
+  // once per locale (cached) and index by id, instead of re-querying per locale
+  // inside the loop. Avoids N redundant getBlogCategories calls.
+  const byLocale = await Promise.all(
     LOCALES.map(async (loc) => {
-      if (!categoryId) return [loc, null] as const;
       const rows = await getBlogCategories(null, loc);
-      const match = rows.find((item) => item.id === categoryId);
-      return [loc, match?.slug ?? null] as const;
+      const map = new Map(rows.map((item) => [item.id, item.slug]));
+      return [loc, map] as const;
     }),
   );
+  const slugByLocale = Object.fromEntries(byLocale.map(([loc, map]) => [loc, map]));
+  const entries = LOCALES.map((loc) => {
+    if (!categoryId) return [loc, null] as const;
+    return [loc, slugByLocale[loc].get(categoryId) ?? null] as const;
+  });
 
   return Object.fromEntries(entries);
 }
@@ -448,6 +455,7 @@ if (isCategorizedPostRoute) {
       categories={categories}
       tags={tags}
       baseUrl={baseUrl}
+      organizationSlug={null}
       searchQuery={searchQuery}
       activeCategorySlug={listingState.activeCategorySlug}
       activeTagSlug={listingState.activeTagSlug}

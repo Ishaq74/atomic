@@ -1,18 +1,17 @@
 import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
-import { ActionError } from "astro:actions";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogSubscribers } from "@database/schemas";
 import { blogPublicRateLimit } from "./_helpers";
 import { sendEmail } from "@/smtp/send";
-import { blogNewsletterConfirmTemplate, blogNewsletterUnsubscribeTemplate } from "@/smtp/templates/blog-newsletter";
+import { blogNewsletterConfirmTemplate } from "@/smtp/templates/blog-newsletter";
 import { logAuditEvent } from "@/lib/audit";
 import { LOCALES } from "@i18n/config";
 import type { Locale } from "@i18n/config";
 
 const blogSubscriptionSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Email invalide"),
+  email: z.email("Email invalide").trim().toLowerCase(),
   locale: z.enum(LOCALES),
   organizationId: z.string().trim().min(1).optional().nullable(),
 });
@@ -44,7 +43,13 @@ export const subscribeBlogNewsletter = defineAction({
       .where(and(eq(blogSubscribers.email, input.email), orgCondition))
       .limit(1);
 
-    const baseUrl = new URL(context.request.url).origin;
+    // Base URL comes from the trusted server config (astro.config site),
+    // NOT from the client Host header — otherwise an attacker controlling
+    // Host could inject an evil.com link into the confirmation email (phishing).
+    // `Astro` is a runtime global injected by Astro; fall back to the
+    // request URL only when it is genuinely unavailable (e.g. unit tests).
+    const site = (globalThis as { Astro?: { site?: URL } }).Astro?.site;
+    const baseUrl = (site ?? new URL(context.request.url)).origin;
     const confirmUrl = `${baseUrl}/api/blog/newsletter/confirm?token=${encodeURIComponent(token)}`;
     const unsubscribeUrl = `${baseUrl}/api/blog/newsletter/unsubscribe?token=${encodeURIComponent(token)}`;
 
@@ -98,6 +103,7 @@ export const subscribeBlogNewsletter = defineAction({
 export const confirmBlogSubscription = defineAction({
   input: blogTokenSchema,
   handler: async (input, context) => {
+    blogPublicRateLimit(context, "newsletter-confirm", { window: 3600, max: 20 });
     const db = getDrizzle();
 
     const subscriber = await db
@@ -109,7 +115,7 @@ export const confirmBlogSubscription = defineAction({
     if (subscriber.length > 0 && subscriber[0].status !== "CONFIRMED") {
       await db
         .update(blogSubscribers)
-        .set({ status: "CONFIRMED", confirmedAt: new Date(), updatedAt: new Date() })
+        .set({ status: "CONFIRMED", confirmedAt: new Date(), tokenUsedAt: new Date(), updatedAt: new Date() })
         .where(eq(blogSubscribers.token, input.token));
 
       await logAuditEvent({
@@ -130,6 +136,7 @@ export const confirmBlogSubscription = defineAction({
 export const unsubscribeBlogNewsletter = defineAction({
   input: blogTokenSchema,
   handler: async (input, context) => {
+    blogPublicRateLimit(context, "newsletter-unsubscribe", { window: 3600, max: 20 });
     const db = getDrizzle();
 
     const subscriber = await db
@@ -141,7 +148,7 @@ export const unsubscribeBlogNewsletter = defineAction({
     if (subscriber.length > 0 && subscriber[0].status !== "UNSUBSCRIBED") {
       await db
         .update(blogSubscribers)
-        .set({ status: "UNSUBSCRIBED", unsubscribedAt: new Date(), updatedAt: new Date() })
+        .set({ status: "UNSUBSCRIBED", unsubscribedAt: new Date(), tokenUsedAt: new Date(), updatedAt: new Date() })
         .where(eq(blogSubscribers.token, input.token));
 
       await logAuditEvent({

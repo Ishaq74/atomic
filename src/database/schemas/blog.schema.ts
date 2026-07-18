@@ -48,6 +48,12 @@ export const blogPosts = pgTable(
       .default("OPEN")
       .notNull(),
     allowReviews: boolean("allow_reviews").default(true).notNull(),
+    // SEO score (0-100) for the post's PRIMARY locale. This is the canonical
+    // score surfaced in listings/admin. NOTE: blog_post_seo.focus_keyword_score
+    // stores the per-locale score. Both are written together by createBlogPost
+    // / updateBlogPost (calculateSeoScore → seoScore AND focusKeywordScore) so
+    // they stay in sync — do NOT update one without the other. seoScore here is
+    // the global/primary-locale source of truth; blog_post_seo is per-locale.
     seoScore: integer("seo_score"),
     publishedAt: timestamp("published_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -73,7 +79,8 @@ export const blogPosts = pgTable(
 
 // ─── Post Translations ──────────────────────────────────────────────────────
 // One row per post × locale. Slug is unique per (organizationId, locale, slug)
-// via the parent organization scope.
+// — organizationId is denormalized from blog_posts so the DB can enforce the
+// unique constraint directly (see migration 0021).
 export const blogPostTranslations = pgTable(
   "blog_post_translations",
   {
@@ -83,6 +90,9 @@ export const blogPostTranslations = pgTable(
     postId: text("post_id")
       .notNull()
       .references(() => blogPosts.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     locale: localeEnum,
     title: text("title").notNull(),
     slug: text("slug").notNull(),
@@ -104,7 +114,14 @@ export const blogPostTranslations = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("blog_post_translations_post_locale_uidx").on(table.postId, table.locale),
+    // Unique translated slug per tenant+locale (org-scoped rows).
+    uniqueIndex("blog_post_translations_org_locale_slug_uidx")
+      .on(table.organizationId, table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NOT NULL`),
+    // Unique translated slug per locale for the global tenant (organization_id IS NULL).
+    uniqueIndex("blog_post_translations_global_locale_slug_uidx")
+      .on(table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NULL`),
     index("blog_post_translations_locale_slug_idx").on(table.locale, table.slug),
   ],
 );
@@ -150,6 +167,9 @@ export const blogCategoryTranslations = pgTable(
     categoryId: text("category_id")
       .notNull()
       .references(() => blogCategories.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     locale: localeEnum,
     name: text("name").notNull(),
     slug: text("slug").notNull(),
@@ -163,7 +183,12 @@ export const blogCategoryTranslations = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("blog_category_translations_cat_locale_uidx").on(table.categoryId, table.locale),
+    uniqueIndex("blog_category_translations_org_locale_slug_uidx")
+      .on(table.organizationId, table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NOT NULL`),
+    uniqueIndex("blog_category_translations_global_locale_slug_uidx")
+      .on(table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NULL`),
     index("blog_category_translations_locale_slug_idx").on(table.locale, table.slug),
   ],
 );
@@ -201,6 +226,9 @@ export const blogTagTranslations = pgTable(
     tagId: text("tag_id")
       .notNull()
       .references(() => blogTags.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     locale: localeEnum,
     name: text("name").notNull(),
     slug: text("slug").notNull(),
@@ -211,7 +239,12 @@ export const blogTagTranslations = pgTable(
       .notNull(),
   },
   (table) => [
-    uniqueIndex("blog_tag_translations_tag_locale_uidx").on(table.tagId, table.locale),
+    uniqueIndex("blog_tag_translations_org_locale_slug_uidx")
+      .on(table.organizationId, table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NOT NULL`),
+    uniqueIndex("blog_tag_translations_global_locale_slug_uidx")
+      .on(table.locale, table.slug)
+      .where(sql`${table.organizationId} IS NULL`),
     index("blog_tag_translations_locale_slug_idx").on(table.locale, table.slug),
   ],
 );
@@ -504,6 +537,8 @@ export const blogPostSeo = pgTable(
       .references(() => blogPosts.id, { onDelete: "cascade" }),
     locale: localeEnum,
     focusKeyword: text("focus_keyword"),
+    // Per-locale SEO score. Mirrors blog_posts.seo_score for this locale; both
+    // are written together by the post actions (see blog_posts.seo_score note).
     focusKeywordScore: integer("focus_keyword_score"),
     readabilityScore: integer("readability_score"),
     metaRobots: text("meta_robots", {
@@ -653,6 +688,11 @@ export const blogSubscribers = pgTable(
     email: text("email").notNull(),
     locale: text("locale", { enum: LOCALES }).notNull(),
     token: text("token").notNull().unique(),
+    // Set the first time a token is consumed (confirm OR unsubscribe). A used
+    // token is rejected on subsequent calls, preventing token replay between
+    // two (re)subscriptions. The token itself stays in the URL (double
+    // opt-in email flow) but becomes single-use once consumed.
+    tokenUsedAt: timestamp("token_used_at"),
     status: text("status", { enum: ["PENDING", "CONFIRMED", "UNSUBSCRIBED"] })
       .default("PENDING")
       .notNull(),
