@@ -5,12 +5,12 @@ import { getDrizzle } from "@database/drizzle";
 import {
   blogPostGalleries,
   blogPostGalleryMedia,
-  mediaFiles,
 } from "@database/schemas";
 import {
   assertBlogPermission,
   resolveBlogTenant,
   assertPostInTenant,
+  assertMediaInTenant,
   blogRateLimit,
   auditBlog,
   blogOrganizationIdSchema,
@@ -150,12 +150,7 @@ export const addGalleryMedia = defineAction({
 
     await assertPostInTenant(gallery.postId, tenant);
 
-    const [media] = await db
-      .select({ id: mediaFiles.id })
-      .from(mediaFiles)
-      .where(eq(mediaFiles.id, input.mediaId))
-      .limit(1);
-    if (!media) throw new ActionError({ code: "NOT_FOUND", message: "Média introuvable." });
+    await assertMediaInTenant(input.mediaId, tenant);
 
     const [row] = await db
       .insert(blogPostGalleryMedia)
@@ -198,6 +193,7 @@ export const removeGalleryMedia = defineAction({
     if (!gallery) throw new ActionError({ code: "NOT_FOUND", message: "Galerie introuvable." });
 
     await assertPostInTenant(gallery.postId, tenant);
+    await assertMediaInTenant(input.mediaId, tenant);
 
     await db
       .delete(blogPostGalleryMedia)

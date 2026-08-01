@@ -237,6 +237,7 @@ export default {
       COMMENT_REJECTED: "Comentario rechazado",
       NEW_REVIEW: "Nueva opinión",
       REVIEW_APPROVED: "Opinión aprobada",
+      REVIEW_REJECTED: "Opinión rechazada",
       POST_PUBLISHED: "Artículo publicado",
       POST_MENTION: "Mencionado en un artículo",
       REPLY_TO_COMMENT: "Respuesta a un comentario",

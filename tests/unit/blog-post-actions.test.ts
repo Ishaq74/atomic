@@ -16,14 +16,17 @@ const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
+const mockTransaction = vi.fn();
+const mockDb = {
+  select: mockSelect,
+  insert: mockInsert,
+  update: mockUpdate,
+  delete: mockDelete,
+  transaction: mockTransaction,
+};
 
 vi.mock('@database/drizzle', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: mockSelect,
-    insert: mockInsert,
-    update: mockUpdate,
-    delete: mockDelete,
-  })),
+  getDrizzle: vi.fn(() => mockDb),
 }));
 
 vi.mock('@database/schemas', () => ({
@@ -36,6 +39,7 @@ vi.mock('@database/schemas', () => ({
   blogPostLocks: { id: 'id', postId: 'postId', userId: 'userId', expiresAt: 'expiresAt' },
   blogCategories: { id: 'id', organizationId: 'organizationId' },
   blogTags: { id: 'id', organizationId: 'organizationId' },
+  mediaFiles: { id: 'id', organizationId: 'organizationId' },
 }));
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
@@ -49,11 +53,13 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@i18n/config', () => ({ LOCALES: ['fr', 'en', 'es', 'ar'] as const }));
 const mockGetFullOrganization = vi.fn();
 const mockUserHasPermission = vi.fn(() => Promise.resolve({ success: true }));
+const mockHasPermission = vi.fn(() => Promise.resolve({ success: true }));
 vi.mock('@/lib/auth', () => ({
   auth: {
     api: {
       getFullOrganization: mockGetFullOrganization,
       userHasPermission: mockUserHasPermission,
+      hasPermission: mockHasPermission,
     },
   },
 }));
@@ -120,8 +126,10 @@ beforeEach(() => {
   mockInsert.mockReset();
   mockUpdate.mockReset();
   mockDelete.mockReset();
+  mockTransaction.mockReset().mockImplementation(async (callback: (tx: typeof mockDb) => Promise<unknown>) => callback(mockDb));
   mockGetFullOrganization.mockReset();
   mockUserHasPermission.mockReset().mockResolvedValue({ success: true });
+  mockHasPermission.mockReset().mockResolvedValue({ success: true });
   vi.mocked(checkRateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 10, resetAt: Date.now() + 60_000 });
 });
 
@@ -152,7 +160,24 @@ describe('createBlogPost', () => {
     const result = await createPost.handler({ ...validPostInput, organizationId: null }, adminCtx());
 
     expect(result).toEqual({ id: 'post-1', slug: validPostInput.slug });
+    expect(mockTransaction).toHaveBeenCalledOnce();
     expect(mockGetFullOrganization).not.toHaveBeenCalled();
+  });
+
+  it('requires create and publish permissions when creating published content', async () => {
+    mockInsert.mockReturnValue(makeMutationChain([{ id: 'post-1' }]));
+
+    await createPost.handler(
+      { ...validPostInput, status: 'PUBLISHED', organizationId: null },
+      adminCtx(),
+    );
+
+    expect(mockUserHasPermission).toHaveBeenCalledWith({
+      body: {
+        userId: 'admin-1',
+        permissions: { blog: ['create', 'publish'] },
+      },
+    });
   });
 
   it('enforces rate limiting on post creation', async () => {
@@ -180,7 +205,7 @@ describe('createBlogPost', () => {
   });
 
   it('rejects a non-admin org member without RBAC permission', async () => {
-    mockGetFullOrganization.mockResolvedValueOnce({ members: [{ userId: 'user-1', role: 'member' }] });
+    mockHasPermission.mockResolvedValueOnce({ success: false });
 
     await expect(
       createPost.handler(
@@ -188,6 +213,7 @@ describe('createBlogPost', () => {
         adminCtx({ id: 'user-1', role: 'user' }),
       ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    expect(mockHasPermission).toHaveBeenCalled();
   });
 });
 
@@ -221,11 +247,40 @@ describe('updateBlogPost', () => {
     mockInsert.mockReturnValue(makeMutationChain());
 
     const result = await updatePost.handler(
-      { id: 'post-1', organizationId: null, locale: 'fr', title: 'New title', slug: 'new-title', status: 'DRAFT' },
+      {
+        id: 'post-1',
+        organizationId: null,
+        locale: 'fr',
+        title: 'New title',
+        slug: 'new-title',
+        content: validPostInput.content,
+        status: 'DRAFT',
+      },
       adminCtx(),
     );
 
     expect(result).toEqual({ id: 'post-1' });
+    expect(mockTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('requires update and publish permissions for a published update', async () => {
+    mockSelect
+      .mockReturnValueOnce(makeChain([{ id: 'post-1', organizationId: null }]))
+      .mockReturnValueOnce(makeChain([]));
+    mockUpdate.mockReturnValue(makeMutationChain());
+    mockInsert.mockReturnValue(makeMutationChain());
+
+    await updatePost.handler(
+      { id: 'post-1', organizationId: null, status: 'PUBLISHED' },
+      adminCtx(),
+    );
+
+    expect(mockUserHasPermission).toHaveBeenCalledWith({
+      body: {
+        userId: 'admin-1',
+        permissions: { blog: ['update', 'publish'] },
+      },
+    });
   });
 });
 
@@ -270,6 +325,7 @@ describe('publishBlogPost', () => {
     const result = await publishPost.handler({ id: 'post-1', organizationId: null }, adminCtx());
 
     expect(result).toEqual({ success: true });
+    expect(mockTransaction).toHaveBeenCalledOnce();
     expect(updateChain.set).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'PUBLISHED', publishedAt: expect.any(Date) }),
     );

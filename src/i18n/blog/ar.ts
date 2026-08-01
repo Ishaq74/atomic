@@ -235,6 +235,7 @@ export default {
       COMMENT_REJECTED: "تم رفض التعليق",
       NEW_REVIEW: "تقييم جديد",
       REVIEW_APPROVED: "تم اعتماد التقييم",
+      REVIEW_REJECTED: "تم رفض التقييم",
       POST_PUBLISHED: "تم نشر المقال",
       POST_MENTION: "إشارة في مقال",
       REPLY_TO_COMMENT: "رد على تعليق",

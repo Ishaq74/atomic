@@ -10,6 +10,7 @@ import {
   assertPostInTenant,
   blogRateLimit,
   auditBlog,
+  invalidateBlogCache,
   blogOrganizationIdSchema,
 } from "./_helpers";
 
@@ -24,6 +25,12 @@ export const createBlogLink = defineAction({
 
     await assertPostInTenant(input.sourcePostId, tenant);
     await assertPostInTenant(input.targetPostId, tenant);
+    if (input.sourcePostId === input.targetPostId) {
+      throw new ActionError({
+        code: "BAD_REQUEST",
+        message: "Un article ne peut pas être lié à lui-même.",
+      });
+    }
 
     const db = getDrizzle();
 
@@ -43,6 +50,7 @@ export const createBlogLink = defineAction({
       metadata: { sourcePostId: input.sourcePostId, targetPostId: input.targetPostId, linkType: input.linkType },
     });
 
+    invalidateBlogCache();
     return { id: link.id };
   },
 });
@@ -80,6 +88,7 @@ export const updateBlogLink = defineAction({
       metadata: { linkType: input.linkType, sortOrder: input.sortOrder },
     });
 
+    invalidateBlogCache();
     return { success: true };
   },
 });
@@ -112,6 +121,7 @@ export const deleteBlogLink = defineAction({
       metadata: { sourcePostId: link.sourcePostId, targetPostId: link.targetPostId },
     });
 
+    invalidateBlogCache();
     return { success: true };
   },
 });

@@ -5,7 +5,12 @@ import { getDrizzle } from "@database/drizzle";
 import { blogComments, blogCommentModerations, blogPosts, blogNotifications } from "@database/schemas";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { blogCommentFormSchema, blogCommentModerationSchema } from "@/lib/blog/validation";
+import { publicBlogPostScope } from "@/lib/blog/public-visibility";
 import { extractIp } from "@/lib/audit";
+
+// Public loaders render roots plus one reply level; reject deeper trees so no
+// accepted comment becomes unreachable in the public thread.
+const MAX_COMMENT_REPLY_DEPTH = 1;
 
 export const createBlogComment = defineAction({
   input: blogCommentFormSchema,
@@ -15,7 +20,7 @@ export const createBlogComment = defineAction({
     const [post] = await db
       .select({ id: blogPosts.id, commentStatus: blogPosts.commentStatus, organizationId: blogPosts.organizationId })
       .from(blogPosts)
-      .where(eq(blogPosts.id, input.postId))
+      .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
       .limit(1);
 
     if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
@@ -29,6 +34,41 @@ export const createBlogComment = defineAction({
     // label) and must be stripped of any markup — sanitizeHtml escapes tags.
     const guestName = input.guestName ? sanitizeHtml(input.guestName) : undefined;
     const guestEmail = input.guestEmail ? sanitizeHtml(input.guestEmail) : undefined;
+
+    if (input.parentId) {
+      let ancestorId: string | null | undefined = input.parentId;
+      let replyDepth = 0;
+
+      while (ancestorId) {
+        const [ancestor] = await db
+          .select({ parentId: blogComments.parentId })
+          .from(blogComments)
+          .where(
+            and(
+              eq(blogComments.id, ancestorId),
+              eq(blogComments.postId, input.postId),
+              eq(blogComments.status, "APPROVED"),
+            ),
+          )
+          .limit(1);
+
+        if (!ancestor) {
+          throw new ActionError({
+            code: "BAD_REQUEST",
+            message: "Le commentaire parent n'appartient pas à cet article ou n'est pas public.",
+          });
+        }
+
+        replyDepth += 1;
+        if (replyDepth > MAX_COMMENT_REPLY_DEPTH) {
+          throw new ActionError({
+            code: "BAD_REQUEST",
+            message: "La profondeur maximale des réponses est atteinte.",
+          });
+        }
+        ancestorId = ancestor.parentId;
+      }
+    }
 
     const [comment] = await db
       .insert(blogComments)
@@ -63,83 +103,123 @@ export const moderateBlogComment = defineAction({
     const user = await assertBlogPermission(context, tenant, { blogComment: ["moderate"] });
 
     const db = getDrizzle();
+    const { newStatus } = await db.transaction(async (tx) => {
+      const [comment] = await tx
+        .select({
+          id: blogComments.id,
+          postId: blogComments.postId,
+          parentId: blogComments.parentId,
+          authorId: blogComments.authorId,
+          content: blogComments.content,
+          status: blogComments.status,
+          postAuthorId: blogPosts.authorId,
+          organizationId: blogPosts.organizationId,
+        })
+        .from(blogComments)
+        .innerJoin(blogPosts, eq(blogComments.postId, blogPosts.id))
+        .where(
+          and(
+            eq(blogComments.id, input.commentId),
+            tenant.organizationId === null
+              ? isNull(blogPosts.organizationId)
+              : eq(blogPosts.organizationId, tenant.organizationId),
+          ),
+        )
+        .limit(1);
 
-    const [comment] = await db
-      .select({ id: blogComments.id, postId: blogComments.postId, parentId: blogComments.parentId, content: blogComments.content, status: blogComments.status })
-      .from(blogComments)
-      .innerJoin(blogPosts, eq(blogComments.postId, blogPosts.id))
-      .where(
-        and(
-          eq(blogComments.id, input.commentId),
-          tenant.organizationId === null
-            ? isNull(blogPosts.organizationId)
-            : eq(blogPosts.organizationId, tenant.organizationId),
-        ),
-      )
-      .limit(1);
+      if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Commentaire introuvable." });
 
-    if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Commentaire introuvable." });
+      const newStatus =
+        input.moderationAction === "APPROVE"
+          ? "APPROVED"
+          : input.moderationAction === "REJECT"
+            ? "REJECTED"
+            : input.moderationAction === "DELETE"
+              ? "TRASH"
+              : input.moderationAction === "RESTORE"
+                ? "PENDING"
+                : comment.status;
 
-    const newStatus =
-      input.moderationAction === "APPROVE"
-        ? "APPROVED"
-        : input.moderationAction === "REJECT"
-          ? "REJECTED"
-          : input.moderationAction === "DELETE"
-            ? "TRASH"
-            : input.moderationAction === "RESTORE"
-              ? "PENDING"
-              : comment.status;
+      const newContent = input.moderationAction === "EDIT" && input.content
+        ? sanitizeHtml(input.content)
+        : comment.content;
+      const becameApproved = newStatus === "APPROVED" && comment.status !== "APPROVED";
+      const becameRejected = newStatus === "REJECTED" && comment.status !== "REJECTED";
 
-    const newContent = input.moderationAction === "EDIT" && input.content ? sanitizeHtml(input.content) : comment.content;
+      await tx
+        .update(blogComments)
+        .set({
+          status: newStatus,
+          content: newContent,
+          isEdited: input.moderationAction === "EDIT",
+        })
+        .where(eq(blogComments.id, input.commentId));
 
-    await db
-      .update(blogComments)
-      .set({
-        status: newStatus,
-        content: newContent,
-        isEdited: input.moderationAction === "EDIT",
-      })
-      .where(eq(blogComments.id, input.commentId));
+      await tx.insert(blogCommentModerations).values({
+        commentId: input.commentId,
+        moderatorId: user.id,
+        action: input.moderationAction,
+        reason: input.reason,
+        previousValues: { status: comment.status, content: comment.content },
+      });
 
-    await db.insert(blogCommentModerations).values({
-      commentId: input.commentId,
-      moderatorId: user.id,
-      action: input.moderationAction,
-      reason: input.reason,
-      previousValues: { status: comment.status, content: comment.content },
-    });
-
-    // Notify comment author. A NEW_COMMENT notification is only sent once
-    // the comment is APPROVED (it is not public before then); a rejection
-    // notifies the author it was declined. The author is never notified
-    // for a still-pending comment.
-    const [commentAuthor] = await db
-      .select({ authorId: blogComments.authorId })
-      .from(blogComments)
-      .where(eq(blogComments.id, input.commentId))
-      .limit(1);
-
-    if (commentAuthor?.authorId && commentAuthor.authorId !== user.id) {
-      if (newStatus === "APPROVED") {
-        await db.insert(blogNotifications).values({
-          userId: commentAuthor.authorId,
-          type: comment.parentId ? "REPLY_TO_COMMENT" : "NEW_COMMENT",
-          postId: comment.postId,
-          commentId: comment.id,
-          fromUserId: user.id,
-          metadata: { content: newContent.slice(0, 200) },
-        });
-      } else if (newStatus === "REJECTED") {
-        await db.insert(blogNotifications).values({
-          userId: commentAuthor.authorId,
-          type: "COMMENT_REJECTED",
-          postId: comment.postId,
-          commentId: comment.id,
-          fromUserId: user.id,
-        });
+      if (comment.authorId && comment.authorId !== user.id) {
+        if (becameApproved) {
+          await tx.insert(blogNotifications).values({
+            userId: comment.authorId,
+            organizationId: comment.organizationId,
+            type: "COMMENT_APPROVED",
+            postId: comment.postId,
+            commentId: comment.id,
+            fromUserId: user.id,
+            metadata: { content: newContent.slice(0, 200) },
+          });
+        } else if (becameRejected) {
+          await tx.insert(blogNotifications).values({
+            userId: comment.authorId,
+            organizationId: comment.organizationId,
+            type: "COMMENT_REJECTED",
+            postId: comment.postId,
+            commentId: comment.id,
+            fromUserId: user.id,
+          });
+        }
       }
-    }
+
+      if (becameApproved) {
+        let recipientId = comment.postAuthorId;
+        let notificationType: "NEW_COMMENT" | "REPLY_TO_COMMENT" = "NEW_COMMENT";
+
+        if (comment.parentId) {
+          const [parent] = await tx
+            .select({ authorId: blogComments.authorId })
+            .from(blogComments)
+            .where(
+              and(
+                eq(blogComments.id, comment.parentId),
+                eq(blogComments.postId, comment.postId),
+              ),
+            )
+            .limit(1);
+          recipientId = parent?.authorId ?? comment.postAuthorId;
+          notificationType = "REPLY_TO_COMMENT";
+        }
+
+        if (recipientId && recipientId !== user.id && recipientId !== comment.authorId) {
+          await tx.insert(blogNotifications).values({
+            userId: recipientId,
+            organizationId: comment.organizationId,
+            type: notificationType,
+            postId: comment.postId,
+            commentId: comment.id,
+            fromUserId: comment.authorId,
+            metadata: { content: newContent.slice(0, 200) },
+          });
+        }
+      }
+
+      return { newStatus };
+    });
 
     auditBlog(context, user.id, "BLOG_COMMENT_MODERATE", {
       resource: "blog_comments",

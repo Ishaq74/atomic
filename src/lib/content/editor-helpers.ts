@@ -47,6 +47,57 @@ export function prefixLines(
   return { value: newValue, selStart: lineStart, selEnd: lineStart + prefixed.length };
 }
 
+function selectedLineRange(value: string, selStart: number, selEnd: number) {
+  const start = Math.max(0, Math.min(selStart, value.length));
+  const end = Math.max(start, Math.min(selEnd, value.length));
+  const lineStart = value.lastIndexOf("\n", start - 1) + 1;
+  // A selection ending exactly at the next line's start must not format that
+  // otherwise unselected line.
+  const effectiveEnd = end > start && value[end - 1] === "\n" ? end - 1 : end;
+  const nextLineBreak = value.indexOf("\n", effectiveEnd);
+  const lineEnd = nextLineBreak === -1 ? value.length : nextLineBreak;
+  return { lineStart, lineEnd };
+}
+
+/** Formats every selected/current line as an HTML h2 block. */
+export function formatHeadingSelection(
+  value: string,
+  selStart: number,
+  selEnd: number,
+): SelectionEdit {
+  const { lineStart, lineEnd } = selectedLineRange(value, selStart, selEnd);
+  const source = value.slice(lineStart, lineEnd) || "Titre";
+  const block = source
+    .split("\n")
+    .map((line) => `<h2>${line}</h2>`)
+    .join("\n");
+  return {
+    value: value.slice(0, lineStart) + block + value.slice(lineEnd),
+    selStart: lineStart,
+    selEnd: lineStart + block.length,
+  };
+}
+
+/** Formats the selected/current lines as one semantic HTML unordered list. */
+export function formatUnorderedListSelection(
+  value: string,
+  selStart: number,
+  selEnd: number,
+): SelectionEdit {
+  const { lineStart, lineEnd } = selectedLineRange(value, selStart, selEnd);
+  const source = value.slice(lineStart, lineEnd) || "Élément";
+  const items = source
+    .split("\n")
+    .map((line) => `<li>${line}</li>`)
+    .join("\n");
+  const block = `<ul>\n${items}\n</ul>`;
+  return {
+    value: value.slice(0, lineStart) + block + value.slice(lineEnd),
+    selStart: lineStart,
+    selEnd: lineStart + block.length,
+  };
+}
+
 /** Inserts a block at the caret, replacing the current selection. */
 export function insertAtCaret(
   value: string,

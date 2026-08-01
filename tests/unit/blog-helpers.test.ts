@@ -15,6 +15,7 @@ vi.mock('astro:actions', () => {
 const mockSelect = vi.fn();
 const mockGetFullOrganization = vi.fn();
 const mockUserHasPermission = vi.fn();
+const mockHasPermission = vi.fn();
 
 vi.mock('@database/drizzle', () => ({
   getDrizzle: vi.fn(() => ({
@@ -26,6 +27,7 @@ vi.mock('@database/schemas', () => ({
   blogPosts: { id: 'id', organizationId: 'organizationId' },
   blogCategories: { id: 'id', organizationId: 'organizationId' },
   blogTags: { id: 'id', organizationId: 'organizationId' },
+  mediaFiles: { id: 'id', organizationId: 'organizationId' },
 }));
 
 vi.mock('@/lib/auth', () => ({
@@ -33,6 +35,7 @@ vi.mock('@/lib/auth', () => ({
     api: {
       getFullOrganization: mockGetFullOrganization,
       userHasPermission: mockUserHasPermission,
+      hasPermission: mockHasPermission,
     },
   },
 }));
@@ -45,14 +48,19 @@ vi.mock('@/lib/audit', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
 }));
+vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
 
 import {
   assertBlogPermission,
   assertCategoryInTenant,
+  assertMediaInTenant,
   assertPostInTenant,
   assertTagInTenant,
+  hasBlogPermission,
+  invalidateBlogCache,
   resolveBlogTenant,
 } from '@/actions/blog/_helpers';
+import { invalidateCache } from '@database/cache';
 
 function fakeContext(user: any = null): any {
   return {
@@ -78,7 +86,9 @@ beforeEach(() => {
   mockSelect.mockReset();
   mockGetFullOrganization.mockReset();
   mockUserHasPermission.mockReset();
+  mockHasPermission.mockReset();
   mockUserHasPermission.mockResolvedValue({ success: true });
+  mockHasPermission.mockResolvedValue({ success: true });
 });
 
 describe('resolveBlogTenant', () => {
@@ -104,24 +114,27 @@ describe('assertBlogPermission', () => {
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
   });
 
-  it('returns the global admin without org lookup or RBAC call', async () => {
+  it('checks global permissions without an implicit admin bypass', async () => {
     const user = { id: 'admin-1', role: 'admin', banned: false };
 
     const result = await assertBlogPermission(
       fakeContext(user),
-      { organizationId: 'org-1', isOrgContext: true },
+      { organizationId: null, isOrgContext: false },
       { blog: ['delete'] },
     );
 
     expect(result).toBe(user);
     expect(mockGetFullOrganization).not.toHaveBeenCalled();
-    expect(mockUserHasPermission).not.toHaveBeenCalled();
+    expect(mockUserHasPermission).toHaveBeenCalledWith({
+      body: {
+        userId: 'admin-1',
+        permissions: { blog: ['delete'] },
+      },
+    });
   });
 
-  it('rejects a non-admin org member in org context', async () => {
-    mockGetFullOrganization.mockResolvedValueOnce({
-      members: [{ userId: 'user-1', role: 'member' }],
-    });
+  it('rejects when Better Auth denies the organization permission', async () => {
+    mockHasPermission.mockResolvedValueOnce({ success: false });
 
     await expect(
       assertBlogPermission(
@@ -134,26 +147,24 @@ describe('assertBlogPermission', () => {
     expect(mockUserHasPermission).not.toHaveBeenCalled();
   });
 
-  it('allows an org admin in org context when RBAC passes', async () => {
-    mockGetFullOrganization.mockResolvedValueOnce({
-      members: [{ userId: 'user-1', role: 'admin' }],
-    });
-
+  it('uses the session-scoped organization permission endpoint', async () => {
     const user = { id: 'user-1', role: 'user', banned: false };
+    const context = fakeContext(user);
     const result = await assertBlogPermission(
-      fakeContext(user),
+      context,
       { organizationId: 'org-1', isOrgContext: true },
       { blog: ['publish'] },
     );
 
     expect(result).toBe(user);
-    expect(mockGetFullOrganization).toHaveBeenCalledOnce();
-    expect(mockUserHasPermission).toHaveBeenCalledWith({
+    expect(mockHasPermission).toHaveBeenCalledWith({
+      headers: context.request.headers,
       body: {
-        userId: 'user-1',
+        organizationId: 'org-1',
         permissions: { blog: ['publish'] },
       },
     });
+    expect(mockUserHasPermission).not.toHaveBeenCalled();
   });
 
   it('rejects when RBAC denies the requested blog permission', async () => {
@@ -166,6 +177,18 @@ describe('assertBlogPermission', () => {
         { blogReview: ['moderate'] },
       ),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('returns false instead of throwing when a capability lookup fails', async () => {
+    mockHasPermission.mockRejectedValueOnce(new Error('auth unavailable'));
+
+    await expect(
+      hasBlogPermission(
+        fakeContext({ id: 'user-1', role: 'user', banned: false }),
+        { organizationId: 'org-1', isOrgContext: true },
+        { blog: ['read'] },
+      ),
+    ).resolves.toBe(false);
   });
 });
 
@@ -202,5 +225,22 @@ describe('tenant resource guards', () => {
     await expect(
       assertTagInTenant('tag-1', { organizationId: null, isOrgContext: false }),
     ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+
+  it('rejects media from another tenant', async () => {
+    mockSelect.mockReturnValueOnce(selectChain([{ id: 'media-1', organizationId: 'org-2' }]));
+
+    await expect(
+      assertMediaInTenant('media-1', { organizationId: 'org-1', isOrgContext: true }),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+  });
+});
+
+describe('invalidateBlogCache', () => {
+  it('invalidates slug and internal-link target caches', () => {
+    invalidateBlogCache();
+
+    expect(invalidateCache).toHaveBeenCalledWith('blog:slugs:');
+    expect(invalidateCache).toHaveBeenCalledWith('blog:link-targets:');
   });
 });

@@ -114,6 +114,7 @@ export const blogPostTranslations = pgTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("blog_post_translations_post_locale_uidx").on(table.postId, table.locale),
     // Unique translated slug per tenant+locale (org-scoped rows).
     uniqueIndex("blog_post_translations_org_locale_slug_uidx")
       .on(table.organizationId, table.locale, table.slug)
@@ -183,6 +184,10 @@ export const blogCategoryTranslations = pgTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("blog_category_translations_category_locale_uidx").on(
+      table.categoryId,
+      table.locale,
+    ),
     uniqueIndex("blog_category_translations_org_locale_slug_uidx")
       .on(table.organizationId, table.locale, table.slug)
       .where(sql`${table.organizationId} IS NOT NULL`),
@@ -239,6 +244,7 @@ export const blogTagTranslations = pgTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("blog_tag_translations_tag_locale_uidx").on(table.tagId, table.locale),
     uniqueIndex("blog_tag_translations_org_locale_slug_uidx")
       .on(table.organizationId, table.locale, table.slug)
       .where(sql`${table.organizationId} IS NOT NULL`),
@@ -436,6 +442,7 @@ export const blogPostReviews = pgTable(
     index("blog_post_reviews_author_idx").on(table.authorId),
     index("blog_post_reviews_rating_idx").on(table.rating),
     index("blog_post_reviews_status_idx").on(table.status),
+    check("blog_post_reviews_rating_check", sql`${table.rating} BETWEEN 1 AND 5`),
   ],
 );
 
@@ -581,6 +588,7 @@ export const blogPostViewStats = pgTable(
     index("blog_post_view_stats_post_idx").on(table.postId),
     index("blog_post_view_stats_date_idx").on(table.date),
     index("blog_post_view_stats_post_date_idx").on(table.postId, table.date),
+    check("blog_post_view_stats_hour_check", sql`${table.hour} BETWEEN 0 AND 23`),
   ],
 );
 
@@ -594,6 +602,9 @@ export const blogNotifications = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
     type: text("type", {
       enum: [
         "NEW_COMMENT",
@@ -601,6 +612,7 @@ export const blogNotifications = pgTable(
         "COMMENT_REJECTED",
         "NEW_REVIEW",
         "REVIEW_APPROVED",
+        "REVIEW_REJECTED",
         "POST_PUBLISHED",
         "POST_MENTION",
         "REPLY_TO_COMMENT",
@@ -616,16 +628,16 @@ export const blogNotifications = pgTable(
   },
   (table) => [
     index("blog_notifications_user_idx").on(table.userId),
+    index("blog_notifications_org_user_idx").on(table.organizationId, table.userId),
     index("blog_notifications_read_idx").on(table.isRead),
     index("blog_notifications_type_idx").on(table.type),
     index("blog_notifications_created_idx").on(table.createdAt),
     check(
       "blog_notifications_single_target",
       sql`(
-        (${table.postId} IS NOT NULL)::int +
-        (${table.commentId} IS NOT NULL)::int +
-        (${table.reviewId} IS NOT NULL)::int
-      ) = 1`,
+        ${table.postId} IS NOT NULL
+        AND NOT (${table.commentId} IS NOT NULL AND ${table.reviewId} IS NOT NULL)
+      )`,
     ),
   ],
 );
@@ -672,6 +684,7 @@ export const blogPostLinks = pgTable(
     uniqueIndex("blog_post_links_unique_idx").on(table.sourcePostId, table.targetPostId, table.linkType),
     index("blog_post_links_source_idx").on(table.sourcePostId),
     index("blog_post_links_target_idx").on(table.targetPostId),
+    check("blog_post_links_no_self_check", sql`${table.sourcePostId} <> ${table.targetPostId}`),
   ],
 );
 
@@ -687,12 +700,15 @@ export const blogSubscribers = pgTable(
     }),
     email: text("email").notNull(),
     locale: text("locale", { enum: LOCALES }).notNull(),
-    token: text("token").notNull().unique(),
-    // Set the first time a token is consumed (confirm OR unsubscribe). A used
-    // token is rejected on subsequent calls, preventing token replay between
-    // two (re)subscriptions. The token itself stays in the URL (double
-    // opt-in email flow) but becomes single-use once consumed.
+    // Legacy plaintext token retained only for links issued before migration
+    // 0005. New subscriptions use the separate purpose-bound hashes below.
+    token: text("token").unique(),
     tokenUsedAt: timestamp("token_used_at"),
+    confirmationTokenHash: text("confirmation_token_hash"),
+    confirmationTokenExpiresAt: timestamp("confirmation_token_expires_at"),
+    confirmationTokenUsedAt: timestamp("confirmation_token_used_at"),
+    unsubscribeTokenHash: text("unsubscribe_token_hash"),
+    unsubscribeTokenUsedAt: timestamp("unsubscribe_token_used_at"),
     status: text("status", { enum: ["PENDING", "CONFIRMED", "UNSUBSCRIBED"] })
       .default("PENDING")
       .notNull(),
@@ -709,6 +725,19 @@ export const blogSubscribers = pgTable(
     index("blog_subscribers_org_idx").on(table.organizationId),
     index("blog_subscribers_status_idx").on(table.status),
     index("blog_subscribers_token_idx").on(table.token),
+    uniqueIndex("blog_subscribers_confirmation_token_hash_uidx").on(
+      table.confirmationTokenHash,
+    ),
+    uniqueIndex("blog_subscribers_unsubscribe_token_hash_uidx").on(
+      table.unsubscribeTokenHash,
+    ),
+    index("blog_subscribers_confirmation_expires_idx").on(
+      table.confirmationTokenExpiresAt,
+    ),
+    check(
+      "blog_subscribers_token_purpose_check",
+      sql`${table.confirmationTokenHash} IS NULL OR ${table.unsubscribeTokenHash} IS NULL OR ${table.confirmationTokenHash} <> ${table.unsubscribeTokenHash} OR (${table.token} IS NULL AND ${table.tokenUsedAt} IS NOT NULL)`,
+    ),
   ],
 );
 
@@ -973,6 +1002,10 @@ export const blogNotificationsRelations = relations(blogNotifications, ({ one })
   user: one(user, {
     fields: [blogNotifications.userId],
     references: [user.id],
+  }),
+  organization: one(organization, {
+    fields: [blogNotifications.organizationId],
+    references: [organization.id],
   }),
   post: one(blogPosts, {
     fields: [blogNotifications.postId],

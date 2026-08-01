@@ -536,6 +536,22 @@ function toDatetimeLocal(date: Date | null): string {
     const orgIdValue = (form.querySelector('input[name="organizationId"]') as HTMLInputElement | null)?.value?.trim();
     const organizationId = orgIdValue ? orgIdValue : undefined;
     let lockTimer: number | undefined;
+    let isDirty = false;
+
+    const markDirty = () => {
+      isDirty = true;
+    };
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    form.addEventListener('input', markDirty);
+    form.addEventListener('change', markDirty);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('astro:before-swap', () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, { once: true });
 
     async function refreshLock() {
       if (form.dataset.mode !== 'edit' || !postId) return;
@@ -553,12 +569,18 @@ function toDatetimeLocal(date: Date | null): string {
 
     featuredPicker?.addEventListener('media-select', (event) => {
       const detail = (event as CustomEvent).detail;
-      if (featuredInput) featuredInput.value = detail.fileId ?? '';
+      if (featuredInput) {
+        featuredInput.value = detail.fileId ?? '';
+        markDirty();
+      }
     });
 
     ogPicker?.addEventListener('media-select', (event) => {
       const detail = (event as CustomEvent).detail;
-      if (ogInput) ogInput.value = detail.fileId ?? '';
+      if (ogInput) {
+        ogInput.value = detail.fileId ?? '';
+        markDirty();
+      }
     });
 
     if (form.dataset.mode === 'edit' && postId) {
@@ -617,6 +639,7 @@ function toDatetimeLocal(date: Date | null): string {
         return;
       }
 
+      isDirty = false;
       toast.success(mode === 'edit' ? form.dataset.tUpdated ?? '' : form.dataset.tCreated ?? '');
       const createdId = (result.data as { id?: string } | undefined)?.id;
       if (mode !== 'edit' && createdId) {
@@ -706,6 +729,13 @@ function toDatetimeLocal(date: Date | null): string {
 
     const checkBtn = document.getElementById('link-check-btn');
     const reportEl = document.getElementById('link-check-report');
+    const replaceReportWithMessage = (message: string, className: string) => {
+      if (!reportEl) return;
+      const paragraph = document.createElement('p');
+      paragraph.className = className;
+      paragraph.textContent = message;
+      reportEl.replaceChildren(paragraph);
+    };
     checkBtn?.addEventListener('click', async () => {
       if (!postId) {
         toast.error('Enregistrez l\'article avant de vérifier les liens.');
@@ -713,25 +743,40 @@ function toDatetimeLocal(date: Date | null): string {
       }
       const formEl = galleriesList.closest('form') as HTMLFormElement | null;
       const localeVal = formEl?.dataset.locale ?? 'fr';
-      if (reportEl) reportEl.innerHTML = '<p class="text-sm text-muted-foreground">Vérification…</p>';
+      replaceReportWithMessage('Vérification…', 'text-sm text-muted-foreground');
       const { data, error } = await actions.checkBlogPostLinks({ postId, locale: localeVal, organizationId: orgId });
       if (error || !data) {
-        if (reportEl) reportEl.innerHTML = `<p class="text-sm text-destructive">${error?.message ?? 'Erreur'}</p>`;
+        replaceReportWithMessage(error?.message ?? 'Erreur', 'text-sm text-destructive');
         return;
       }
       const deadCount = data.deadExplicit.length + data.deadInline.length;
       if (deadCount === 0) {
-        if (reportEl) reportEl.innerHTML = '<p class="rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-success">Aucun lien mort détecté.</p>';
+        replaceReportWithMessage(
+          'Aucun lien mort détecté.',
+          'rounded-lg border border-success/40 bg-success/10 px-3 py-2 text-sm text-success',
+        );
         return;
       }
-      const items = [
-        ...data.deadExplicit.map((d: { linkType: string; targetPostId: string }) =>
-          `<li class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">Lien « ${d.linkType} » → article supprimé (${d.targetPostId})</li>`),
-        ...data.deadInline.map((d: { text: string; target: string | null; reason: string }) =>
-          `<li class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm">Lien interne mort${d.target ? ` (${d.target})` : ''} : « ${d.text} »</li>`),
-      ];
       if (reportEl) {
-        reportEl.innerHTML = `<p class="text-sm font-medium text-destructive">${deadCount} lien(s) mort(s) détecté(s) :</p><ul class="space-y-2">${items.join('')}</ul>`;
+        const summary = document.createElement('p');
+        summary.className = 'text-sm font-medium text-destructive';
+        summary.textContent = `${deadCount} lien(s) mort(s) détecté(s) :`;
+
+        const list = document.createElement('ul');
+        list.className = 'space-y-2';
+        const appendItem = (text: string) => {
+          const item = document.createElement('li');
+          item.className = 'rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm';
+          item.textContent = text;
+          list.appendChild(item);
+        };
+        data.deadExplicit.forEach((dead: { linkType: string; targetPostId: string }) => {
+          appendItem(`Lien « ${dead.linkType} » → article supprimé (${dead.targetPostId})`);
+        });
+        data.deadInline.forEach((dead: { text: string; target: string | null; reason: string }) => {
+          appendItem(`Lien interne mort${dead.target ? ` (${dead.target})` : ''} : « ${dead.text} »`);
+        });
+        reportEl.replaceChildren(summary, list);
       }
     });
   }

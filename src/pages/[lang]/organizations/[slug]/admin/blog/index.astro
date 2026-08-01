@@ -7,6 +7,7 @@ import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
 import BlogAdminPage from "@/components/blog/BlogAdminPage.astro";
+import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 
 export const prerender = false;
 
@@ -22,7 +23,19 @@ if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']
 
 const { org, members } = orgData;
 const activeOrgRole = getUserOrgRole(members, user.id);
-if (activeOrgRole !== 'admin' && activeOrgRole !== 'owner') {
+const tenant = resolveBlogTenant({ organizationId: org.id });
+const [canAccessBlog, canPublish, canDelete] = await Promise.all([
+  hasBlogPermission(Astro, tenant, {
+    blog: ["read"],
+    blogCategory: ["read"],
+    blogTag: ["read"],
+    blogComment: ["read"],
+    blogReview: ["read"],
+  }),
+  hasBlogPermission(Astro, tenant, { blog: ["publish"] }),
+  hasBlogPermission(Astro, tenant, { blog: ["delete"] }),
+]);
+if (!canAccessBlog) {
   return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
 }
 
@@ -75,6 +88,8 @@ const tags = tagRows.map((item) => ({
       basePublicUrl={basePublicUrl}
       organizationId={org.id}
       userId={user.id}
+      canPublish={canPublish}
+      canDelete={canDelete}
     />
   </AuthLayout>
 </BaseLayout>

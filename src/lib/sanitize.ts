@@ -13,9 +13,13 @@ const ALLOWED_ATTR = [
   "href", "src", "alt", "title", "class",
   "target", "rel", "width", "height",
   "colspan", "rowspan", "loading",
+  "id", "data-internal-link",
 ];
 
 const SAFE_URL_PROTOCOLS = /^(https?:\/\/|mailto:|tel:|\/(?!\/)).+/;
+const HEADING_TAGS = new Set(["H1", "H2", "H3", "H4", "H5", "H6"]);
+const CONTROLLED_HEADING_ID = /^[\p{L}\p{N}][\p{L}\p{N}._:-]{0,127}$/u;
+const CONTROLLED_INTERNAL_TARGET = /^[\p{L}\p{N}][\p{L}\p{N}._:/-]{0,255}$/u;
 
 /** Validates a URL for use in <a href>. Blocks javascript:, data:, vbscript: etc. */
 export function safeUrl(url: unknown): string {
@@ -54,6 +58,22 @@ const MAX_SANITIZE_LENGTH = 500_000; // 500 KB
 DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
     node.setAttribute("rel", "noopener noreferrer");
+  }
+});
+
+// DOMPurify's attribute allowlist is global. Restrict these two editor
+// attributes to their intended elements and controlled values rather than
+// broadly enabling ids or arbitrary data-* attributes on authored content.
+DOMPurify.addHook("uponSanitizeAttribute", (node, data) => {
+  if (data.attrName === "id") {
+    data.keepAttr =
+      HEADING_TAGS.has(node.nodeName.toUpperCase()) &&
+      CONTROLLED_HEADING_ID.test(data.attrValue);
+  }
+  if (data.attrName === "data-internal-link") {
+    data.keepAttr =
+      node.nodeName.toUpperCase() === "A" &&
+      (data.attrValue === "" || CONTROLLED_INTERNAL_TARGET.test(data.attrValue));
   }
 });
 

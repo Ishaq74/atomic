@@ -6,6 +6,7 @@ import { isValidLocale } from "@i18n/utils";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { DEFAULT_LOCALE } from "@i18n/config";
 import { buildBlogPostUrl } from "@/lib/blog/utils";
+import { publicBlogPostColumnsScope } from "@/lib/blog/public-visibility";
 
 export const prerender = false;
 
@@ -17,7 +18,7 @@ const ERROR_CODES = {
 } as const;
 
 /** Map CMS locale to PostgreSQL text search configuration */
-function getRegconfig(locale: string): string {
+export function getRegconfig(locale: string): string {
   switch (locale) {
     case "fr": return "french";
     case "en": return "english";
@@ -31,7 +32,7 @@ function getRegconfig(locale: string): string {
  * Strips tsquery operators, prefix-matches on the last word for autocomplete.
  * Returns null if no valid tokens remain.
  */
-function buildTsQuery(raw: string): string | null {
+export function buildTsQuery(raw: string): string | null {
   const tokens = raw
     .split(/\s+/)
     .map((w) => w.replace(/[&|!():'\\<>]/g, "").trim())
@@ -118,6 +119,14 @@ export const GET: APIRoute = async ({ url, clientAddress }) => {
     }
   }
 
+  const blogOrganizationPredicate = orgId
+    ? sql`bp.organization_id = ${orgId}`
+    : sql`bp.organization_id IS NULL`;
+  const blogPublicationPredicate = publicBlogPostColumnsScope(
+    sql.raw("bp.status"),
+    sql.raw("bp.published_at"),
+  );
+
   const raw = await db.execute<{
     type: "page" | "blog_post";
     id: string;
@@ -180,8 +189,8 @@ export const GET: APIRoute = async ({ url, clientAddress }) => {
       FROM blog_posts bp
       JOIN blog_post_translations bpt ON bpt.post_id = bp.id AND bpt.locale = ${locale}
       WHERE bpt.search_vector @@ to_tsquery(${sql.raw(`'${regconfig}'`)}, ${tsQuery})
-        AND bp.organization_id IS ${orgId ? sql.raw(`'${orgId}'`) : sql.raw("NULL")}
-        AND bp.status = 'PUBLISHED'
+        AND ${blogOrganizationPredicate}
+        AND ${blogPublicationPredicate}
     ) combined
     ORDER BY rank DESC
     LIMIT ${limit}

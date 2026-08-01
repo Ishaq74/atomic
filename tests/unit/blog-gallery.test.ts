@@ -30,7 +30,7 @@ vi.mock('@database/schemas', () => ({
   blogPostGalleries: { id: 'id', postId: 'postId' },
   blogPostGalleryMedia: { id: 'id', galleryId: 'galleryId', mediaId: 'mediaId' },
   blogPosts: { id: 'id', organizationId: 'organizationId' },
-  mediaFiles: { id: 'id' },
+  mediaFiles: { id: 'id', organizationId: 'organizationId' },
 }));
 
 vi.mock('@database/cache', () => ({ invalidateCache: vi.fn() }));
@@ -46,6 +46,7 @@ vi.mock('@/lib/auth', () => ({
   auth: {
     api: {
       userHasPermission: vi.fn(() => Promise.resolve({ success: true })),
+      hasPermission: vi.fn(() => Promise.resolve({ success: true })),
       getFullOrganization: vi.fn(() => Promise.resolve({ members: [] })),
     },
   },
@@ -129,13 +130,30 @@ describe('blog gallery actions', () => {
   it('adds media to a gallery', async () => {
     mockSelect
       .mockImplementationOnce(() => selectChain([{ id: 'gal-1', postId: 'post-1' }]))
-      .mockImplementationOnce(() => selectChain([{ id: 'media-1' }]));
+      .mockImplementationOnce(() => selectChain([{ id: 'post-1', organizationId: null }]))
+      .mockImplementationOnce(() => selectChain([{ id: 'media-1', organizationId: null }]));
     const res = await addMedia.handler(
       { galleryId: 'gal-1', mediaId: 'media-1', altText: 'alt', sortOrder: 0, organizationId: null },
       adminCtx(),
     );
     expect(res.success).toBe(true);
     expect(mockInsert).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects media belonging to another organization before insertion', async () => {
+    mockSelect
+      .mockImplementationOnce(() => selectChain([{ id: 'gal-1', postId: 'post-1' }]))
+      .mockImplementationOnce(() => selectChain([{ id: 'post-1', organizationId: 'org-1' }]))
+      .mockImplementationOnce(() => selectChain([{ id: 'media-1', organizationId: 'org-2' }]));
+
+    await expect(
+      addMedia.handler(
+        { galleryId: 'gal-1', mediaId: 'media-1', altText: 'alt', sortOrder: 0, organizationId: 'org-1' },
+        adminCtx(),
+      ),
+    ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+
+    expect(mockInsert).not.toHaveBeenCalled();
   });
 
   it('removes media from a gallery', async () => {

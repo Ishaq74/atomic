@@ -27,12 +27,12 @@ vi.mock('@database/schemas', () => ({
   blogPostGalleryMedia: { galleryId: 'galleryId', mediaId: 'mediaId', sortOrder: 'sortOrder' },
   blogPostReviews: { id: 'id', postId: 'postId', authorId: 'authorId', status: 'status', rating: 'rating', createdAt: 'createdAt' },
   blogPostReviewHelpful: { reviewId: 'reviewId', userId: 'userId', isHelpful: 'isHelpful' },
-  blogReports: { id: 'id', postId: 'postId', status: 'status', reporterId: 'reporterId', createdAt: 'createdAt' },
+  blogReports: { id: 'id', postId: 'postId', commentId: 'commentId', reviewId: 'reviewId', status: 'status', reporterId: 'reporterId', createdAt: 'createdAt' },
   blogPostFavorites: { postId: 'postId', userId: 'userId' },
   blogPostReactions: { postId: 'postId', userId: 'userId', reactionType: 'reactionType' },
   blogPostSeo: { id: 'id', postId: 'postId', locale: 'locale' },
   blogPostViewStats: { id: 'id', postId: 'postId', date: 'date', hour: 'hour', referrer: 'referrer', deviceType: 'deviceType' },
-  blogNotifications: { id: 'id', userId: 'userId', isRead: 'isRead', createdAt: 'createdAt', postId: 'postId', fromUserId: 'fromUserId' },
+  blogNotifications: { id: 'id', userId: 'userId', isRead: 'isRead', createdAt: 'createdAt', postId: 'postId', commentId: 'commentId', reviewId: 'reviewId', fromUserId: 'fromUserId' },
   blogPostLocks: { id: 'id', postId: 'postId' },
   blogPostLinks: { id: 'id' },
   mediaFiles: { id: 'id', url: 'url', width: 'width', height: 'height' },
@@ -43,9 +43,11 @@ vi.mock('@i18n/utils', () => ({ isValidLocale: (l: string) => ['fr', 'en', 'es',
 
 import {
   getBlogPosts,
+  getBlogPostBySlug,
   getBlogCategories,
   getBlogTags,
   getBlogReviewStats,
+  getBlogModerationQueue,
   getBlogNotifications,
   getUnreadBlogNotificationCount,
 } from '@/database/loaders/blog.loader';
@@ -89,10 +91,19 @@ describe('getBlogPosts', () => {
       hasNextPage: false,
       hasPrevPage: false,
     });
+
   });
 
   it('returns an empty result for an invalid locale without querying the DB', async () => {
     const { items, meta } = await getBlogPosts(null, 'xx' as any, { page: 1 });
+
+    expect(items).toEqual([]);
+    expect(meta.total).toBe(0);
+    expect(mockSelect).not.toHaveBeenCalled();
+  });
+
+  it('never exposes a non-published status through the public list loader', async () => {
+    const { items, meta } = await getBlogPosts(null, 'fr', { page: 1, status: 'DRAFT' });
 
     expect(items).toEqual([]);
     expect(meta.total).toBe(0);
@@ -130,6 +141,23 @@ describe('getBlogPosts', () => {
       hasNextPage: true,
       hasPrevPage: true,
     });
+  });
+});
+
+describe('getBlogPostBySlug', () => {
+  it('applies tenant and visibility in the initial joined query before LIMIT 1', async () => {
+    const initialQuery = makeChain([]);
+    mockSelect.mockReturnValueOnce(initialQuery);
+
+    const result = await getBlogPostBySlug('org-1', 'fr', 'shared-slug');
+
+    expect(result).toBeNull();
+    expect(mockSelect).toHaveBeenCalledOnce();
+    expect(initialQuery.innerJoin).toHaveBeenCalledOnce();
+    expect(initialQuery.where).toHaveBeenCalledOnce();
+    expect(initialQuery.where.mock.invocationCallOrder[0]).toBeLessThan(
+      initialQuery.limit.mock.invocationCallOrder[0],
+    );
   });
 });
 
@@ -207,6 +235,16 @@ describe('getBlogNotifications', () => {
 
     expect(result).toEqual(rows);
   });
+
+  it('can filter notifications by organization through their resolved post target', async () => {
+    const chain = makeChain([]);
+    mockSelect.mockReturnValueOnce(chain);
+
+    await getBlogNotifications('user-1', { limit: 10, organizationId: 'org-1' });
+
+    expect(chain.leftJoin).toHaveBeenCalledTimes(4);
+    expect(chain.where).toHaveBeenCalledOnce();
+  });
 });
 
 describe('getUnreadBlogNotificationCount', () => {
@@ -216,5 +254,23 @@ describe('getUnreadBlogNotificationCount', () => {
     const count = await getUnreadBlogNotificationCount('user-1');
 
     expect(count).toBe(4);
+  });
+});
+
+describe('getBlogModerationQueue', () => {
+  it('left-joins report subjects so indirect comment and review reports are returned', async () => {
+    const commentsChain = makeChain([]);
+    const reviewsChain = makeChain([]);
+    const reportsChain = makeChain([]);
+    mockSelect
+      .mockReturnValueOnce(commentsChain)
+      .mockReturnValueOnce(reviewsChain)
+      .mockReturnValueOnce(reportsChain);
+
+    const result = await getBlogModerationQueue(null);
+
+    expect(result).toEqual({ comments: [], reviews: [], reports: [] });
+    expect(reportsChain.leftJoin).toHaveBeenCalledTimes(4);
+    expect(reportsChain.innerJoin).not.toHaveBeenCalled();
   });
 });

@@ -1,10 +1,11 @@
 import { blogRateLimit, invalidateBlogCache, auditBlog } from "./_helpers";
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, count, sql } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogPostReactions, blogPostFavorites, blogPosts } from "@database/schemas";
 import { blogReactionFormSchema } from "@/lib/blog/validation";
+import { publicBlogPostScope } from "@/lib/blog/public-visibility";
 
 export const toggleBlogReaction = defineAction({
   input: blogReactionFormSchema,
@@ -14,17 +15,18 @@ export const toggleBlogReaction = defineAction({
     blogRateLimit(context, user.id, "reaction-toggle", { window: 60, max: 60 });
 
     const db = getDrizzle();
-    const [post] = await db
-      .select({ id: blogPosts.id })
-      .from(blogPosts)
-      .where(eq(blogPosts.id, input.postId))
-      .limit(1);
-    if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
 
     // Run the toggle + the recount inside a single transaction so the count
     // is read under the same isolation snapshot as the write (no read-after-write
     // race under concurrent toggles from different users on the same post).
     const { active, count: total } = await db.transaction(async (tx) => {
+      const [post] = await tx
+        .select({ id: blogPosts.id })
+        .from(blogPosts)
+        .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
+        .limit(1);
+      if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
+
       const [existing] = await tx
         .select()
         .from(blogPostReactions)
@@ -90,6 +92,13 @@ export const toggleBlogFavorite = defineAction({
     // Same transactional isolation as toggleBlogReaction: write + recount in
     // one snapshot so concurrent favorites can't desync the returned count.
     const { active, count: total } = await db.transaction(async (tx) => {
+      const [post] = await tx
+        .select({ id: blogPosts.id })
+        .from(blogPosts)
+        .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
+        .limit(1);
+      if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
+
       const [existing] = await tx
         .select()
         .from(blogPostFavorites)
