@@ -1193,6 +1193,7 @@ export interface BlogTranslations {
       | "COMMENT_REJECTED"
       | "NEW_REVIEW"
       | "REVIEW_APPROVED"
+      | "REVIEW_REJECTED"
       | "POST_PUBLISHED"
       | "POST_MENTION"
       | "REPLY_TO_COMMENT",

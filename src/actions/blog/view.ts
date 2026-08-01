@@ -1,9 +1,10 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogPosts, blogPostViewStats } from "@database/schemas";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { publicBlogPostScope } from "@/lib/blog/public-visibility";
 import { extractIp } from "@/lib/audit";
 
 type DeviceType = "DESKTOP" | "MOBILE" | "TABLET";
@@ -41,13 +42,12 @@ export const recordBlogPostView = defineAction({
   }),
   handler: async (input, context) => {
     const db = getDrizzle();
-    const [post] = await db
+    const [visiblePost] = await db
       .select({ id: blogPosts.id })
       .from(blogPosts)
-      .where(eq(blogPosts.id, input.postId))
+      .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
       .limit(1);
-
-    if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
+    if (!visiblePost) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
 
     // Resolve the stable visitor id FIRST (cookie for anon, session for auth)
     // so it can drive de-duplication — not the IP alone.
@@ -81,18 +81,23 @@ export const recordBlogPostView = defineAction({
     const now = new Date();
     const deviceType = detectDeviceType(context.request.headers.get("user-agent"));
 
-    await db
-      .update(blogPosts)
-      .set({ viewCount: sql`${blogPosts.viewCount} + 1` })
-      .where(eq(blogPosts.id, input.postId));
+    await db.transaction(async (tx) => {
+      const [updatedPost] = await tx
+        .update(blogPosts)
+        .set({ viewCount: sql`${blogPosts.viewCount} + 1` })
+        .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
+        .returning({ id: blogPosts.id });
 
-    await db.insert(blogPostViewStats).values({
-      postId: input.postId,
-      date: now.toISOString().slice(0, 10),
-      hour: now.getUTCHours(),
-      referrer: input.referrer?.slice(0, 500),
-      deviceType,
-      sessionId: visitorSessionId,
+      if (!updatedPost) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
+
+      await tx.insert(blogPostViewStats).values({
+        postId: input.postId,
+        date: now.toISOString().slice(0, 10),
+        hour: now.getUTCHours(),
+        referrer: input.referrer?.slice(0, 500),
+        deviceType,
+        sessionId: visitorSessionId,
+      });
     });
 
     // Views are recorded in blogPostViewStats (their own analytics table).

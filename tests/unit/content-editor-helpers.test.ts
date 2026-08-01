@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   wrapSelection,
   prefixLines,
+  formatHeadingSelection,
+  formatUnorderedListSelection,
   insertAtCaret,
   buildImageToken,
   buildExternalLinkToken,
@@ -26,6 +28,23 @@ describe('content editor helpers', () => {
   it('prefixLines prefixes each intersecting line', () => {
     const r = prefixLines('a\nb\nc', 0, 3, '## ');
     expect(r.value).toBe('## a\n## b\nc');
+  });
+
+  it('formats the current line as an HTML heading rather than Markdown', () => {
+    const r = formatHeadingSelection('before\nHeading\nnext', 9, 9);
+    expect(r.value).toBe('before\n<h2>Heading</h2>\nnext');
+    expect(r.value).not.toContain('## ');
+  });
+
+  it('formats selected lines as one semantic HTML list', () => {
+    const r = formatUnorderedListSelection('first\nsecond\nthird', 0, 12);
+    expect(r.value).toBe('<ul>\n<li>first</li>\n<li>second</li>\n</ul>\nthird');
+    expect(r.value).not.toContain('- ');
+  });
+
+  it('uses HTML placeholders for empty heading and list blocks', () => {
+    expect(formatHeadingSelection('', 0, 0).value).toBe('<h2>Titre</h2>');
+    expect(formatUnorderedListSelection('', 0, 0).value).toBe('<ul>\n<li>Élément</li>\n</ul>');
   });
 
   it('insertAtCaret inserts a block at the caret', () => {

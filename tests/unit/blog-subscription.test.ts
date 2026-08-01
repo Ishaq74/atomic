@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// ── Mocks ───────────────────────────────────────────────────────────
-vi.mock('astro:actions', () => {
+vi.mock("astro:actions", () => {
   class ActionError extends Error {
     code: string;
     constructor({ code, message }: { code: string; message: string }) {
@@ -9,128 +8,154 @@ vi.mock('astro:actions', () => {
       this.code = code;
     }
   }
-  return { ActionError, defineAction: (def: any) => def };
+  return { ActionError, defineAction: (definition: unknown) => definition };
 });
 
-const mockSelect = vi.fn();
-const mockInsert = vi.fn();
-const mockUpdate = vi.fn();
-const mockDelete = vi.fn();
-
-vi.mock('@database/drizzle', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: mockSelect,
-    insert: mockInsert,
-    update: mockUpdate,
-    delete: mockDelete,
-  })),
+const serviceMocks = vi.hoisted(() => ({
+  subscribe: vi.fn(),
+  confirm: vi.fn(),
+  unsubscribe: vi.fn(),
 }));
 
-vi.mock('@database/schemas', () => ({
-  blogSubscribers: {
-    id: 'id',
-    organizationId: 'organizationId',
-    email: 'email',
-    locale: 'locale',
-    token: 'token',
-    status: 'status',
-    confirmedAt: 'confirmedAt',
-    unsubscribedAt: 'unsubscribedAt',
-  },
-}));
+vi.mock("@/lib/newsletter/blog-newsletter-service", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/lib/newsletter/blog-newsletter-service")>();
+  return { ...actual, blogNewsletterService: serviceMocks };
+});
 
-vi.mock('@/lib/audit', () => ({
-  logAuditEvent: vi.fn(() => Promise.resolve()),
-  extractIp: vi.fn(() => '203.0.113.7'),
+vi.mock("@/lib/audit", () => ({
+  extractIp: vi.fn(() => "203.0.113.7"),
 }));
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock("@/lib/rate-limit", () => ({
   checkRateLimit: vi.fn(() => ({ allowed: true, remaining: 10 })),
 }));
-vi.mock('@smtp/send', () => ({ sendEmail: vi.fn(() => Promise.resolve()) }));
-vi.mock('@smtp/templates/blog-newsletter', () => ({
-  blogNewsletterConfirmTemplate: vi.fn(() => ({
-    subject: 'Confirm',
-    html: '<p>confirm</p>',
-    text: 'confirm',
-  })),
-  blogNewsletterUnsubscribeTemplate: vi.fn(() => ({
-    subject: 'Unsubscribe',
-    html: '<p>unsub</p>',
-    text: 'unsub',
-  })),
+vi.mock("@i18n/config", () => ({
+  LOCALES: ["fr", "en", "es", "ar"] as const,
 }));
-vi.mock('@i18n/config', () => ({ LOCALES: ['fr', 'en', 'es', 'ar'] as const }));
 
-import { subscribeBlogNewsletter, confirmBlogSubscription, unsubscribeBlogNewsletter } from '@/actions/blog/subscription';
+import {
+  confirmBlogSubscription,
+  subscribeBlogNewsletter,
+  unsubscribeBlogNewsletter,
+} from "@/actions/blog/subscription";
+import {
+  NewsletterDeliveryError,
+  NewsletterOrganizationNotFoundError,
+} from "@/lib/newsletter/blog-newsletter-service";
 
-const subscribe = subscribeBlogNewsletter as unknown as { handler: (...a: any[]) => Promise<any> };
-const confirm = confirmBlogSubscription as unknown as { handler: (...a: any[]) => Promise<any> };
-const unsubscribe = unsubscribeBlogNewsletter as unknown as { handler: (...a: any[]) => Promise<any> };
+const subscribe = subscribeBlogNewsletter as unknown as {
+  handler: (...args: any[]) => Promise<any>;
+};
+const confirm = confirmBlogSubscription as unknown as {
+  handler: (...args: any[]) => Promise<any>;
+};
+const unsubscribe = unsubscribeBlogNewsletter as unknown as {
+  handler: (...args: any[]) => Promise<any>;
+};
 
-function guestCtx() {
+function guestContext() {
   return {
     locals: {},
-    request: { headers: new Headers(), url: 'http://localhost:4321/api/blog/newsletter/confirm' },
-    clientAddress: '203.0.113.7',
+    request: new Request("https://attacker.invalid/actions", {
+      headers: { "user-agent": "newsletter-test" },
+    }),
+    clientAddress: "203.0.113.7",
+    site: new URL("https://atomic.example"),
   } as any;
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockSelect.mockReturnValue({ from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }) });
-  mockInsert.mockReturnValue({ values: () => ({ returning: () => Promise.resolve([{ id: 'sub-1' }]) }) });
-  mockUpdate.mockReturnValue({ set: () => ({ where: () => Promise.resolve([]) }) });
+  serviceMocks.subscribe.mockResolvedValue(undefined);
+  serviceMocks.confirm.mockResolvedValue({ consumed: true });
+  serviceMocks.unsubscribe.mockResolvedValue({ consumed: true });
 });
 
-describe('blog newsletter subscription', () => {
-  it('subscribes a new email with a token and sends confirmation email', async () => {
-    const res = await subscribe.handler(
-      { email: 'test@example.com', locale: 'fr', organizationId: null },
-      guestCtx(),
+describe("blog newsletter actions", () => {
+  it("delegates subscription to the shared business service with configured site", async () => {
+    const result = await subscribe.handler(
+      { email: "reader@example.com", locale: "fr", organizationId: null },
+      guestContext(),
     );
-    expect(res.success).toBe(true);
-    expect(mockInsert).toHaveBeenCalledTimes(1);
+
+    expect(result).toEqual({ success: true });
+    expect(serviceMocks.subscribe).toHaveBeenCalledWith({
+      email: "reader@example.com",
+      locale: "fr",
+      organizationId: null,
+      configuredSite: new URL("https://atomic.example"),
+      audit: {
+        ipAddress: "203.0.113.7",
+        userAgent: "newsletter-test",
+      },
+    });
   });
 
-  it('re-subscribes an existing email (resets to PENDING)', async () => {
-    mockSelect.mockReturnValue({
-      from: () => ({
-        where: () => ({
-          limit: () => Promise.resolve([{ id: 'sub-1', status: 'CONFIRMED' }]),
-        }),
-      }),
-    });
-    const res = await subscribe.handler(
-      { email: 'test@example.com', locale: 'en', organizationId: null },
-      guestCtx(),
+  it("returns a generic bad request when the organization does not exist", async () => {
+    serviceMocks.subscribe.mockRejectedValueOnce(
+      new NewsletterOrganizationNotFoundError(),
     );
-    expect(res.success).toBe(true);
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
+
+    await expect(
+      subscribe.handler(
+        { email: "reader@example.com", locale: "fr", organizationId: "missing" },
+        guestContext(),
+      ),
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Organisation invalide.",
+    });
   });
 
-  it('confirms a subscription by token', async () => {
-    mockSelect.mockReturnValue({
-      from: () => ({
-        where: () => ({
-          limit: () => Promise.resolve([{ id: 'sub-1', status: 'PENDING' }]),
-        }),
-      }),
+  it("surfaces SMTP failure without exposing subscriber state", async () => {
+    serviceMocks.subscribe.mockRejectedValueOnce(
+      new NewsletterDeliveryError(new Error("provider failure")),
+    );
+
+    await expect(
+      subscribe.handler(
+        { email: "reader@example.com", locale: "fr", organizationId: null },
+        guestContext(),
+      ),
+    ).rejects.toMatchObject({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "L'inscription n'a pas pu être finalisée. Veuillez réessayer.",
     });
-    const res = await confirm.handler({ token: 'tok-123' }, guestCtx());
-    expect(res.success).toBe(true);
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it('unsubscribes a subscription by token', async () => {
-    mockSelect.mockReturnValue({
-      from: () => ({
-        where: () => ({
-          limit: () => Promise.resolve([{ id: 'sub-1', status: 'CONFIRMED' }]),
-        }),
-      }),
+  it("keeps confirmation Action responses state-independent", async () => {
+    serviceMocks.confirm.mockResolvedValueOnce({ consumed: false });
+
+    const result = await confirm.handler(
+      { token: "legacy-token" },
+      guestContext(),
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(serviceMocks.confirm).toHaveBeenCalledWith({
+      token: "legacy-token",
+      audit: {
+        ipAddress: "203.0.113.7",
+        userAgent: "newsletter-test",
+      },
     });
-    const res = await unsubscribe.handler({ token: 'tok-123' }, guestCtx());
-    expect(res.success).toBe(true);
-    expect(mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps unsubscribe Action responses state-independent", async () => {
+    serviceMocks.unsubscribe.mockResolvedValueOnce({ consumed: false });
+
+    const result = await unsubscribe.handler(
+      { token: "legacy-token" },
+      guestContext(),
+    );
+
+    expect(result).toEqual({ success: true });
+    expect(serviceMocks.unsubscribe).toHaveBeenCalledWith({
+      token: "legacy-token",
+      audit: {
+        ipAddress: "203.0.113.7",
+        userAgent: "newsletter-test",
+      },
+    });
   });
 });

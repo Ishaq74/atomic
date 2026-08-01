@@ -29,6 +29,25 @@ describe('sanitizeHtml', () => {
     expect(sanitizeHtml(input)).toBe(input);
   });
 
+  it('preserves controlled ids only on headings', () => {
+    const result = sanitizeHtml(
+      '<h2 id="getting-started">Title</h2><p id="not-controlled">Text</p><h3 id="bad id">Bad</h3>',
+    );
+    expect(result).toContain('<h2 id="getting-started">Title</h2>');
+    expect(result).toContain('<p>Text</p>');
+    expect(result).toContain('<h3>Bad</h3>');
+  });
+
+  it('preserves only the controlled internal-link data attribute on anchors', () => {
+    const result = sanitizeHtml(
+      '<a href="/post" data-internal-link="post-1" data-other="unsafe">Post</a>' +
+      '<span data-internal-link="post-2">Text</span>',
+    );
+    expect(result).toContain('data-internal-link="post-1"');
+    expect(result).not.toContain('data-other');
+    expect(result).toContain('<span>Text</span>');
+  });
+
   it('preserves links with valid href and forces rel="noopener noreferrer" on target=_blank', () => {
     const input = '<a href="https://example.com" target="_blank" rel="noopener">Link</a>';
     // The sanitizer hardens target="_blank" links against reverse-tabnabbing by

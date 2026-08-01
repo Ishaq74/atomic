@@ -163,7 +163,8 @@ const orgAttr = organizationId ?? "";
   import { toast } from '@atoms/toast';
   import {
     wrapSelection,
-    prefixLines,
+    formatHeadingSelection,
+    formatUnorderedListSelection,
     insertAtCaret,
     buildImageToken,
     buildExternalLinkToken,
@@ -193,7 +194,9 @@ const orgAttr = organizationId ?? "";
       textarea!.value = edit.value;
       textarea!.focus();
       textarea!.setSelectionRange(edit.selStart, edit.selEnd);
-      refreshPreview();
+      // Keep the preview and parent form's dirty-state guard in sync with
+      // programmatic toolbar edits.
+      textarea!.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     root.querySelectorAll<HTMLButtonElement>('.ce-btn').forEach((btn) => {
@@ -205,8 +208,8 @@ const orgAttr = organizationId ?? "";
         switch (cmd) {
           case 'bold': return applyEdit(wrapSelection(val, s, e, '<strong>', '</strong>', 'texte'));
           case 'italic': return applyEdit(wrapSelection(val, s, e, '<em>', '</em>', 'texte'));
-          case 'h2': return applyEdit(prefixLines(val, s, e, '## '));
-          case 'ul': return applyEdit(prefixLines(val, s, e, '- '));
+          case 'h2': return applyEdit(formatHeadingSelection(val, s, e));
+          case 'ul': return applyEdit(formatUnorderedListSelection(val, s, e));
           case 'link': return openLinkDialog();
           case 'image': return openImagePicker();
         }
@@ -249,7 +252,13 @@ const orgAttr = organizationId ?? "";
     async function runSearch(q: string) {
       const resultsEl = dialog?.querySelector('.ce-link-results') as HTMLElement | null;
       if (!resultsEl || !resolverName) return;
-      resultsEl.innerHTML = '<p class="text-muted-foreground">…</p>';
+      const replaceWithStatus = (message: string, className: string) => {
+        const status = document.createElement('p');
+        status.className = className;
+        status.textContent = message;
+        resultsEl.replaceChildren(status);
+      };
+      replaceWithStatus('…', 'text-muted-foreground');
       const { data, error } = await actions.resolveBlogInternalLink({
         target: '',
         mode: 'search',
@@ -258,15 +267,18 @@ const orgAttr = organizationId ?? "";
         locale,
       });
       if (error || !data) {
-        resultsEl.innerHTML = `<p class="text-destructive">${error?.message ?? 'Erreur'}</p>`;
+        replaceWithStatus(error?.message ?? 'Erreur', 'text-destructive');
         return;
       }
       const results = data.results ?? [];
       if (results.length === 0) {
-        resultsEl.innerHTML = `<p class="text-muted-foreground">${root.getAttribute('data-t-noresult') ?? 'Aucun résultat.'}</p>`;
+        replaceWithStatus(
+          root.getAttribute('data-t-noresult') ?? 'Aucun résultat.',
+          'text-muted-foreground',
+        );
         return;
       }
-      resultsEl.innerHTML = '';
+      resultsEl.replaceChildren();
       results.forEach((r: { id: string; label: string; href: string }) => {
         const item = document.createElement('button');
         item.type = 'button';

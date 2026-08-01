@@ -1,10 +1,11 @@
 import { assertBlogPermission, resolveBlogTenant, auditBlog, blogOrganizationIdSchema, blogPublicRateLimit, invalidateBlogCache } from "./_helpers";
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, desc, isNull, or, exists, sql } from "drizzle-orm";
+import { eq, and, desc, isNull, or } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogReports, blogComments, blogPostReviews, blogPosts } from "@database/schemas";
 import { blogReportFormSchema, blogReportStatusSchema } from "@/lib/blog/validation";
+import { publicBlogPostScope } from "@/lib/blog/public-visibility";
 
 export const createBlogReport = defineAction({
   input: blogReportFormSchema,
@@ -12,6 +13,55 @@ export const createBlogReport = defineAction({
     blogPublicRateLimit(context, "report-create", { window: 600, max: 10 });
     const user = context.locals.user;
     const db = getDrizzle();
+
+    const targetCount = Number(Boolean(input.postId))
+      + Number(Boolean(input.commentId))
+      + Number(Boolean(input.reviewId));
+    if (targetCount !== 1) {
+      throw new ActionError({ code: "BAD_REQUEST", message: "Un seul élément peut être signalé à la fois." });
+    }
+
+    let subjectExists = false;
+    if (input.postId) {
+      const [post] = await db
+        .select({ id: blogPosts.id })
+        .from(blogPosts)
+        .where(and(eq(blogPosts.id, input.postId), publicBlogPostScope(blogPosts)))
+        .limit(1);
+      subjectExists = Boolean(post);
+    } else if (input.commentId) {
+      const [comment] = await db
+        .select({ id: blogComments.id })
+        .from(blogComments)
+        .innerJoin(blogPosts, eq(blogComments.postId, blogPosts.id))
+        .where(
+          and(
+            eq(blogComments.id, input.commentId),
+            eq(blogComments.status, "APPROVED"),
+            publicBlogPostScope(blogPosts),
+          ),
+        )
+        .limit(1);
+      subjectExists = Boolean(comment);
+    } else if (input.reviewId) {
+      const [review] = await db
+        .select({ id: blogPostReviews.id })
+        .from(blogPostReviews)
+        .innerJoin(blogPosts, eq(blogPostReviews.postId, blogPosts.id))
+        .where(
+          and(
+            eq(blogPostReviews.id, input.reviewId),
+            eq(blogPostReviews.status, "APPROVED"),
+            publicBlogPostScope(blogPosts),
+          ),
+        )
+        .limit(1);
+      subjectExists = Boolean(review);
+    }
+
+    if (!subjectExists) {
+      throw new ActionError({ code: "NOT_FOUND", message: "Élément public introuvable." });
+    }
 
     const [report] = await db
       .insert(blogReports)
@@ -58,6 +108,13 @@ export const updateBlogReport = defineAction({
 
     if (!report) throw new ActionError({ code: "NOT_FOUND", message: "Signalement introuvable." });
 
+    const targetCount = Number(Boolean(report.postId))
+      + Number(Boolean(report.commentId))
+      + Number(Boolean(report.reviewId));
+    if (targetCount !== 1) {
+      throw new ActionError({ code: "BAD_REQUEST", message: "Le signalement possède une cible invalide." });
+    }
+
     const orgFilter =
       tenant.organizationId === null
         ? isNull(blogPosts.organizationId)
@@ -81,14 +138,16 @@ export const updateBlogReport = defineAction({
       owningPostId = review?.postId ?? null;
     }
 
-    if (owningPostId) {
-      const [post] = await db
-        .select({ id: blogPosts.id })
-        .from(blogPosts)
-        .where(and(eq(blogPosts.id, owningPostId), orgFilter))
-        .limit(1);
-      if (!post) throw new ActionError({ code: "FORBIDDEN", message: "Ce signalement n'appartient pas à ce tenant." });
+    if (!owningPostId) {
+      throw new ActionError({ code: "NOT_FOUND", message: "La cible du signalement est introuvable." });
     }
+
+    const [post] = await db
+      .select({ id: blogPosts.id })
+      .from(blogPosts)
+      .where(and(eq(blogPosts.id, owningPostId), orgFilter))
+      .limit(1);
+    if (!post) throw new ActionError({ code: "FORBIDDEN", message: "Ce signalement n'appartient pas à ce tenant." });
 
     await db
       .update(blogReports)
@@ -147,49 +206,23 @@ export const getBlogModerationQueue = defineAction({
       .limit(input.limit)
       .offset(offset);
 
-    // Reports may target a post directly, or a comment/review (postId null).
-    // A report belongs to the tenant if its owning post (direct, via comment,
-    // or via review) matches the tenant org filter.
-    const reportInTenant = or(
-      and(
-        sql`${blogReports.postId} IS NOT NULL`,
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(blogPosts)
-            .where(and(eq(blogPosts.id, blogReports.postId), orgFilter)),
-        ),
-      ),
-      and(
-        sql`${blogReports.commentId} IS NOT NULL`,
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(blogComments)
-            .innerJoin(blogPosts, eq(blogPosts.id, blogComments.postId))
-            .where(and(eq(blogComments.id, blogReports.commentId), orgFilter)),
-        ),
-      ),
-      and(
-        sql`${blogReports.reviewId} IS NOT NULL`,
-        exists(
-          db
-            .select({ one: sql`1` })
-            .from(blogPostReviews)
-            .innerJoin(blogPosts, eq(blogPosts.id, blogPostReviews.postId))
-            .where(and(eq(blogPostReviews.id, blogReports.reviewId), orgFilter)),
-        ),
-      ),
-    );
-
     const pendingReports = await db
       .select({
         report: blogReports,
         post: { id: blogPosts.id, slug: blogPosts.slug },
       })
       .from(blogReports)
-      .innerJoin(blogPosts, eq(blogReports.postId, blogPosts.id))
-      .where(and(eq(blogReports.status, "PENDING"), reportInTenant))
+      .leftJoin(blogComments, eq(blogReports.commentId, blogComments.id))
+      .leftJoin(blogPostReviews, eq(blogReports.reviewId, blogPostReviews.id))
+      .leftJoin(
+        blogPosts,
+        or(
+          eq(blogReports.postId, blogPosts.id),
+          eq(blogComments.postId, blogPosts.id),
+          eq(blogPostReviews.postId, blogPosts.id),
+        ),
+      )
+      .where(and(eq(blogReports.status, "PENDING"), orgFilter))
       .orderBy(desc(blogReports.createdAt))
       .limit(input.limit)
       .offset(offset);

@@ -57,9 +57,26 @@ interface Props {
   basePublicUrl: string;
   organizationId?: string | null;
   userId: string;
+  canPublish: boolean;
+  canDelete: boolean;
 }
 
-const { title, locale, blogT, posts, postsMeta, categories, tags, moderation, baseAdminUrl, basePublicUrl, organizationId, userId } = Astro.props;
+const {
+  title,
+  locale,
+  blogT,
+  posts,
+  postsMeta,
+  categories,
+  tags,
+  moderation,
+  baseAdminUrl,
+  basePublicUrl,
+  organizationId,
+  userId,
+  canPublish,
+  canDelete,
+} = Astro.props;
 
 const publishedCount = posts.filter((row) => row.post.status === "PUBLISHED").length;
 const draftCount = posts.filter((row) => row.post.status === "DRAFT").length;
@@ -97,7 +114,12 @@ function buildLocaleHref(targetLocale: Locale): string {
         ))}
       </div>
     </div>
-    <NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} />
+    <NotificationBell
+      blogT={blogT}
+      userId={userId}
+      baseAdminUrl={baseAdminUrl}
+      organizationId={organizationId ?? null}
+    />
   </div>
 
   <Tabs defaultValue="posts">
@@ -117,8 +139,8 @@ function buildLocaleHref(targetLocale: Locale): string {
         meta={postsMeta}
         baseAdminUrl={baseAdminUrl}
         basePublicUrl={basePublicUrl}
-        canPublish={true}
-        canDelete={true}
+        canPublish={canPublish}
+        canDelete={canDelete}
         organizationId={organizationId}
       />
     </TabsContent>

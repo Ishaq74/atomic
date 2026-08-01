@@ -1,17 +1,15 @@
 import type { APIRoute } from 'astro';
-import { eq } from 'drizzle-orm';
-import { getDrizzle } from '@database/drizzle';
-import { blogSubscribers } from '@database/schemas';
-import { logAuditEvent, extractIp } from '@/lib/audit';
+import { extractIp } from '@/lib/audit';
+import { blogNewsletterService } from '@/lib/newsletter/blog-newsletter-service';
 
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url, request, clientAddress, site }) => {
-  const token = url.searchParams.get('token');
-  if (!token) {
+  const token = url.searchParams.get('token')?.trim();
+  if (!token || token.length > 512) {
     return new Response(renderMessage(false, 'Lien de désinscription invalide.'), {
       status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      headers: responseHeaders,
     });
   }
 
@@ -19,52 +17,44 @@ export const GET: APIRoute = async ({ url, request, clientAddress, site }) => {
   if (site && url.origin !== site.origin) {
     return new Response(renderMessage(false, 'Lien de désinscription invalide.'), {
       status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      headers: responseHeaders,
     });
   }
 
-  const db = getDrizzle();
-  const subscriber = await db
-    .select()
-    .from(blogSubscribers)
-    .where(eq(blogSubscribers.token, token))
-    .limit(1);
-
-  if (subscriber.length === 0) {
-    return new Response(renderMessage(false, 'Lien de désinscription invalide ou expiré.'), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  try {
+    const result = await blogNewsletterService.unsubscribe({
+      token,
+      audit: {
+        ipAddress: extractIp(request.headers, clientAddress),
+        userAgent: request.headers.get('user-agent'),
+      },
     });
-  }
-
-  // Reject a token that was already consumed (confirm or unsubscribe).
-  if (subscriber[0].tokenUsedAt !== null) {
-    return new Response(renderMessage(false, 'Ce lien a déjà été utilisé.'), {
-      status: 400,
-      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    if (!result.consumed) {
+      return new Response(renderMessage(false, 'Lien de désinscription invalide ou expiré.'), {
+        status: 400,
+        headers: responseHeaders,
+      });
+    }
+  } catch (error) {
+    console.error('[newsletter] Unsubscribe endpoint failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
     });
-  }
-
-  if (subscriber[0].status !== 'UNSUBSCRIBED') {
-    await db
-      .update(blogSubscribers)
-      .set({ status: 'UNSUBSCRIBED', unsubscribedAt: new Date(), tokenUsedAt: new Date(), updatedAt: new Date() })
-      .where(eq(blogSubscribers.token, token));
-
-    await logAuditEvent({
-      userId: 'system',
-      action: 'BLOG_NEWSLETTER_UNSUBSCRIBE',
-      resource: 'blogSubscriber',
-      resourceId: subscriber[0].id,
-      ipAddress: extractIp(request.headers, clientAddress),
-      userAgent: request.headers.get('user-agent'),
+    return new Response(renderMessage(false, 'Service temporairement indisponible.'), {
+      status: 503,
+      headers: responseHeaders,
     });
   }
 
   return new Response(renderMessage(true, 'Vous êtes désabonné de la newsletter. Vous pourrez vous réinscrire à tout moment.'), {
     status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    headers: responseHeaders,
   });
+};
+
+const responseHeaders = {
+  'Content-Type': 'text/html; charset=utf-8',
+  'Cache-Control': 'no-store',
+  'Referrer-Policy': 'no-referrer',
 };
 
 function renderMessage(success: boolean, message: string): string {

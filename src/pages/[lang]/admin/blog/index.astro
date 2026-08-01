@@ -6,6 +6,7 @@ import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
 import BlogAdminPage from "@/components/blog/BlogAdminPage.astro";
+import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 
 export const prerender = false;
 
@@ -24,6 +25,11 @@ const blogT = await getBlogTranslations(locale);
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
 const baseAdminUrl = `/${locale}/admin/blog`;
 const basePublicUrl = `/${locale}/${blogT.routes.blog}`;
+const globalTenant = resolveBlogTenant({});
+const [canPublish, canDelete] = await Promise.all([
+  hasBlogPermission(Astro, globalTenant, { blog: ["publish"] }),
+  hasBlogPermission(Astro, globalTenant, { blog: ["delete"] }),
+]);
 
 const [{ rows, meta }, categoryRows, tagRows, moderation] = await Promise.all([
   getBlogPostsForAdmin(null, locale, { page }),
@@ -68,6 +74,8 @@ const tags = tagRows.map((item) => ({
       baseAdminUrl={baseAdminUrl}
       basePublicUrl={basePublicUrl}
       userId={user.id}
+      canPublish={canPublish}
+      canDelete={canDelete}
     />
   </AuthLayout>
 </BaseLayout>

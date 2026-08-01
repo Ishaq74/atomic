@@ -3,14 +3,15 @@ import type { ActionAPIContext } from "astro:actions";
 import { z } from "astro/zod";
 import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
-import { blogPosts, blogCategories, blogTags } from "@database/schemas";
+import { blogPosts, blogCategories, blogTags, mediaFiles } from "@database/schemas";
 import { logAuditEvent, extractIp, type AuditAction } from "@/lib/audit";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { invalidateCache } from "@database/cache";
 import type { statement } from "@/lib/permissions";
 
 type Statement = typeof statement;
-type Permissions = { [K in keyof Statement]?: Statement[K][number][] };
+export type BlogPermissions = { [K in keyof Statement]?: Statement[K][number][] };
+type BlogPermissionContext = Pick<ActionAPIContext, "locals" | "request">;
 
 export interface BlogTenantContext {
   organizationId: string | null;
@@ -32,14 +33,48 @@ export function resolveBlogTenant(input: { organizationId?: string | null }): Bl
 }
 
 /**
- * Vérifie que l'utilisateur est connecté et a les permissions requises.
- * Pour un contexte org, vérifie aussi qu'il est membre owner/admin de l'org
- * OU admin global.
+ * Capability check shared by actions and server-rendered admin pages.
+ * Organization permissions are always resolved from the authenticated Better
+ * Auth session; an organization id supplied by a client never grants access.
  */
+export async function hasBlogPermission(
+  context: BlogPermissionContext,
+  tenant: BlogTenantContext,
+  permissions: BlogPermissions,
+): Promise<boolean> {
+  const user = context.locals.user;
+  if (!user || user.banned) return false;
+
+  try {
+    const { auth } = await import("@/lib/auth");
+    if (tenant.isOrgContext) {
+      const result = await auth.api.hasPermission({
+        headers: context.request.headers,
+        body: {
+          organizationId: tenant.organizationId!,
+          permissions: permissions as Record<string, string[]>,
+        },
+      });
+      return result.success;
+    }
+
+    const result = await auth.api.userHasPermission({
+      body: {
+        userId: user.id,
+        permissions: permissions as Record<string, string[]>,
+      },
+    });
+    return result.success;
+  } catch {
+    return false;
+  }
+}
+
+/** Vérifie que l'utilisateur est connecté et a les permissions requises. */
 export async function assertBlogPermission(
   context: ActionAPIContext,
   tenant: BlogTenantContext,
-  permissions: Permissions,
+  permissions: BlogPermissions,
 ) {
   const user = context.locals.user;
   if (!user) {
@@ -52,50 +87,7 @@ export async function assertBlogPermission(
     throw new ActionError({ code: "FORBIDDEN", message: "Compte suspendu." });
   }
 
-  // Global admin bypass
-  // NOTE (governance): a global admin is treated as a superuser and may act on
-  // ANY tenant, including creating/editing posts in an organization they are
-  // not a member of. This is a deliberate privilege escalation path for
-  // platform operators — it is NOT a bug. If stricter isolation is required,
-  // replace this early-return with an explicit assertOrgMembership() check
-  // even for admins (see createBlogPost / updateBlogPost which pass an
-  // organizationId supplied by the client).
-  if (user.role === "admin") return user;
-
-  // Org context: must be owner or admin of the org
-  if (tenant.isOrgContext) {
-    const { auth } = await import("@/lib/auth");
-    const fullOrg = await auth.api.getFullOrganization({
-      query: { organizationId: tenant.organizationId! },
-      headers: context.request.headers,
-    });
-
-    if (!fullOrg) {
-      throw new ActionError({ code: "NOT_FOUND", message: "Organisation introuvable." });
-    }
-
-    const member = (fullOrg.members ?? []).find(
-      (m: { userId: string }) => m.userId === user.id,
-    );
-
-    if (!member || (member.role !== "owner" && member.role !== "admin")) {
-      throw new ActionError({
-        code: "FORBIDDEN",
-        message: "Vous devez être propriétaire ou administrateur de cette organisation.",
-      });
-    }
-  }
-
-  // RBAC permission check
-  const { auth } = await import("@/lib/auth");
-  const result = await auth.api.userHasPermission({
-    body: {
-      userId: user.id,
-      permissions: permissions as Record<string, string[]>,
-    },
-  });
-
-  if (!result.success) {
+  if (!(await hasBlogPermission(context, tenant, permissions))) {
     throw new ActionError({ code: "FORBIDDEN", message: "Permissions insuffisantes." });
   }
 
@@ -108,7 +100,11 @@ export async function assertBlogPermission(
 export async function assertPostInTenant(postId: string, tenant: BlogTenantContext) {
   const db = getDrizzle();
   const [post] = await db
-    .select({ id: blogPosts.id, organizationId: blogPosts.organizationId })
+    .select({
+      id: blogPosts.id,
+      organizationId: blogPosts.organizationId,
+      status: blogPosts.status,
+    })
     .from(blogPosts)
     .where(eq(blogPosts.id, postId))
     .limit(1);
@@ -163,6 +159,26 @@ export async function assertTagInTenant(tagId: string, tenant: BlogTenantContext
   }
 
   return tag;
+}
+
+export async function assertMediaInTenant(mediaId: string, tenant: BlogTenantContext) {
+  const db = getDrizzle();
+  const [media] = await db
+    .select({ id: mediaFiles.id, organizationId: mediaFiles.organizationId })
+    .from(mediaFiles)
+    .where(eq(mediaFiles.id, mediaId))
+    .limit(1);
+
+  if (!media) {
+    throw new ActionError({ code: "NOT_FOUND", message: "Média introuvable." });
+  }
+
+  const mediaOrgId = media.organizationId ?? null;
+  if (mediaOrgId !== tenant.organizationId) {
+    throw new ActionError({ code: "FORBIDDEN", message: "Ce média n'appartient pas à ce tenant." });
+  }
+
+  return media;
 }
 
 export function blogRateLimit(
@@ -233,6 +249,7 @@ export function auditBlog(
  * Les préfixes correspondent exactement aux clés générées par blog.loader.ts :
  *   blog:post:  blog:list:  blog:related:  blog:author:
  *   blog:categories:  blog:category:  blog:tags:  blog:tag:
+ *   blog:slugs:  blog:link-targets:
  */
 export function invalidateBlogCache() {
   for (const prefix of [
@@ -244,6 +261,8 @@ export function invalidateBlogCache() {
     "blog:category:",
     "blog:tags:",
     "blog:tag:",
+    "blog:slugs:",
+    "blog:link-targets:",
   ]) {
     invalidateCache(prefix);
   }

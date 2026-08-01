@@ -38,6 +38,7 @@ import type {
   BlogTagTranslation,
 } from "@/lib/blog/types";
 import { BLOG_DEFAULTS, type BlogPostStatus, type BlogReactionType } from "@/lib/blog/constants";
+import { publicBlogPostScope } from "@/lib/blog/public-visibility";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -51,13 +52,7 @@ export function orgScope(
 }
 
 export function publishedScope(table: typeof blogPosts) {
-  // A post is publicly visible when PUBLISHED and either not locked, or locked
-  // by an edit lease that has already expired (stale locks from crashed editors
-  // must not hide a published post forever — see blogPostLocks.expiresAt, 15 min).
-  return and(
-    eq(table.status, "PUBLISHED"),
-    or(isNull(table.lockedBy), sql`${table.lockedAt} < now() - interval '15 minutes'`),
-  );
+  return publicBlogPostScope(table);
 }
 
 type BlogPostListRow = {
@@ -219,27 +214,25 @@ export const getBlogPostBySlug = cached(
     if (!isValidLocale(locale)) return null;
     const db = getDrizzle();
 
-    const [translation] = await db
-      .select()
+    const [row] = await db
+      .select({
+        post: blogPosts,
+        translation: blogPostTranslations,
+      })
       .from(blogPostTranslations)
-      .where(and(eq(blogPostTranslations.locale, locale), eq(blogPostTranslations.slug, slug)))
-      .limit(1);
-
-    if (!translation) return null;
-
-    const [post] = await db
-      .select()
-      .from(blogPosts)
+      .innerJoin(blogPosts, eq(blogPosts.id, blogPostTranslations.postId))
       .where(
         and(
-          eq(blogPosts.id, translation.postId),
+          eq(blogPostTranslations.locale, locale),
+          eq(blogPostTranslations.slug, slug),
           orgScope(blogPosts, organizationId),
-          publishedScope(blogPosts),
+          publicBlogPostScope(blogPosts),
         ),
       )
       .limit(1);
 
-    if (!post) return null;
+    if (!row) return null;
+    const { post, translation } = row;
 
     const author = post.authorId
       ? await db.select({ id: user.id, name: user.name, image: user.image }).from(user).where(eq(user.id, post.authorId)).limit(1).then(r => r[0] ?? null)
@@ -342,6 +335,9 @@ export const getBlogPosts = cached(
     filters: BlogPostFilters,
   ): Promise<{ items: BlogPostListItem[]; meta: BlogPaginationMeta }> => {
     if (!isValidLocale(locale)) return { items: [], meta: emptyMeta(filters) };
+    if (filters.status && filters.status !== "PUBLISHED") {
+      return { items: [], meta: emptyMeta(filters) };
+    }
     const db = getDrizzle();
 
     const page = Math.max(1, filters.page ?? 1);
@@ -351,13 +347,8 @@ export const getBlogPosts = cached(
     const conditions: (ReturnType<typeof eq> | ReturnType<typeof and> | ReturnType<typeof or> | ReturnType<typeof ilike> | ReturnType<typeof inArray>)[] = [
       orgScope(blogPosts, organizationId),
       eq(blogPostTranslations.locale, locale),
+      publicBlogPostScope(blogPosts) as ReturnType<typeof and>,
     ];
-
-    if (filters.status) {
-      conditions.push(eq(blogPosts.status, filters.status));
-    } else {
-      conditions.push(publishedScope(blogPosts) as ReturnType<typeof and>);
-    }
 
     if (filters.categorySlug) {
       conditions.push(
@@ -701,7 +692,7 @@ export const getBlogCategories = cached(
         .from(blogPostCategories)
         .innerJoin(blogPosts, eq(blogPostCategories.postId, blogPosts.id))
         .where(
-          and(inArray(blogPostCategories.categoryId, categoryIds), eq(blogPosts.status, "PUBLISHED")),
+          and(inArray(blogPostCategories.categoryId, categoryIds), publicBlogPostScope(blogPosts)),
         )
         .groupBy(blogPostCategories.categoryId);
       for (const row of counts) postCounts.set(row.categoryId, Number(row.value));
@@ -779,7 +770,7 @@ export const getBlogTags = cached(
         .select({ tagId: blogPostTags.tagId, value: count() })
         .from(blogPostTags)
         .innerJoin(blogPosts, eq(blogPostTags.postId, blogPosts.id))
-        .where(and(inArray(blogPostTags.tagId, tagIds), eq(blogPosts.status, "PUBLISHED")))
+        .where(and(inArray(blogPostTags.tagId, tagIds), publicBlogPostScope(blogPosts)))
         .groupBy(blogPostTags.tagId);
       for (const row of counts) postCounts.set(row.tagId, Number(row.value));
     }
@@ -843,8 +834,13 @@ export async function getBlogComments(
       author: { id: user.id, name: user.name, image: user.image },
     })
     .from(blogComments)
+    .innerJoin(blogPosts, eq(blogComments.postId, blogPosts.id))
     .leftJoin(user, eq(user.id, blogComments.authorId))
-    .where(statusCondition ? and(...baseConditions, statusCondition) : and(...baseConditions))
+    .where(
+      statusCondition
+        ? and(...baseConditions, statusCondition, publicBlogPostScope(blogPosts))
+        : and(...baseConditions, publicBlogPostScope(blogPosts)),
+    )
     .orderBy(desc(blogComments.createdAt))
     .limit(limit)
     .offset(offset);
@@ -896,8 +892,9 @@ export async function getBlogReviews(
       author: { id: user.id, name: user.name, image: user.image },
     })
     .from(blogPostReviews)
+    .innerJoin(blogPosts, eq(blogPostReviews.postId, blogPosts.id))
     .leftJoin(user, eq(user.id, blogPostReviews.authorId))
-    .where(and(...conditions))
+    .where(and(...conditions, publicBlogPostScope(blogPosts)))
     .orderBy(desc(blogPostReviews.createdAt))
     .limit(limit)
     .offset(offset);
@@ -928,7 +925,14 @@ export async function getBlogReviewStats(postId: string) {
   const rows = await db
     .select({ rating: blogPostReviews.rating, count: count() })
     .from(blogPostReviews)
-    .where(and(eq(blogPostReviews.postId, postId), eq(blogPostReviews.status, "APPROVED")))
+    .innerJoin(blogPosts, eq(blogPostReviews.postId, blogPosts.id))
+    .where(
+      and(
+        eq(blogPostReviews.postId, postId),
+        eq(blogPostReviews.status, "APPROVED"),
+        publicBlogPostScope(blogPosts),
+      ),
+    )
     .groupBy(blogPostReviews.rating);
 
   const total = rows.reduce((sum, r) => sum + Number(r.count), 0);
@@ -963,7 +967,7 @@ export async function getBlogPostLinks(
       blogPostTranslations,
       and(eq(blogPostTranslations.postId, blogPosts.id), eq(blogPostTranslations.locale, "fr")),
     )
-    .where(and(...conditions))
+    .where(and(...conditions, publicBlogPostScope(blogPosts)))
     .orderBy(asc(blogPostLinks.sortOrder), asc(blogPostLinks.linkType));
 
   return rows.map((row) => ({
@@ -1291,7 +1295,16 @@ export async function getBlogModerationQueue(
       reporter: { id: user.id, name: user.name },
     })
     .from(blogReports)
-    .innerJoin(blogPosts, eq(blogReports.postId, blogPosts.id))
+    .leftJoin(blogComments, eq(blogReports.commentId, blogComments.id))
+    .leftJoin(blogPostReviews, eq(blogReports.reviewId, blogPostReviews.id))
+    .leftJoin(
+      blogPosts,
+      or(
+        eq(blogReports.postId, blogPosts.id),
+        eq(blogComments.postId, blogPosts.id),
+        eq(blogPostReviews.postId, blogPosts.id),
+      ),
+    )
     .leftJoin(user, eq(user.id, blogReports.reporterId))
     .where(and(orgScope(blogPosts, organizationId), eq(blogReports.status, "PENDING")))
     .orderBy(desc(blogReports.createdAt))
@@ -1305,7 +1318,12 @@ export async function getBlogModerationQueue(
 
 export async function getBlogNotifications(
   userId: string,
-  opts: { page?: number; limit?: number; unreadOnly?: boolean } = {},
+  opts: {
+    page?: number;
+    limit?: number;
+    unreadOnly?: boolean;
+    organizationId?: string | null;
+  } = {},
 ) {
   const db = getDrizzle();
   const page = Math.max(1, opts.page ?? 1);
@@ -1319,12 +1337,27 @@ export async function getBlogNotifications(
       fromUser: { id: user.id, name: user.name, image: user.image },
     })
     .from(blogNotifications)
-    .leftJoin(blogPosts, eq(blogNotifications.postId, blogPosts.id))
+    .leftJoin(blogComments, eq(blogNotifications.commentId, blogComments.id))
+    .leftJoin(blogPostReviews, eq(blogNotifications.reviewId, blogPostReviews.id))
+    .leftJoin(
+      blogPosts,
+      or(
+        eq(blogNotifications.postId, blogPosts.id),
+        eq(blogComments.postId, blogPosts.id),
+        eq(blogPostReviews.postId, blogPosts.id),
+      ),
+    )
     .leftJoin(user, eq(user.id, blogNotifications.fromUserId))
     .where(
-      opts.unreadOnly
-        ? and(eq(blogNotifications.userId, userId), eq(blogNotifications.isRead, false))
-        : eq(blogNotifications.userId, userId),
+      and(
+        eq(blogNotifications.userId, userId),
+        opts.unreadOnly ? eq(blogNotifications.isRead, false) : undefined,
+        Object.hasOwn(opts, "organizationId")
+          ? opts.organizationId === null
+            ? isNull(blogNotifications.organizationId)
+            : eq(blogNotifications.organizationId, opts.organizationId!)
+          : undefined,
+      ),
     )
     .orderBy(desc(blogNotifications.createdAt))
     .limit(limit)
@@ -1333,12 +1366,36 @@ export async function getBlogNotifications(
   return rows;
 }
 
-export async function getUnreadBlogNotificationCount(userId: string): Promise<number> {
+export async function getUnreadBlogNotificationCount(
+  userId: string,
+  organizationId?: string | null,
+): Promise<number> {
   const db = getDrizzle();
-  const [{ value }] = await db
+  const query = db
     .select({ value: count() })
     .from(blogNotifications)
-    .where(and(eq(blogNotifications.userId, userId), eq(blogNotifications.isRead, false)));
+    .leftJoin(blogComments, eq(blogNotifications.commentId, blogComments.id))
+    .leftJoin(blogPostReviews, eq(blogNotifications.reviewId, blogPostReviews.id))
+    .leftJoin(
+      blogPosts,
+      or(
+        eq(blogNotifications.postId, blogPosts.id),
+        eq(blogComments.postId, blogPosts.id),
+        eq(blogPostReviews.postId, blogPosts.id),
+      ),
+    );
+
+  const [{ value }] = await query.where(
+    and(
+      eq(blogNotifications.userId, userId),
+      eq(blogNotifications.isRead, false),
+      organizationId === undefined
+        ? undefined
+        : organizationId === null
+          ? isNull(blogNotifications.organizationId)
+          : eq(blogNotifications.organizationId, organizationId),
+    ),
+  );
   return Number(value);
 }
 

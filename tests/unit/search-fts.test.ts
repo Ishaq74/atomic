@@ -1,34 +1,39 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 
-/**
- * Tests for the full-text search helpers used by /api/search.
- * We import the functions by re-implementing them here since they're
- * defined inside the route module. This ensures the logic is correct.
- */
+const mockExecute = vi.fn();
+const mockSelect = vi.fn();
 
-// ─── Reimplemented helpers (must mirror src/pages/api/search.ts) ───
+vi.mock('@database/drizzle', () => ({
+  getDrizzle: vi.fn(() => ({
+    execute: mockExecute,
+    select: mockSelect,
+  })),
+}));
 
-function getRegconfig(locale: string): string {
-  switch (locale) {
-    case 'fr': return 'french';
-    case 'en': return 'english';
-    case 'es': return 'spanish';
-    default: return 'simple';
-  }
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn(() => ({
+    allowed: true,
+    remaining: 59,
+    resetAt: Date.now() + 60_000,
+  })),
+}));
+
+import { GET, buildTsQuery, getRegconfig } from '@/pages/api/search';
+
+function makeOrganizationQuery(rows: Array<{ id: string }>) {
+  const chain: any = {
+    from: vi.fn(() => chain),
+    where: vi.fn(() => chain),
+    limit: vi.fn(() => Promise.resolve(rows)),
+  };
+  return chain;
 }
 
-function buildTsQuery(raw: string): string | null {
-  const tokens = raw
-    .split(/\s+/)
-    .map((w) => w.replace(/[&|!():'\\<>]/g, '').trim())
-    .filter((w) => w.length > 0);
-
-  if (tokens.length === 0) return null;
-
-  return tokens
-    .map((w, i) => (i === tokens.length - 1 ? `${w}:*` : w))
-    .join(' & ');
-}
+beforeEach(() => {
+  mockExecute.mockReset().mockResolvedValue({ rows: [] });
+  mockSelect.mockReset();
+});
 
 // ─── Tests ──────────────────────────────────────────────────────────
 
@@ -105,5 +110,38 @@ describe('buildTsQuery', () => {
 
   it('handles Arabic text', () => {
     expect(buildTsQuery('مرحبا العالم')).toBe('مرحبا & العالم:*');
+  });
+});
+
+describe('GET blog publication scope', () => {
+  it('uses IS NULL for global posts and excludes future publications', async () => {
+    const response = await GET({
+      url: new URL('https://atomic.test/api/search?q=atomic&locale=fr'),
+      clientAddress: '203.0.113.1',
+    } as any);
+
+    expect(response.status).toBe(200);
+    const query = new PgDialect().sqlToQuery(mockExecute.mock.calls[0][0]);
+    expect(query.sql).toContain('bp.organization_id IS NULL');
+    expect(query.sql).toContain('bp.status = $');
+    expect(query.params).toContain('PUBLISHED');
+    expect(query.sql).toContain('bp.published_at <= now()');
+  });
+
+  it('uses an equality parameter, never IS, for an organization id', async () => {
+    mockSelect.mockReturnValueOnce(makeOrganizationQuery([{ id: 'org-1' }]));
+
+    const response = await GET({
+      url: new URL('https://atomic.test/api/search?q=atomic&locale=en&org=acme'),
+      clientAddress: '203.0.113.2',
+    } as any);
+
+    expect(response.status).toBe(200);
+    const query = new PgDialect().sqlToQuery(mockExecute.mock.calls[0][0]);
+    expect(query.sql).toContain('bp.organization_id = $');
+    expect(query.sql).not.toMatch(/bp\.organization_id IS ['"]/);
+    expect(query.params).toContain('org-1');
+    expect(query.params).toContain('PUBLISHED');
+    expect(query.sql).toContain('bp.published_at <= now()');
   });
 });

@@ -16,6 +16,7 @@ const mockSelect = vi.fn();
 const mockInsert = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
+const mockTransaction = vi.fn();
 
 vi.mock('@database/drizzle', () => ({
   getDrizzle: vi.fn(() => {
@@ -25,22 +26,20 @@ vi.mock('@database/drizzle', () => ({
       update: mockUpdate,
       delete: mockDelete,
     };
-    // Simulate a transactional context: run the callback with the same
-    // mocked query methods so read-after-write isolation is exercised.
-    return { ...db, transaction: (cb: (tx: typeof db) => Promise<any>) => cb(db) };
+    return { ...db, transaction: (cb: (tx: typeof db) => Promise<any>) => mockTransaction(cb, db) };
   }),
 }));
 
 vi.mock('@database/schemas', () => ({
-  blogPosts: { id: 'id', organizationId: 'organizationId', commentStatus: 'commentStatus', allowReviews: 'allowReviews', authorId: 'authorId', slug: 'slug', viewCount: 'viewCount' },
-  blogComments: { id: 'id', postId: 'postId', authorId: 'authorId', status: 'status', content: 'content' },
+  blogPosts: { id: 'id', organizationId: 'organizationId', commentStatus: 'commentStatus', allowReviews: 'allowReviews', authorId: 'authorId', slug: 'slug', viewCount: 'viewCount', status: 'status', publishedAt: 'publishedAt' },
+  blogComments: { id: 'id', postId: 'postId', parentId: 'parentId', authorId: 'authorId', status: 'status', content: 'content', createdAt: 'createdAt' },
   blogCommentModerations: { id: 'id', commentId: 'commentId' },
-  blogPostReviews: { id: 'id', postId: 'postId', authorId: 'authorId', status: 'status', rating: 'rating' },
+  blogPostReviews: { id: 'id', postId: 'postId', authorId: 'authorId', status: 'status', rating: 'rating', helpfulCount: 'helpfulCount', createdAt: 'createdAt' },
   blogPostReviewHelpful: { reviewId: 'reviewId', userId: 'userId', isHelpful: 'isHelpful' },
   blogPostReactions: { postId: 'postId', userId: 'userId', reactionType: 'reactionType' },
   blogPostFavorites: { postId: 'postId', userId: 'userId' },
-  blogReports: { id: 'id', postId: 'postId', commentId: 'commentId', reviewId: 'reviewId', status: 'status', reporterId: 'reporterId' },
-  blogNotifications: { id: 'id', userId: 'userId', isRead: 'isRead' },
+  blogReports: { id: 'id', postId: 'postId', commentId: 'commentId', reviewId: 'reviewId', status: 'status', reporterId: 'reporterId', createdAt: 'createdAt' },
+  blogNotifications: { id: 'id', userId: 'userId', isRead: 'isRead', postId: 'postId', commentId: 'commentId', reviewId: 'reviewId', fromUserId: 'fromUserId', createdAt: 'createdAt' },
   blogPostViewStats: { id: 'id', postId: 'postId' },
 }));
 
@@ -60,9 +59,9 @@ vi.mock('@/lib/auth', () => ({
 
 // ── Imports ─────────────────────────────────────────────────────────
 import { createBlogComment, moderateBlogComment } from '@/actions/blog/comment';
-import { createBlogReview, voteBlogReviewHelpful } from '@/actions/blog/review';
+import { createBlogReview, moderateBlogReview, voteBlogReviewHelpful } from '@/actions/blog/review';
 import { toggleBlogReaction, toggleBlogFavorite } from '@/actions/blog/reaction';
-import { createBlogReport } from '@/actions/blog/moderation';
+import { createBlogReport, getBlogModerationQueue } from '@/actions/blog/moderation';
 import { recordBlogPostView } from '@/actions/blog/view';
 import { markBlogNotificationRead, markAllBlogNotificationsRead } from '@/actions/blog/notification';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -70,10 +69,12 @@ import { checkRateLimit } from '@/lib/rate-limit';
 const createComment = createBlogComment as unknown as { handler: (...a: any[]) => Promise<any> };
 const moderateComment = moderateBlogComment as unknown as { handler: (...a: any[]) => Promise<any> };
 const createReview = createBlogReview as unknown as { handler: (...a: any[]) => Promise<any> };
+const moderateReview = moderateBlogReview as unknown as { handler: (...a: any[]) => Promise<any> };
 const voteHelpful = voteBlogReviewHelpful as unknown as { handler: (...a: any[]) => Promise<any> };
 const toggleReaction = toggleBlogReaction as unknown as { handler: (...a: any[]) => Promise<any> };
 const toggleFavorite = toggleBlogFavorite as unknown as { handler: (...a: any[]) => Promise<any> };
 const createReport = createBlogReport as unknown as { handler: (...a: any[]) => Promise<any> };
+const moderationQueue = getBlogModerationQueue as unknown as { handler: (...a: any[]) => Promise<any> };
 const recordView = recordBlogPostView as unknown as { handler: (...a: any[]) => Promise<any> };
 const markRead = markBlogNotificationRead as unknown as { handler: (...a: any[]) => Promise<any> };
 const markAllRead = markAllBlogNotificationsRead as unknown as { handler: (...a: any[]) => Promise<any> };
@@ -108,6 +109,9 @@ function adminCtx() {
 }
 
 function makeChain(rows: any[]) {
+  const terminal: any = Object.assign(Promise.resolve(rows), {
+    offset: vi.fn(() => Promise.resolve(rows)),
+  });
   const chain: any = {
     from: vi.fn(() => chain),
     where: vi.fn(() => chain),
@@ -115,7 +119,8 @@ function makeChain(rows: any[]) {
     leftJoin: vi.fn(() => chain),
     orderBy: vi.fn(() => chain),
     groupBy: vi.fn(() => chain),
-    limit: vi.fn(() => Promise.resolve(rows)),
+    limit: vi.fn(() => terminal),
+    offset: vi.fn(() => Promise.resolve(rows)),
     then: (resolve: any) => resolve(rows),
   };
   return chain;
@@ -137,6 +142,9 @@ beforeEach(() => {
   mockInsert.mockReset();
   mockUpdate.mockReset();
   mockDelete.mockReset();
+  mockTransaction.mockReset().mockImplementation(
+    (callback: (tx: any) => Promise<any>, db: any) => callback(db),
+  );
   mockUserHasPermission.mockReset().mockResolvedValue({ success: true });
   vi.mocked(checkRateLimit).mockReset().mockReturnValue({ allowed: true, remaining: 10, resetAt: Date.now() + 60_000 });
 });
@@ -151,9 +159,7 @@ describe('createBlogComment', () => {
   });
 
   it('allows a guest comment and sanitizes its content', async () => {
-    mockSelect
-      .mockReturnValueOnce(makeChain([{ id: 'post-1', commentStatus: 'OPEN', organizationId: null }]))
-      .mockReturnValueOnce(makeChain([{ authorId: 'author-1' }]));
+    mockSelect.mockReturnValueOnce(makeChain([{ id: 'post-1', commentStatus: 'OPEN', organizationId: null }]));
     const insertChain = makeMutationChain([{ id: 'comment-1', status: 'PENDING' }]);
     mockInsert.mockReturnValue(insertChain);
 
@@ -165,6 +171,51 @@ describe('createBlogComment', () => {
     expect(result).toEqual({ id: 'comment-1', status: 'PENDING' });
     const insertedValues = insertChain.values.mock.calls[0][0];
     expect(insertedValues.content).not.toContain('<script>');
+  });
+
+  it('rejects comments on posts that are not publicly visible', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      createComment.handler({ postId: 'post-1', content: 'Not public' }, guestCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects a parent comment outside the same public post', async () => {
+    mockSelect
+      .mockReturnValueOnce(makeChain([{ id: 'post-1', commentStatus: 'OPEN' }]))
+      .mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      createComment.handler({ postId: 'post-1', parentId: 'comment-other-post', content: 'Reply' }, guestCtx()),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+  });
+
+  it('allows one reply level below an approved root comment', async () => {
+    mockSelect
+      .mockReturnValueOnce(makeChain([{ id: 'post-1', commentStatus: 'OPEN' }]))
+      .mockReturnValueOnce(makeChain([{ parentId: null }]));
+    mockInsert.mockReturnValue(makeMutationChain([{ id: 'reply-1', status: 'PENDING' }]));
+
+    const result = await createComment.handler(
+      { postId: 'post-1', parentId: 'comment-1', content: 'Reply' },
+      guestCtx(),
+    );
+
+    expect(result).toEqual({ id: 'reply-1', status: 'PENDING' });
+  });
+
+  it('caps replies at the single level rendered by public loaders', async () => {
+    mockSelect
+      .mockReturnValueOnce(makeChain([{ id: 'post-1', commentStatus: 'OPEN' }]))
+      .mockReturnValueOnce(makeChain([{ parentId: 'comment-2' }]))
+      .mockReturnValueOnce(makeChain([{ parentId: null }]));
+
+    await expect(
+      createComment.handler({ postId: 'post-1', parentId: 'comment-1', content: 'Too deep' }, guestCtx()),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 
   it('is rate-limited per IP for guests', async () => {
@@ -180,9 +231,9 @@ describe('createBlogComment', () => {
 
 describe('moderateBlogComment', () => {
   it('approves a pending comment', async () => {
-    mockSelect
-      .mockReturnValueOnce(makeChain([{ id: 'comment-1', postId: 'post-1', content: 'hi', status: 'PENDING' }]))
-      .mockReturnValueOnce(makeChain([{ authorId: 'guest-author' }]));
+    mockSelect.mockReturnValueOnce(
+      makeChain([{ id: 'comment-1', postId: 'post-1', parentId: null, authorId: null, postAuthorId: 'admin-1', content: 'hi', status: 'PENDING' }]),
+    );
     const updateChain = makeMutationChain();
     mockUpdate.mockReturnValue(updateChain);
     mockInsert.mockReturnValue(makeMutationChain());
@@ -194,16 +245,72 @@ describe('moderateBlogComment', () => {
 
     expect(result).toEqual({ success: true });
     expect(updateChain.set).toHaveBeenCalledWith(expect.objectContaining({ status: 'APPROVED' }));
+    expect(mockTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('creates a single-target approval notification inside the moderation transaction', async () => {
+    mockSelect.mockReturnValueOnce(
+      makeChain([{ id: 'comment-1', postId: 'post-1', parentId: null, authorId: 'author-1', postAuthorId: 'admin-1', content: 'hi', status: 'PENDING' }]),
+    );
+    mockUpdate.mockReturnValue(makeMutationChain());
+    const moderationInsert = makeMutationChain();
+    const notificationInsert = makeMutationChain();
+    mockInsert
+      .mockReturnValueOnce(moderationInsert)
+      .mockReturnValueOnce(notificationInsert);
+
+    await moderateComment.handler(
+      { commentId: 'comment-1', moderationAction: 'APPROVE', organizationId: null },
+      adminCtx(),
+    );
+
+    expect(notificationInsert.values).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'COMMENT_APPROVED', commentId: 'comment-1' }),
+    );
+    expect(notificationInsert.values.mock.calls[0][0]).not.toHaveProperty('postId');
+    expect(mockTransaction).toHaveBeenCalledOnce();
   });
 });
 
 describe('createBlogReview', () => {
   it('requires authentication', async () => {
-    mockSelect.mockReturnValueOnce(makeChain([{ id: 'post-1', allowReviews: true }]));
-
     await expect(
       createReview.handler({ postId: 'post-1', rating: 5, content: 'Great read' }, guestCtx()),
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  describe('moderateBlogReview', () => {
+    it('updates and notifies atomically when approving a review', async () => {
+      mockSelect.mockReturnValueOnce(makeChain([{ id: 'review-1', authorId: 'reviewer-1', status: 'PENDING' }]));
+      mockUpdate.mockReturnValue(makeMutationChain());
+      const notificationInsert = makeMutationChain();
+      mockInsert.mockReturnValue(notificationInsert);
+
+      const result = await moderateReview.handler(
+        { reviewId: 'review-1', status: 'APPROVED', organizationId: null },
+        adminCtx(),
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockTransaction).toHaveBeenCalledOnce();
+      expect(notificationInsert.values).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'REVIEW_APPROVED', reviewId: 'review-1' }),
+      );
+      expect(notificationInsert.values.mock.calls[0][0]).not.toHaveProperty('postId');
+    });
+
+    it('does not mislabel a rejected review as a rejected comment', async () => {
+      mockSelect.mockReturnValueOnce(makeChain([{ id: 'review-1', authorId: 'reviewer-1', status: 'PENDING' }]));
+      mockUpdate.mockReturnValue(makeMutationChain());
+
+      await moderateReview.handler(
+        { reviewId: 'review-1', status: 'REJECTED', organizationId: null },
+        adminCtx(),
+      );
+
+      expect(mockTransaction).toHaveBeenCalledOnce();
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
   });
 
   it('rejects when reviews are disabled', async () => {
@@ -216,8 +323,7 @@ describe('createBlogReview', () => {
 
   it('sanitizes review content before persisting (defense in depth)', async () => {
     mockSelect
-      .mockReturnValueOnce(makeChain([{ id: 'post-1', allowReviews: true }]))
-      .mockReturnValueOnce(makeChain([{ authorId: 'post-author' }]));
+      .mockReturnValueOnce(makeChain([{ id: 'post-1', allowReviews: true, authorId: 'post-author' }]));
     const insertChain = makeMutationChain([{ id: 'review-1', status: 'PENDING' }]);
     mockInsert.mockReturnValue(insertChain);
 
@@ -228,6 +334,15 @@ describe('createBlogReview', () => {
 
     const insertedValues = insertChain.values.mock.calls[0][0];
     expect(insertedValues.content).not.toContain('<script>');
+    expect(mockTransaction).toHaveBeenCalledOnce();
+  });
+
+  it('rejects reviews on posts that are not publicly visible', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      createReview.handler({ postId: 'post-1', rating: 5, content: 'Future post' }, userCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 
   it('is rate-limited per user', async () => {
@@ -243,18 +358,29 @@ describe('createBlogReview', () => {
 describe('voteBlogReviewHelpful', () => {
   it('records a helpful vote and recalculates the count', async () => {
     mockInsert.mockReturnValue(makeMutationChain());
-    mockSelect.mockReturnValueOnce(makeChain([{ helpful: 3 }]));
+    mockSelect
+      .mockReturnValueOnce(makeChain([{ id: 'review-1' }]))
+      .mockReturnValueOnce(makeChain([{ helpful: 3 }]));
     mockUpdate.mockReturnValue(makeMutationChain());
 
     const result = await voteHelpful.handler({ reviewId: 'review-1', isHelpful: true }, userCtx());
 
     expect(result).toEqual({ success: true });
+    expect(mockTransaction).toHaveBeenCalledOnce();
   });
 
   it('requires authentication', async () => {
     await expect(
       voteHelpful.handler({ reviewId: 'review-1', isHelpful: true }, guestCtx()),
     ).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
+  });
+
+  it('rejects a helpful vote when its review is not on a public post', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      voteHelpful.handler({ reviewId: 'review-1', isHelpful: true }, userCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
 
@@ -269,6 +395,7 @@ describe('toggleBlogReaction', () => {
     const result = await toggleReaction.handler({ postId: 'post-1', reactionType: 'LIKE' }, userCtx());
 
     expect(result).toEqual({ active: true, count: 1 });
+    expect(mockTransaction).toHaveBeenCalledOnce();
   });
 
   it('removes an existing reaction (toggle off)', async () => {
@@ -290,6 +417,14 @@ describe('toggleBlogReaction', () => {
       toggleReaction.handler({ postId: 'post-1', reactionType: 'LIKE' }, userCtx()),
     ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' });
   });
+
+  it('rejects reactions on posts that are not publicly visible', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      toggleReaction.handler({ postId: 'post-1', reactionType: 'LIKE' }, userCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
 });
 
 describe('toggleBlogFavorite', () => {
@@ -306,15 +441,63 @@ describe('toggleBlogFavorite', () => {
       toggleFavorite.handler({ postId: 'post-1' }, userCtx()),
     ).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS' });
   });
+
+  it('rejects favorites on posts that are not publicly visible', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      toggleFavorite.handler({ postId: 'post-1' }, userCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
 });
 
 describe('createBlogReport', () => {
   it('accepts an anonymous report and is rate-limited per IP', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([{ id: 'post-1' }]));
     mockInsert.mockReturnValue(makeMutationChain([{ id: 'report-1' }]));
 
     const result = await createReport.handler({ postId: 'post-1', reason: 'SPAM' }, guestCtx());
 
     expect(result).toEqual({ id: 'report-1' });
+  });
+
+  describe('getBlogModerationQueue', () => {
+    it('left-joins report targets so comment and review reports remain visible', async () => {
+      const commentsChain = makeChain([]);
+      const reviewsChain = makeChain([]);
+      const reportsChain = makeChain([]);
+      mockSelect
+        .mockReturnValueOnce(commentsChain)
+        .mockReturnValueOnce(reviewsChain)
+        .mockReturnValueOnce(reportsChain);
+
+      const result = await moderationQueue.handler(
+        { organizationId: null, page: 1, limit: 20 },
+        adminCtx(),
+      );
+
+      expect(result).toEqual({ comments: [], reviews: [], reports: [] });
+      expect(reportsChain.leftJoin).toHaveBeenCalledTimes(3);
+      expect(reportsChain.innerJoin).not.toHaveBeenCalled();
+    });
+  });
+
+  it('rejects reports for subjects that are not publicly visible', async () => {
+    mockSelect.mockReturnValueOnce(makeChain([]));
+
+    await expect(
+      createReport.handler({ commentId: 'comment-1', reason: 'SPAM' }, guestCtx()),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
+  it('rejects inconsistent report targets even when called without action parsing', async () => {
+    await expect(
+      createReport.handler({ postId: 'post-1', reviewId: 'review-1', reason: 'SPAM' }, guestCtx()),
+    ).rejects.toMatchObject({ code: 'BAD_REQUEST' });
+
+    expect(mockSelect).not.toHaveBeenCalled();
   });
 
   it('rejects when rate-limited', async () => {
@@ -331,7 +514,7 @@ describe('createBlogReport', () => {
 describe('recordBlogPostView', () => {
   it('increments the view counter and logs a view stat row', async () => {
     mockSelect.mockReturnValueOnce(makeChain([{ id: 'post-1' }]));
-    mockUpdate.mockReturnValue(makeMutationChain());
+    mockUpdate.mockReturnValue(makeMutationChain([{ id: 'post-1' }]));
     mockInsert.mockReturnValue(makeMutationChain());
 
     const result = await recordView.handler({ postId: 'post-1', referrer: 'https://example.com' }, guestCtx());
@@ -339,6 +522,7 @@ describe('recordBlogPostView', () => {
     expect(result).toEqual({ recorded: true });
     expect(mockUpdate).toHaveBeenCalled();
     expect(mockInsert).toHaveBeenCalled();
+    expect(mockTransaction).toHaveBeenCalledOnce();
   });
 
   it('de-duplicates repeat views from the same IP within the cooldown window', async () => {
