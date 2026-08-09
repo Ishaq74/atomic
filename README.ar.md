@@ -338,12 +338,14 @@ migrations/
   0002_sticky_blazing_skull.sql
   0003_brief_senator_kelly.sql
   0004_flashy_ezekiel_stane.sql
+  0005_hard_joseph.sql
   meta/
     0000_snapshot.json
     0001_snapshot.json
     0002_snapshot.json
     0003_snapshot.json
     0004_snapshot.json
+    0005_snapshot.json
     _journal.json
 schemas/
   audit-log.schema.ts
@@ -420,10 +422,10 @@ schemas.ts
 - `blog_post_reactions`: `postId`, `userId`, `reactionType`, `createdAt`, `updatedAt` _(post: one, user: one)_
 - `blog_post_seo`: `id`, `postId`, `locale`, `focusKeyword`, `focusKeywordScore`, `readabilityScore`, `metaRobots`, `metaOgType`, `metaOgLocale`, `metaTwitterCard`, `schemaMarkup`, `createdAt`, `updatedAt` _(post: one)_
 - `blog_post_view_stats`: `id`, `postId`, `viewedAt`, `date`, `hour`, `referrer`, `country`, `deviceType`, `sessionId` _(post: one)_
-- `blog_notifications`: `id`, `userId`, `type`, `postId`, `commentId`, `reviewId`, `fromUserId`, `isRead`, `metadata`, `createdAt` _(user: one, post: one, comment: one, review: one, fromUser: one)_
+- `blog_notifications`: `id`, `userId`, `organizationId`, `type`, `postId`, `commentId`, `reviewId`, `fromUserId`, `isRead`, `metadata`, `createdAt` _(user: one, organization: one, post: one, comment: one, review: one, fromUser: one)_
 - `blog_post_locks`: `id`, `postId`, `userId`, `sessionId`, `lockedAt`, `expiresAt` _(post: one, user: one)_
 - `blog_post_links`: `id`, `sourcePostId`, `targetPostId`, `linkType`, `sortOrder`, `createdAt` _(sourcePost: one, targetPost: one)_
-- `blog_subscribers`: `id`, `organizationId`, `email`, `locale`, `token`, `tokenUsedAt`, `status`, `confirmedAt`, `unsubscribedAt`, `createdAt`, `updatedAt`
+- `blog_subscribers`: `id`, `organizationId`, `email`, `locale`, `token`, `tokenUsedAt`, `confirmationTokenHash`, `confirmationTokenExpiresAt`, `confirmationTokenUsedAt`, `unsubscribeTokenHash`, `unsubscribeTokenUsedAt`, `status`, `confirmedAt`, `unsubscribedAt`, `createdAt`, `updatedAt`
 
 ### الترحيلات
 
@@ -432,6 +434,7 @@ schemas.ts
 - `0002_sticky_blazing_skull.sql`
 - `0003_brief_senator_kelly.sql`
 - `0004_flashy_ezekiel_stane.sql`
+- `0005_hard_joseph.sql`
 
 ### الأوامر
 
@@ -784,12 +787,200 @@ tests/
   unit/
 .github/
 agents/
+  akil.agent.md
+  anne.agent.md
   AtomicFullStackEngineer.agent.md
   AtomicUIDesigner.agent.md
+  designer.agent.md
   DevOpsExpert.agent.md
+  elias.agent.md
+  fatima.agent.md
+  hawa.agent.md
+  ishaq.agent.md
+  leila.agent.md
+  liwei.agent.md
+  maya.agent.md
+  moonzam.agent.md
+  orchestrator.agent.md
+  ourssoum.agent.md
+  planner.agent.md
+  soren.agent.md
+  vladimir.agent.md
+  yusra.agent.md
 dependabot.yml
 prompts/
   plan-codeReview.prompt.md
+skills/
+  accessibility/
+    references/
+      A11Y-PATTERNS.md
+      WCAG.md
+    SKILL.md
+  astro/
+    SKILL.md
+  best-practices/
+    SKILL.md
+  drizzle/
+    metadata.json
+    references/
+      advanced-schemas.md
+      performance.md
+      query-patterns.md
+      vs-prisma.md
+    SKILL.md
+  emailAndPassword/
+    SKILL.md
+  frontend-design/
+    LICENSE.txt
+    SKILL.md
+  nodejs-backend-patterns/
+    references/
+      advanced-patterns.md
+    SKILL.md
+  nodejs-best-practices/
+    SKILL.md
+  organization/
+    SKILL.md
+  playwright-best-practices/
+    advanced/
+      authentication-flows.md
+      authentication.md
+      clock-mocking.md
+      mobile-testing.md
+      multi-context.md
+      multi-user.md
+      network-advanced.md
+      third-party.md
+    architecture/
+      pom-vs-fixtures.md
+      test-architecture.md
+      when-to-mock.md
+    browser-apis/
+      browser-apis.md
+      iframes.md
+      service-workers.md
+      websockets.md
+    core/
+      annotations.md
+      assertions-waiting.md
+      configuration.md
+      fixtures-hooks.md
+      global-setup.md
+      locators.md
+      page-object-model.md
+      projects-dependencies.md
+      test-data.md
+      test-suite-structure.md
+      test-tags.md
+    debugging/
+      console-errors.md
+      debugging.md
+      error-testing.md
+      flaky-tests.md
+    frameworks/
+      angular.md
+      nextjs.md
+      react.md
+      vue.md
+    infrastructure-ci-cd/
+      ci-cd.md
+      docker.md
+      github-actions.md
+      gitlab.md
+      other-providers.md
+      parallel-sharding.md
+      performance.md
+      reporting.md
+      test-coverage.md
+    LICENSE.md
+    README.md
+    SKILL.md
+    testing-patterns/
+      accessibility.md
+      api-testing.md
+      browser-extensions.md
+      canvas-webgl.md
+      component-testing.md
+      drag-drop.md
+      electron.md
+      file-operations.md
+      file-upload-download.md
+      forms-validation.md
+      graphql-testing.md
+      i18n.md
+      performance-testing.md
+      security-testing.md
+      visual-regression.md
+  seo/
+    SKILL.md
+  shadcn/
+    agents/
+      openai.yml
+    assets/
+      shadcn-small.png
+      shadcn.png
+    cli.md
+    customization.md
+    evals/
+      evals.json
+    mcp.md
+    rules/
+      base-vs-radix.md
+      composition.md
+      forms.md
+      icons.md
+      styling.md
+    SKILL.md
+  tailwind-css-patterns/
+    references/
+      accessibility.md
+      animations.md
+      component-patterns.md
+      configuration.md
+      layout-patterns.md
+      performance.md
+      reference.md
+      responsive-design.md
+    SKILL.md
+  tailwind-v4-shadcn/
+    references/
+      advanced-usage.md
+      common-gotchas.md
+      dark-mode.md
+      migration-guide.md
+      plugins-reference.md
+    SKILL.md
+    templates/
+      components.json
+      index.css
+      theme-provider.tsx
+      tsconfig.app.json
+      utils.ts
+      vite.config.ts
+  twoFactor/
+    SKILL.md
+  typescript-advanced-types/
+    SKILL.md
+  vitest/
+    GENERATION.md
+    references/
+      advanced-environments.md
+      advanced-projects.md
+      advanced-type-testing.md
+      advanced-vi.md
+      core-cli.md
+      core-config.md
+      core-describe.md
+      core-expect.md
+      core-hooks.md
+      core-test-api.md
+      features-concurrency.md
+      features-context.md
+      features-coverage.md
+      features-filtering.md
+      features-mocking.md
+      features-snapshots.md
+    SKILL.md
 workflows/
   ci.yml
   codeql.yml
