@@ -1,6 +1,9 @@
 name: finalize-blog-schema-invariants
 
 on:
+  pull_request:
+    branches:
+      - feature/cms-platform-foundation
   push:
     branches:
       - feature/cms-platform-schema-invariants
