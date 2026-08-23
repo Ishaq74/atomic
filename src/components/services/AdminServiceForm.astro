@@ -9,29 +9,21 @@ import ContentEditor from "@components/content/ContentEditor.astro";
 import { getServiceTranslations } from "@/modules/services/i18n";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail } from "@/modules/services/domain";
-const { locale, service = null, organizationId = null } = Astro.props as { locale: Locale; service?: ServiceDetail | null; organizationId?: string | null };
+const { locale, service = null, organizationId = null, baseAdminUrl = `/${locale}/admin/services` } = Astro.props as { locale: Locale; service?: ServiceDetail | null; organizationId?: string | null; baseAdminUrl?: string };
 const t = getServiceTranslations(locale);
 const translation = service?.translation;
 ---
 <AdminFormShell formSelector="form[data-service-form]" title={service ? t.admin.editService : t.admin.newService}>
-  <form id="service-form" data-service-form data-mode={service ? "edit" : "create"} class="space-y-6" data-organization-id={organizationId ?? ""}>
+  <form id="service-form" data-service-form data-mode={service ? "edit" : "create"} data-base-admin-url={baseAdminUrl} class="space-y-6">
     <input type="hidden" name="organizationId" value={organizationId ?? ""} />
     <input type="hidden" name="locale" value={locale} />
     {service && <input type="hidden" name="id" value={service.service.id} />}
-    <div class="grid gap-4 md:grid-cols-2">
-      <div class="space-y-1.5"><Label for="service-title">{t.admin.fields.title}</Label><Input id="service-title" name="title" required value={translation?.title ?? ""} /></div>
-      <div class="space-y-1.5"><Label for="service-slug">{t.admin.fields.slug}</Label><Input id="service-slug" name="slug" required value={translation?.slug ?? ""} /></div>
-    </div>
+    <div class="grid gap-4 md:grid-cols-2"><div class="space-y-1.5"><Label for="service-title">{t.admin.fields.title}</Label><Input id="service-title" name="title" required value={translation?.title ?? ""} /></div><div class="space-y-1.5"><Label for="service-slug">{t.admin.fields.slug}</Label><Input id="service-slug" name="slug" required value={translation?.slug ?? ""} /></div></div>
     <div class="space-y-1.5"><Label for="service-excerpt">{t.admin.fields.excerpt}</Label><Textarea id="service-excerpt" name="excerpt" rows={3} defaultValue={translation?.excerpt ?? ""} /></div>
     <ContentEditor name="content" value={translation?.content ?? ""} locale={locale} organizationId={organizationId} resolverName="blog" label={t.admin.fields.content} required rows={16} />
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="space-y-1.5"><Label for="service-price">{t.admin.fields.price}</Label><Input id="service-price" name="priceMinor" type="number" min="0" step="1" value={service?.service.priceMinor ?? ""} /></div>
-      <div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service?.service.currency ?? "EUR"} /></div>
-      <div class="space-y-1.5"><Label for="service-duration">{t.admin.fields.duration}</Label><Input id="service-duration" name="durationMinutes" type="number" min="1" value={service?.service.durationMinutes ?? ""} /></div>
-      <div class="space-y-1.5"><Label for="service-capacity">{t.admin.fields.maxParticipants}</Label><Input id="service-capacity" name="maxParticipants" type="number" min="1" value={service?.service.maxParticipants ?? ""} /></div>
-    </div>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div class="space-y-1.5"><Label for="service-price">{t.admin.fields.price}</Label><Input id="service-price" name="priceMinor" type="number" min="0" step="1" value={service?.service.priceMinor ?? ""} /></div><div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service?.service.currency ?? "EUR"} /></div><div class="space-y-1.5"><Label for="service-duration">{t.admin.fields.duration}</Label><Input id="service-duration" name="durationMinutes" type="number" min="1" value={service?.service.durationMinutes ?? ""} /></div><div class="space-y-1.5"><Label for="service-capacity">{t.admin.fields.maxParticipants}</Label><Input id="service-capacity" name="maxParticipants" type="number" min="1" value={service?.service.maxParticipants ?? ""} /></div></div>
     <div class="flex flex-wrap gap-6"><Checkbox name="isMobile" label={t.admin.fields.mobile} checked={service?.service.isMobile ?? false} /><Checkbox name="isFeatured" label={t.admin.fields.featured} checked={service?.service.isFeatured ?? false} /></div>
-    <div class="flex flex-wrap justify-end gap-3 border-t pt-5"><Button type="button" variant="outline" href={`/${locale}/admin/services`}>Annuler</Button><Button type="submit">{t.admin.save}</Button></div>
+    <div class="flex flex-wrap justify-end gap-3 border-t pt-5"><Button type="button" variant="outline" href={baseAdminUrl}>Annuler</Button><Button type="submit">{t.admin.save}</Button></div>
     <p id="service-form-status" class="text-sm" aria-live="polite"></p>
   </form>
 </AdminFormShell>
@@ -41,20 +33,11 @@ const translation = service?.translation;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(form);
-      const parseIds = (name: string) => Array.from(form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]:checked`)).map((input) => input.value);
       const checked = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.checked ?? false;
-      const payload = {
-        organizationId: String(data.get("organizationId") || "") || null,
-        locale: String(data.get("locale")), title: String(data.get("title")), slug: String(data.get("slug")), excerpt: String(data.get("excerpt") || "") || null, content: String(data.get("content")),
-        status: "DRAFT", publishedAt: null, coverImageId: null, ogImageId: null,
-        priceMinor: data.get("priceMinor") ? Number(data.get("priceMinor")) : null, currency: String(data.get("currency") || "") || null,
-        durationMinutes: data.get("durationMinutes") ? Number(data.get("durationMinutes")) : null, maxParticipants: data.get("maxParticipants") ? Number(data.get("maxParticipants")) : null,
-        isMobile: checked("isMobile"), isFeatured: checked("isFeatured"), categoryIds: parseIds("categoryIds"), tagIds: parseIds("tagIds"),
-      };
+      const payload = { organizationId: String(data.get("organizationId") || "") || null, locale: String(data.get("locale")), title: String(data.get("title")), slug: String(data.get("slug")), excerpt: String(data.get("excerpt") || "") || null, content: String(data.get("content")), status: "DRAFT", publishedAt: null, coverImageId: null, ogImageId: null, priceMinor: data.get("priceMinor") ? Number(data.get("priceMinor")) : null, currency: String(data.get("currency") || "") || null, durationMinutes: data.get("durationMinutes") ? Number(data.get("durationMinutes")) : null, maxParticipants: data.get("maxParticipants") ? Number(data.get("maxParticipants")) : null, isMobile: checked("isMobile"), isFeatured: checked("isFeatured"), categoryIds: [], tagIds: [] };
       const result = form.dataset.mode === "edit" ? await actions.updateService({ ...payload, id: String(data.get("id")) }) : await actions.createService(payload);
-      const status = form.querySelector<HTMLElement>("#service-form-status");
-      if (status) status.textContent = result.error ? result.error.message : "Enregistré.";
-      if (!result.error && result.data?.id && form.dataset.mode !== "edit") window.location.href = `/${data.get("locale")}/admin/services/${result.data.id}/edit`;
+      const status = form.querySelector<HTMLElement>("#service-form-status"); if (status) status.textContent = result.error ? result.error.message : "Enregistré.";
+      if (!result.error && result.data?.id && form.dataset.mode !== "edit") window.location.href = `${form.dataset.baseAdminUrl}/${result.data.id}/edit`;
     });
   }
 </script>
