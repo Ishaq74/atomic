@@ -30,11 +30,22 @@ describe("Atomic module contracts", () => {
     });
   });
 
-  it("declares Blog's editorial resource actions", () => {
+  it("declares Blog's editorial resource management contract", () => {
     expect(blogPostAdminResource.id).toBe("blog-post");
+    expect(blogPostAdminResource.entity).toBe("blog_post");
+    expect(blogPostAdminResource.management).toEqual({
+      list: true,
+      search: true,
+      filters: true,
+      sort: true,
+      pagination: true,
+      stats: true,
+    });
     expect(blogPostAdminResource.actions.create).toBe(true);
     expect(blogPostAdminResource.actions.publish).toBe(true);
     expect(blogPostAdminResource.actions.duplicate).toBe(true);
     expect(blogPostAdminResource.actions.delete).toBe(true);
+    expect(blogPostAdminResource.actions.bulk).toBe(false);
+    expect(blogPostAdminResource.permissionNamespace).toBe("blog");
   });
 });
