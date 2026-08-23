@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CMS_CAPABILITIES } from "@/lib/cms/capabilities";
 import { blogModule } from "@/lib/blog/module";
 import { blogPostAdminResource } from "@/lib/blog/admin-resource";
 
@@ -21,10 +22,10 @@ describe("Atomic module contracts", () => {
     });
   });
 
-  it("binds every enabled capability to an existing Atomic implementation", () => {
+  it("binds every enabled capability to the canonical Atomic catalog", () => {
     for (const capability of Object.keys(blogModule.capabilities) as Array<keyof typeof blogModule.capabilities>) {
       expect(blogModule.capabilities[capability]).toBe(true);
-      expect(blogModule.capabilityProviders[capability]).toMatch(/^src\//);
+      expect(blogModule.capabilityProviders[capability]).toBe(CMS_CAPABILITIES[capability].implementations.join(" + "));
     }
   });
 
