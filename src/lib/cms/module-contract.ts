@@ -13,15 +13,15 @@ export interface AtomicModuleCapabilities {
   audit: boolean;
 }
 
-export interface AtomicModuleDefinition<
-  TEntity extends object = object,
-  TFilter extends object = object,
-> {
+/**
+ * Domain modules own entities and semantics. Platform capabilities are shared
+ * and explicitly opted into. Runtime module definitions contain no phantom
+ * values used only to satisfy TypeScript generics.
+ */
+export interface AtomicModuleDefinition {
   readonly id: string;
   readonly entity: string;
   readonly capabilities: Readonly<AtomicModuleCapabilities>;
-  readonly __entityType?: TEntity;
-  readonly __filterType?: TFilter;
 }
 
 export type ModuleCapability = keyof AtomicModuleCapabilities;
