@@ -13,36 +13,19 @@ import type { BlogPostListItem } from "@/lib/blog/types";
 
 interface PostRow extends Pick<BlogPostListItem, "post" | "translation" | "author" | "categories"> {}
 interface TaxonomyItem {
-  id: string;
-  slug: string;
-  name: string;
-  description?: string | null;
-  color?: string | null;
-  icon?: string | null;
-  parentId?: string | null;
-  sortOrder?: number | null;
-  postCount: number;
+  id: string; slug: string; name: string; description?: string | null; color?: string | null;
+  icon?: string | null; parentId?: string | null; sortOrder?: number | null; postCount: number;
 }
 interface Props {
-  locale: Locale;
-  blogT: BlogTranslations;
-  title: string;
-  posts: PostRow[];
+  locale: Locale; blogT: BlogTranslations; title: string; posts: PostRow[];
   postsMeta: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean };
-  stats: BlogAdminAggregateStats;
-  categories: TaxonomyItem[];
-  tags: TaxonomyItem[];
+  stats: BlogAdminAggregateStats; categories: TaxonomyItem[]; tags: TaxonomyItem[];
   moderation: {
     comments: { comment: { id: string; content: string; createdAt: Date; guestName: string | null; guestEmail: string | null; status: string }; post: { id: string; slug: string } }[];
     reviews: { review: { id: string; rating: number; title: string | null; content: string; createdAt: Date; status: string }; post: { id: string; slug: string } }[];
     reports: { report: { id: string; reason: string; description: string | null; createdAt: Date; status: string }; post: { id: string; slug: string } | null }[];
   };
-  baseAdminUrl: string;
-  basePublicUrl: string;
-  organizationId?: string | null;
-  userId: string;
-  canPublish: boolean;
-  canDelete: boolean;
+  baseAdminUrl: string; basePublicUrl: string; organizationId?: string | null; userId: string; canPublish: boolean; canDelete: boolean;
 }
 
 const { title, locale, blogT, posts, postsMeta, stats, categories, tags, moderation, baseAdminUrl, basePublicUrl, organizationId, userId, canPublish, canDelete } = Astro.props;
@@ -50,9 +33,7 @@ const moderationCount = moderation.comments.length + moderation.reviews.length +
 const localeSwitcherT = blogT.admin.localeSwitcher;
 const currentPath = Astro.url.pathname;
 const pathWithoutLocale = currentPath.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/";
-function buildLocaleHref(targetLocale: Locale): string {
-  return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`;
-}
+function buildLocaleHref(targetLocale: Locale): string { return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`; }
 ---
 
 <div class="space-y-6">
@@ -62,11 +43,7 @@ function buildLocaleHref(targetLocale: Locale): string {
       <p class="mt-1 text-sm text-muted-foreground">{blogT.admin.title}</p>
       <div class="mt-4 flex flex-wrap items-center gap-2">
         <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>
-        {LOCALES.map((loc) => (
-          <a href={buildLocaleHref(loc)} aria-current={loc === locale ? "page" : undefined} class:list={["inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors", { "border-primary bg-primary text-primary-foreground": loc === locale, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale }]}>
-            {LOCALE_LABELS[loc]}
-          </a>
-        ))}
+        {LOCALES.map((loc) => <a href={buildLocaleHref(loc)} aria-current={loc === locale ? "page" : undefined} class:list={["inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors", { "border-primary bg-primary text-primary-foreground": loc === locale, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale }]}>{LOCALE_LABELS[loc]}</a>)}
       </div>
     </div>
     <NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} organizationId={organizationId ?? null} />
@@ -80,30 +57,18 @@ function buildLocaleHref(targetLocale: Locale): string {
       <TabsTrigger value="moderation">{blogT.admin.moderation}</TabsTrigger>
       <TabsTrigger value="stats">{blogT.admin.stats}</TabsTrigger>
     </TabsList>
-
-    <TabsContent value="posts" defaultActive class="pt-4">
-      <AdminPostList locale={locale} blogT={blogT} rows={posts} meta={postsMeta} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canPublish={canPublish} canDelete={canDelete} organizationId={organizationId} />
-    </TabsContent>
+    <TabsContent value="posts" defaultActive class="pt-4"><AdminPostList locale={locale} blogT={blogT} rows={posts} meta={postsMeta} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canPublish={canPublish} canDelete={canDelete} organizationId={organizationId} /></TabsContent>
     <TabsContent value="categories" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="category" items={categories} organizationId={organizationId} /></TabsContent>
     <TabsContent value="tags" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="tag" items={tags} organizationId={organizationId} /></TabsContent>
     <TabsContent value="moderation" class="pt-4"><AdminModerationQueue blogT={blogT} moderation={moderation} organizationId={organizationId} /></TabsContent>
     <TabsContent value="stats" class="pt-4">
       <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          [blogT.admin.posts, stats.total],
-          [blogT.statuses.PUBLISHED, stats.published],
-          [blogT.statuses.DRAFT, stats.draft],
-          [blogT.admin.archive, stats.archived],
-          [blogT.statuses.DELETED, stats.deleted],
-          [blogT.admin.featured ?? blogT.admin.posts, stats.featured],
-          [blogT.admin.sticky ?? blogT.admin.posts, stats.sticky],
-          [blogT.admin.views, stats.views],
-          [blogT.admin.moderation, moderationCount],
+          [blogT.admin.posts, stats.total], [blogT.statuses.PUBLISHED, stats.published], [blogT.statuses.DRAFT, stats.draft],
+          [blogT.admin.archive, stats.archived], [blogT.statuses.DELETED, stats.deleted], [blogT.featured, stats.featured],
+          [blogT.sticky, stats.sticky], [blogT.admin.views, stats.views], [blogT.admin.moderation, moderationCount],
         ].map(([label, value]) => (
-          <Card>
-            <CardHeader><CardTitle class="text-sm text-muted-foreground">{label}</CardTitle></CardHeader>
-            <CardContent><p class="text-3xl font-bold">{value}</p></CardContent>
-          </Card>
+          <Card><CardHeader><CardTitle class="text-sm text-muted-foreground">{label}</CardTitle></CardHeader><CardContent><p class="text-3xl font-bold">{value}</p></CardContent></Card>
         ))}
       </div>
     </TabsContent>
