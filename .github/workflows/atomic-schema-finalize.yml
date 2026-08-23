@@ -1,9 +1,6 @@
 name: finalize-blog-schema-invariants
 
 on:
-  pull_request:
-    branches:
-      - feature/cms-platform-foundation
   push:
     branches:
       - feature/cms-platform-schema-invariants
@@ -23,7 +20,7 @@ jobs:
           ref: feature/cms-platform-schema-invariants
           fetch-depth: 1
 
-      - name: Apply exact schema invariants
+      - name: Apply exact reaction schema invariant
         shell: bash
         run: |
           python - <<'PY'
@@ -31,38 +28,28 @@ jobs:
           p = Path('src/database/schemas/blog.schema.ts')
           s = p.read_text()
 
-          old_reaction = '(table) => [primaryKey({ columns: [table.postId, table.userId, table.reactionType] })],'
-          new_reaction = '(table) => [primaryKey({ columns: [table.postId, table.userId] })],'
-          if s.count(old_reaction) != 1:
-              raise SystemExit(f'reaction primary key pattern count={s.count(old_reaction)}, expected 1')
-          s = s.replace(old_reaction, new_reaction, 1)
-
-          old_notification = '''    check(\n      "blog_notifications_single_target",\n      sql`(\n        ${table.postId} IS NOT NULL\n        AND NOT (${table.commentId} IS NOT NULL AND ${table.reviewId} IS NOT NULL)\n      )`,\n    ),'''
-          new_notification = '''    check(\n      "blog_notifications_single_target",\n      sql`(\n        (${table.postId} IS NOT NULL)::int +\n        (${table.commentId} IS NOT NULL)::int +\n        (${table.reviewId} IS NOT NULL)::int\n      ) = 1`,\n    ),'''
-          if s.count(old_notification) != 1:
-              raise SystemExit(f'notification target check pattern count={s.count(old_notification)}, expected 1')
-          s = s.replace(old_notification, new_notification, 1)
-
-          p.write_text(s)
+          old = '(table) => [primaryKey({ columns: [table.postId, table.userId, table.reactionType] })],'
+          new = '(table) => [primaryKey({ columns: [table.postId, table.userId] })],'
+          if s.count(old) != 1:
+              raise SystemExit(f'reaction primary key pattern count={s.count(old)}, expected 1')
+          p.write_text(s.replace(old, new, 1))
           PY
 
           rm .atomic-schema-finalize
 
-      - name: Commit schema invariants
+      - name: Commit schema invariant
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/database/schemas/blog.schema.ts .atomic-schema-finalize
-          git commit -m "fix(blog): align schema reaction and notification invariants" || exit 0
+          git commit -m "fix(blog): align reaction schema key with domain invariant"
           git push origin HEAD:feature/cms-platform-schema-invariants
 
       - name: Remove temporary workflow
         if: always()
         shell: bash
         run: |
-          git fetch origin feature/cms-platform-schema-invariants
-          git checkout feature/cms-platform-schema-invariants
           git rm -f .github/workflows/atomic-schema-finalize.yml || true
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
