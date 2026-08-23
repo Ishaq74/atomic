@@ -22,8 +22,10 @@ if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`)
 const { org, members } = orgData;
 const activeOrgRole = getUserOrgRole(members, user.id);
 const tenant = resolveBlogTenant({ organizationId: org.id });
-const [canAccessBlog, canPublish, canDelete] = await Promise.all([
+const [canAccessBlog, canCreate, canUpdate, canPublish, canDelete] = await Promise.all([
   hasBlogPermission(Astro, tenant, { blog: ["read"], blogCategory: ["read"], blogTag: ["read"], blogComment: ["read"], blogReview: ["read"] }),
+  hasBlogPermission(Astro, tenant, { blog: ["create"] }),
+  hasBlogPermission(Astro, tenant, { blog: ["update"] }),
   hasBlogPermission(Astro, tenant, { blog: ["publish"] }),
   hasBlogPermission(Astro, tenant, { blog: ["delete"] }),
 ]);
@@ -62,6 +64,6 @@ const filterOptions = { categories: categories.map(({ id, name }) => ({ id, name
 <BaseLayout title={`${authT.organizations.blog.title} — ${org.name}`} description={authT.organizations.blog.description}>
   <AuthLayout title={org.name}>
     <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} activeItem="blog" orgRole={activeOrgRole} />
-    <BlogAdminPage locale={locale} blogT={blogT} title={`${authT.organizations.blog.title} — ${org.name}`} posts={rows} postsMeta={meta} stats={stats} moderationCount={moderationCount} categories={categories} tags={tags} moderation={moderation} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} userId={user.id} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
+    <BlogAdminPage locale={locale} blogT={blogT} title={`${authT.organizations.blog.title} — ${org.name}`} posts={rows} postsMeta={meta} stats={stats} moderationCount={moderationCount} categories={categories} tags={tags} moderation={moderation} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} userId={user.id} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
   </AuthLayout>
 </BaseLayout>
