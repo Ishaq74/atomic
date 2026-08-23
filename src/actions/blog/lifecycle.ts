@@ -26,7 +26,7 @@ import {
 } from "./_helpers";
 
 type Db = ReturnType<typeof getDrizzle>;
-type DbTransaction = Parameters<Parameters<Db["transaction"]>[0]>[0];
+type DbTransaction = Parameters<Db["transaction"]>[0] extends (tx: infer T, ...args: never[]) => unknown ? T : never;
 
 const lifecycleInput = z.object({ id: z.uuid(), organizationId: blogOrganizationIdSchema });
 
@@ -73,7 +73,7 @@ async function performTransition(
   context: ActionAPIContext,
   to: BlogPostStatus,
   permission: "publish" | "update",
-  action: string,
+  action: "BLOG_POST_PUBLISH" | "BLOG_POST_UNPUBLISH" | "BLOG_POST_ARCHIVE" | "BLOG_POST_RESTORE",
   note: string,
 ) {
   const tenant = resolveBlogTenant(input);
@@ -92,7 +92,7 @@ async function performTransition(
     await appendRevision(tx, input.id, user.id, to, note);
   });
 
-  auditBlog(context, user.id, action as Parameters<typeof auditBlog>[2], {
+  auditBlog(context, user.id, action, {
     resource: "blog_posts",
     resourceId: input.id,
     metadata: { organizationId: tenant.organizationId, from: post.status, to },
@@ -101,25 +101,10 @@ async function performTransition(
   return { success: true };
 }
 
-export const publishBlogPost = defineAction({
-  input: lifecycleInput,
-  handler: async (input, context) => performTransition(input, context, "PUBLISHED", "publish", "BLOG_POST_PUBLISH", "Publication"),
-});
-
-export const unpublishBlogPost = defineAction({
-  input: lifecycleInput,
-  handler: async (input, context) => performTransition(input, context, "DRAFT", "publish", "BLOG_POST_UNPUBLISH", "Dépublication"),
-});
-
-export const archiveBlogPost = defineAction({
-  input: lifecycleInput,
-  handler: async (input, context) => performTransition(input, context, "ARCHIVED", "update", "BLOG_POST_ARCHIVE", "Archivage"),
-});
-
-export const restoreBlogPost = defineAction({
-  input: lifecycleInput,
-  handler: async (input, context) => performTransition(input, context, "DRAFT", "update", "BLOG_POST_RESTORE", "Restauration"),
-});
+export const publishBlogPost = defineAction({ input: lifecycleInput, handler: async (input, context) => performTransition(input, context, "PUBLISHED", "publish", "BLOG_POST_PUBLISH", "Publication") });
+export const unpublishBlogPost = defineAction({ input: lifecycleInput, handler: async (input, context) => performTransition(input, context, "DRAFT", "publish", "BLOG_POST_UNPUBLISH", "Dépublication") });
+export const archiveBlogPost = defineAction({ input: lifecycleInput, handler: async (input, context) => performTransition(input, context, "ARCHIVED", "update", "BLOG_POST_ARCHIVE", "Archivage") });
+export const restoreBlogPost = defineAction({ input: lifecycleInput, handler: async (input, context) => performTransition(input, context, "DRAFT", "update", "BLOG_POST_RESTORE", "Restauration") });
 
 export const deleteBlogPost = defineAction({
   input: lifecycleInput,
@@ -129,18 +114,12 @@ export const deleteBlogPost = defineAction({
     blogRateLimit(context, user.id, "post-delete");
     const post = await assertPostInTenant(input.id, tenant);
     assertTransition(post.status as BlogPostStatus, "DELETED");
-
     const db = getDrizzle();
     await db.transaction(async (tx) => {
       await tx.update(blogPosts).set({ status: "DELETED", publishedAt: null, updatedBy: user.id }).where(eq(blogPosts.id, input.id));
       await appendRevision(tx, input.id, user.id, "DELETED", "Suppression");
     });
-
-    auditBlog(context, user.id, "BLOG_POST_DELETE", {
-      resource: "blog_posts",
-      resourceId: input.id,
-      metadata: { organizationId: tenant.organizationId, from: post.status, to: "DELETED" },
-    });
+    auditBlog(context, user.id, "BLOG_POST_DELETE", { resource: "blog_posts", resourceId: input.id, metadata: { organizationId: tenant.organizationId, from: post.status, to: "DELETED" } });
     invalidateBlogCache();
     return { success: true };
   },
@@ -153,7 +132,6 @@ export const duplicateBlogPost = defineAction({
     const user = await assertBlogPermission(context, tenant, { blog: ["create"] });
     const source = await assertPostInTenant(input.id, tenant);
     const db = getDrizzle();
-
     const [translations, categories, tags, seo, galleries, links] = await Promise.all([
       db.select().from(blogPostTranslations).where(eq(blogPostTranslations.postId, input.id)).orderBy(blogPostTranslations.locale),
       db.select({ categoryId: blogPostCategories.categoryId }).from(blogPostCategories).where(eq(blogPostCategories.postId, input.id)),
@@ -162,73 +140,32 @@ export const duplicateBlogPost = defineAction({
       db.select().from(blogPostGalleries).where(eq(blogPostGalleries.postId, input.id)),
       db.select().from(blogPostLinks).where(eq(blogPostLinks.sourcePostId, input.id)),
     ]);
-
     if (!translations.length) throw new ActionError({ code: "BAD_REQUEST", message: "Impossible de dupliquer un article sans traduction." });
     const canonicalSlug = await uniqueCopySlug(db, tenant.organizationId, source.slug);
 
     const duplicated = await db.transaction(async (tx) => {
-      const [post] = await tx.insert(blogPosts).values({
-        organizationId: tenant.organizationId,
-        authorId: source.authorId,
-        slug: canonicalSlug,
-        status: "DRAFT",
-        featuredImageId: source.featuredImageId,
-        isFeatured: source.isFeatured,
-        isSticky: false,
-        commentStatus: source.commentStatus,
-        allowReviews: source.allowReviews,
-        seoScore: source.seoScore,
-        publishedAt: null,
-        updatedBy: user.id,
-      }).returning();
-
+      const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
       for (const translation of translations) {
-        await tx.insert(blogPostTranslations).values({
-          postId: post.id,
-          organizationId: tenant.organizationId,
-          locale: translation.locale,
-          title: translation.title,
-          slug: translation.locale === LOCALES[0]
-            ? canonicalSlug
-            : await uniqueTranslationCopySlug(tx, tenant.organizationId, translation.locale, translation.slug),
-          content: translation.content,
-          excerpt: translation.excerpt,
-          metaTitle: translation.metaTitle,
-          metaDescription: translation.metaDescription,
-          metaKeywords: translation.metaKeywords,
-          canonicalUrl: null,
-          ogTitle: translation.ogTitle,
-          ogDescription: translation.ogDescription,
-          ogImageId: translation.ogImageId,
-        });
+        const translationSlug = translation.locale === LOCALES[0] ? canonicalSlug : await uniqueTranslationCopySlug(tx, tenant.organizationId, translation.locale, translation.slug);
+        await tx.insert(blogPostTranslations).values({ postId: post.id, organizationId: tenant.organizationId, locale: translation.locale, title: translation.title, slug: translationSlug, content: translation.content, excerpt: translation.excerpt, metaTitle: translation.metaTitle, metaDescription: translation.metaDescription, metaKeywords: translation.metaKeywords, canonicalUrl: null, ogTitle: translation.ogTitle, ogDescription: translation.ogDescription, ogImageId: translation.ogImageId });
       }
-
       if (categories.length) await tx.insert(blogPostCategories).values(categories.map(({ categoryId }) => ({ postId: post.id, categoryId })));
       if (tags.length) await tx.insert(blogPostTags).values(tags.map(({ tagId }) => ({ postId: post.id, tagId })));
       if (seo.length) await tx.insert(blogPostSeo).values(seo.map(({ id: _id, postId: _postId, ...rest }) => ({ postId: post.id, ...rest })));
-
       for (const gallery of galleries) {
         const [newGallery] = await tx.insert(blogPostGalleries).values({ postId: post.id, title: gallery.title, description: gallery.description, sortOrder: gallery.sortOrder }).returning();
         const media = await tx.select().from(blogPostGalleryMedia).where(eq(blogPostGalleryMedia.galleryId, gallery.id));
         if (media.length) await tx.insert(blogPostGalleryMedia).values(media.map(({ galleryId: _old, ...item }) => ({ galleryId: newGallery.id, ...item })));
       }
-
       for (const link of links) {
         const [target] = await tx.select({ id: blogPosts.id }).from(blogPosts).where(and(eq(blogPosts.id, link.targetPostId), tenantScope(tenant.organizationId))).limit(1);
-        if (target && target.id !== post.id) {
-          await tx.insert(blogPostLinks).values({ sourcePostId: post.id, targetPostId: target.id, linkType: link.linkType, sortOrder: link.sortOrder });
-        }
+        if (target && target.id !== post.id) await tx.insert(blogPostLinks).values({ sourcePostId: post.id, targetPostId: target.id, linkType: link.linkType, sortOrder: link.sortOrder });
       }
-
       await appendRevision(tx, post.id, user.id, "DRAFT", "Duplication initiale", translations[0].locale);
       return post;
     });
 
-    auditBlog(context, user.id, "BLOG_POST_CREATE", {
-      resource: "blog_posts",
-      resourceId: duplicated.id,
-      metadata: { organizationId: tenant.organizationId, duplicatedFrom: input.id },
-    });
+    auditBlog(context, user.id, "BLOG_POST_CREATE", { resource: "blog_posts", resourceId: duplicated.id, metadata: { organizationId: tenant.organizationId, duplicatedFrom: input.id } });
     invalidateBlogCache();
     return { id: duplicated.id, slug: duplicated.slug };
   },
@@ -246,16 +183,11 @@ export const restoreBlogPostRevision = defineAction({
 
     await db.transaction(async (tx) => {
       const [translation] = await tx.select().from(blogPostTranslations).where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale))).limit(1);
-      if (translation) {
-        await tx.update(blogPostTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(eq(blogPostTranslations.id, translation.id));
-      } else {
-        await tx.insert(blogPostTranslations).values({ postId: input.postId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt });
-      }
-      const status = revision.status;
-      await tx.update(blogPosts).set({ slug: revision.slug, status, publishedAt: status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
-      await appendRevision(tx, input.postId, user.id, status, `Restauration de la révision ${revision.id}`, revision.locale);
+      if (translation) await tx.update(blogPostTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(eq(blogPostTranslations.id, translation.id));
+      else await tx.insert(blogPostTranslations).values({ postId: input.postId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt });
+      await tx.update(blogPosts).set({ slug: revision.slug, status: revision.status, publishedAt: revision.status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
+      await appendRevision(tx, input.postId, user.id, revision.status, `Restauration de la révision ${revision.id}`, revision.locale);
     });
-
     auditBlog(context, user.id, "BLOG_POST_UPDATE", { resource: "blog_posts", resourceId: input.postId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } });
     invalidateBlogCache();
     return { success: true };
