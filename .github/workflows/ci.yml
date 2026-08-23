@@ -20,13 +20,13 @@ jobs:
     env:
       SITE_URL: ${{ vars.SITE_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           version: 10
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -70,13 +70,13 @@ jobs:
       SMTP_FROM_EMAIL: ci@test.local
       SMTP_HOST: localhost
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           version: 10
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -97,7 +97,7 @@ jobs:
         run: pnpm test:report
 
       - name: Upload Vitest Report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: vitest-report
@@ -133,13 +133,13 @@ jobs:
       SMTP_FROM_EMAIL: ci@test.local
       SMTP_HOST: localhost
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           version: 10
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -166,7 +166,7 @@ jobs:
         run: pnpm test:e2e:report
 
       - name: Upload Playwright Report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
@@ -202,13 +202,13 @@ jobs:
       SMTP_FROM_EMAIL: ci@test.local
       SMTP_HOST: localhost
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           version: 10
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -262,7 +262,7 @@ jobs:
         run: pnpm a11y:teardown
 
       - name: Upload Lighthouse Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: lighthouse-reports
@@ -270,7 +270,7 @@ jobs:
           retention-days: 7
 
       - name: Upload A11y Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: a11y-reports
@@ -288,13 +288,13 @@ jobs:
       BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
       BETTER_AUTH_URL: ${{ vars.BETTER_AUTH_URL }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
         with:
           version: 10
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -305,7 +305,7 @@ jobs:
         run: pnpm build
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: production-build
           path: dist/
