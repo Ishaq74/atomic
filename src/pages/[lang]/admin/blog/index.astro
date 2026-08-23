@@ -38,6 +38,6 @@ const filterOptions = { categories: categories.map(({ id, name }) => ({ id, name
 <BaseLayout title={blogT.admin.title} description={blogT.admin.title}>
   <AuthLayout title={blogT.admin.title}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
-    <BlogAdminPage locale={locale} blogT={blogT} title={blogT.admin.title} posts={rows} postsMeta={meta} stats={stats} categories={categories} tags={tags} moderation={moderation as never} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} userId={user.id} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
+    <BlogAdminPage locale={locale} blogT={blogT} title={blogT.admin.title} posts={rows} postsMeta={meta} stats={stats} categories={categories} tags={tags} moderation={moderation} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} userId={user.id} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
   </AuthLayout>
 </BaseLayout>
