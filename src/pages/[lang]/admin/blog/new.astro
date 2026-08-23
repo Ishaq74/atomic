@@ -39,7 +39,7 @@ const tags = tagRows.map((item) => ({
 <BaseLayout title={blogT.admin.newPost} description={blogT.admin.title}>
   <AuthLayout title={blogT.admin.newPost}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
-    <AdminFormShell title={blogT.admin.newPost} description={blogT.admin.title} message={blogT.admin.feedback.unsavedChanges}>
+    <AdminFormShell title={blogT.admin.newPost} description={blogT.admin.title}>
       <AdminPostForm
         locale={locale}
         blogT={blogT}
