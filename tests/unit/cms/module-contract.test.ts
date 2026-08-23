@@ -21,16 +21,20 @@ describe("Atomic module contracts", () => {
     });
   });
 
-  it("declares Blog's editorial resource actions and presentation grammar", () => {
+  it("declares the shared cards/lists/single/ui presentation grammar", () => {
+    expect(blogModule.presentations).toEqual({
+      card: ["default", "compact", "featured"],
+      list: ["default", "dense", "search"],
+      single: ["default", "reader"],
+      ui: ["author", "meta", "rating", "taxonomy", "publication"],
+    });
+  });
+
+  it("declares Blog's editorial resource actions", () => {
     expect(blogPostAdminResource.id).toBe("blog-post");
     expect(blogPostAdminResource.actions.create).toBe(true);
     expect(blogPostAdminResource.actions.publish).toBe(true);
     expect(blogPostAdminResource.actions.duplicate).toBe(true);
     expect(blogPostAdminResource.actions.delete).toBe(true);
-    expect(blogPostAdminResource.presentation).toEqual({
-      card: ["default", "compact"],
-      list: ["default", "dense"],
-      single: ["default"],
-    });
   });
 });
