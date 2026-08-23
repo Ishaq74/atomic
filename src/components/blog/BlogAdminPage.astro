@@ -16,24 +16,54 @@ interface PostRow extends Pick<BlogPostListItem, "post" | "translation" | "autho
 interface TaxonomyItem { id: string; slug: string; name: string; description?: string | null; color?: string | null; icon?: string | null; parentId?: string | null; sortOrder?: number | null; postCount: number; }
 interface FilterOptions { categories: { id: string; name: string }[]; tags: { id: string; name: string }[]; authors: { id: string; name: string | null }[] }
 interface Props {
-  locale: Locale; blogT: BlogTranslations; title: string; posts: PostRow[];
+  locale: Locale;
+  blogT: BlogTranslations;
+  title: string;
+  posts: PostRow[];
   postsMeta: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean };
-  stats: BlogAdminAggregateStats; categories: TaxonomyItem[]; tags: TaxonomyItem[];
+  stats: BlogAdminAggregateStats;
+  moderationCount: number;
+  categories: TaxonomyItem[];
+  tags: TaxonomyItem[];
   moderation: Awaited<ReturnType<typeof getBlogModerationQueue>>;
-  baseAdminUrl: string; basePublicUrl: string; organizationId?: string | null; userId: string; canPublish: boolean; canDelete: boolean;
+  baseAdminUrl: string;
+  basePublicUrl: string;
+  organizationId?: string | null;
+  userId: string;
+  canPublish: boolean;
+  canDelete: boolean;
   filterOptions: FilterOptions;
 }
-const { title, locale, blogT, posts, postsMeta, stats, categories, tags, moderation, baseAdminUrl, basePublicUrl, organizationId, userId, canPublish, canDelete, filterOptions } = Astro.props;
-const moderationCount = moderation.comments.length + moderation.reviews.length + moderation.reports.length;
+const { title, locale, blogT, posts, postsMeta, stats, moderationCount, categories, tags, moderation, baseAdminUrl, basePublicUrl, organizationId, userId, canPublish, canDelete, filterOptions } = Astro.props;
 const localeSwitcherT = blogT.admin.localeSwitcher;
 const currentPath = Astro.url.pathname;
 const pathWithoutLocale = currentPath.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/";
 function buildLocaleHref(targetLocale: Locale): string { return `${getRelativeLocaleUrl(targetLocale, pathWithoutLocale)}${Astro.url.search}`; }
 ---
 <div class="space-y-6">
-  <div class="flex items-start justify-between gap-4"><div><h1 class="font-heading text-2xl font-semibold">{title}</h1><p class="mt-1 text-sm text-muted-foreground">{blogT.admin.title}</p><div class="mt-4 flex flex-wrap items-center gap-2"><span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>{LOCALES.map((loc) => <a href={buildLocaleHref(loc)} aria-current={loc === locale ? "page" : undefined} class:list={["inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors", { "border-primary bg-primary text-primary-foreground": loc === locale, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale }]}>{LOCALE_LABELS[loc]}</a>)}</div></div><NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} organizationId={organizationId ?? null} /></div>
+  <div class="flex items-start justify-between gap-4">
+    <div>
+      <h1 class="font-heading text-2xl font-semibold">{title}</h1>
+      <p class="mt-1 text-sm text-muted-foreground">{blogT.admin.title}</p>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>
+        {LOCALES.map((loc) => (
+          <a href={buildLocaleHref(loc)} aria-current={loc === locale ? "page" : undefined} class:list={["inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors", { "border-primary bg-primary text-primary-foreground": loc === locale, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale }]}>
+            {LOCALE_LABELS[loc]}
+          </a>
+        ))}
+      </div>
+    </div>
+    <NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} organizationId={organizationId ?? null} />
+  </div>
   <Tabs defaultValue="posts">
-    <TabsList><TabsTrigger value="posts" defaultActive>{blogT.admin.posts}</TabsTrigger><TabsTrigger value="categories">{blogT.admin.categories}</TabsTrigger><TabsTrigger value="tags">{blogT.admin.tags}</TabsTrigger><TabsTrigger value="moderation">{blogT.admin.moderation}</TabsTrigger><TabsTrigger value="stats">{blogT.admin.stats}</TabsTrigger></TabsList>
+    <TabsList>
+      <TabsTrigger value="posts" defaultActive>{blogT.admin.posts}</TabsTrigger>
+      <TabsTrigger value="categories">{blogT.admin.categories}</TabsTrigger>
+      <TabsTrigger value="tags">{blogT.admin.tags}</TabsTrigger>
+      <TabsTrigger value="moderation">{blogT.admin.moderation}</TabsTrigger>
+      <TabsTrigger value="stats">{blogT.admin.stats}</TabsTrigger>
+    </TabsList>
     <TabsContent value="posts" defaultActive class="pt-4"><AdminPostList locale={locale} blogT={blogT} rows={posts} meta={postsMeta} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canPublish={canPublish} canDelete={canDelete} organizationId={organizationId} filterOptions={filterOptions} /></TabsContent>
     <TabsContent value="categories" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="category" items={categories} organizationId={organizationId} /></TabsContent>
     <TabsContent value="tags" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="tag" items={tags} organizationId={organizationId} /></TabsContent>
