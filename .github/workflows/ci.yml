@@ -97,7 +97,7 @@ jobs:
         run: pnpm test:report
 
       - name: Upload Vitest Report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: vitest-report
@@ -166,7 +166,7 @@ jobs:
         run: pnpm test:e2e:report
 
       - name: Upload Playwright Report
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
@@ -262,7 +262,7 @@ jobs:
         run: pnpm a11y:teardown
 
       - name: Upload Lighthouse Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: lighthouse-reports
@@ -270,7 +270,7 @@ jobs:
           retention-days: 7
 
       - name: Upload A11y Reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: a11y-reports
@@ -305,7 +305,7 @@ jobs:
         run: pnpm build
 
       - name: Upload Build Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: production-build
           path: dist/
