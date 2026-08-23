@@ -1,0 +1,52 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+  formSelector?: string;
+  message?: string;
+}
+
+const {
+  title,
+  description,
+  formSelector = "form[data-admin-form], form#blog-post-form",
+  message = "You have unsaved changes.",
+} = Astro.props;
+---
+<section class="space-y-6" data-admin-form-shell data-form-selector={formSelector} data-dirty-message={message}>
+  {(title || description) && (
+    <header>
+      {title ? <h1 class="font-heading text-2xl font-semibold">{title}</h1> : null}
+      {description ? <p class="mt-1 text-sm text-muted-foreground">{description}</p> : null}
+    </header>
+  )}
+  <slot />
+</section>
+
+<script>
+  function initAdminFormShell() {
+    document.querySelectorAll<HTMLElement>("[data-admin-form-shell]").forEach((shell) => {
+      const selector = shell.dataset.formSelector ?? "form[data-admin-form]";
+      const message = shell.dataset.dirtyMessage ?? "You have unsaved changes.";
+      shell.querySelectorAll<HTMLFormElement>(selector).forEach((form) => {
+        if (form.dataset.dirtyGuardBound === "true") return;
+        form.dataset.dirtyGuardBound = "true";
+        let dirty = false;
+        let submitted = false;
+        const markDirty = () => { if (!submitted) dirty = true; };
+        form.addEventListener("input", markDirty);
+        form.addEventListener("change", markDirty);
+        form.addEventListener("submit", () => { submitted = true; dirty = false; });
+        form.addEventListener("reset", () => { dirty = false; });
+        window.addEventListener("beforeunload", (event) => {
+          if (!dirty || submitted) return;
+          event.preventDefault();
+          event.returnValue = message;
+        });
+      });
+    });
+  }
+
+  initAdminFormShell();
+  document.addEventListener("astro:after-swap", initAdminFormShell);
+</script>
