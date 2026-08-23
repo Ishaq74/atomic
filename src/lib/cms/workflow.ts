@@ -13,7 +13,6 @@ export function canTransition<TState extends string>(
   from: TState,
   to: TState,
 ): boolean {
-  if (from === to) return true;
   return workflow.transitions.some((transition) => transition.from === from && transition.to === to);
 }
 
