@@ -72,7 +72,11 @@ export const blogPostFormSchema = z.object({
   seo: blogSeoInputSchema.optional(),
 });
 
-export const blogPostUpdateSchema = blogPostFormSchema.partial().extend({
+// Status is deliberately excluded from ordinary edits. Publication lifecycle
+// must go through the explicit publish/unpublish/archive/restore actions so
+// authorization, transition validation, audit, revisions and cache invalidation
+// cannot be bypassed through updateBlogPost.
+export const blogPostUpdateSchema = blogPostFormSchema.partial().omit({ status: true, publishedAt: true }).extend({
   id: z.uuid(),
   locale: localeEnum.optional(),
 });
