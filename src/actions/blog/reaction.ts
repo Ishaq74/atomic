@@ -16,9 +16,6 @@ export const toggleBlogReaction = defineAction({
 
     const db = getDrizzle();
 
-    // Run the toggle + the recount inside a single transaction so the count
-    // is read under the same isolation snapshot as the write (no read-after-write
-    // race under concurrent toggles from different users on the same post).
     const { active, count: total } = await db.transaction(async (tx) => {
       const [post] = await tx
         .select({ id: blogPosts.id })
@@ -30,26 +27,18 @@ export const toggleBlogReaction = defineAction({
       const [existing] = await tx
         .select()
         .from(blogPostReactions)
-        .where(
-          and(
-            eq(blogPostReactions.postId, input.postId),
-            eq(blogPostReactions.userId, user.id),
-            eq(blogPostReactions.reactionType, input.reactionType),
-          ),
-        )
+        .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)))
         .limit(1);
 
-      if (existing) {
+      if (existing?.reactionType === input.reactionType) {
         await tx
           .delete(blogPostReactions)
-          .where(
-            and(
-              eq(blogPostReactions.postId, input.postId),
-              eq(blogPostReactions.userId, user.id),
-              eq(blogPostReactions.reactionType, input.reactionType),
-            ),
-          );
+          .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
       } else {
+        // One reaction is the semantic contract: changing reaction replaces the prior one.
+        await tx
+          .delete(blogPostReactions)
+          .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
         await tx.insert(blogPostReactions).values({
           postId: input.postId,
           userId: user.id,
@@ -60,14 +49,9 @@ export const toggleBlogReaction = defineAction({
       const [{ value }] = await tx
         .select({ value: count() })
         .from(blogPostReactions)
-        .where(
-          and(
-            eq(blogPostReactions.postId, input.postId),
-            eq(blogPostReactions.reactionType, input.reactionType),
-          ),
-        );
+        .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.reactionType, input.reactionType)));
 
-      return { active: !existing, count: Number(value) };
+      return { active: existing?.reactionType !== input.reactionType, count: Number(value) };
     });
 
     invalidateBlogCache();
@@ -89,8 +73,6 @@ export const toggleBlogFavorite = defineAction({
 
     const db = getDrizzle();
 
-    // Same transactional isolation as toggleBlogReaction: write + recount in
-    // one snapshot so concurrent favorites can't desync the returned count.
     const { active, count: total } = await db.transaction(async (tx) => {
       const [post] = await tx
         .select({ id: blogPosts.id })
@@ -106,18 +88,12 @@ export const toggleBlogFavorite = defineAction({
         .limit(1);
 
       if (existing) {
-        await tx
-          .delete(blogPostFavorites)
-          .where(and(eq(blogPostFavorites.postId, input.postId), eq(blogPostFavorites.userId, user.id)));
+        await tx.delete(blogPostFavorites).where(and(eq(blogPostFavorites.postId, input.postId), eq(blogPostFavorites.userId, user.id)));
       } else {
         await tx.insert(blogPostFavorites).values({ postId: input.postId, userId: user.id });
       }
 
-      const [{ value }] = await tx
-        .select({ value: count() })
-        .from(blogPostFavorites)
-        .where(eq(blogPostFavorites.postId, input.postId));
-
+      const [{ value }] = await tx.select({ value: count() }).from(blogPostFavorites).where(eq(blogPostFavorites.postId, input.postId));
       return { active: !existing, count: Number(value) };
     });
 
