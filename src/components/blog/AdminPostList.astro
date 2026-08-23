@@ -3,52 +3,22 @@ import { Icon } from "astro-icon/components";
 import type { Locale } from "@i18n/config";
 import type { BlogTranslations } from "@i18n/config";
 import { buildBlogPostHref } from "@/lib/blog/utils";
-import {
-  Table,
-  TableHeader,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@atoms/table";
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@atoms/table";
 import { Badge } from "@atoms/badge";
 import Button from "@atoms/button/Button.astro";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@atoms/pagination";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@atoms/pagination";
 
 interface AdminPostRow {
-  post: {
-    id: string;
-    status: string;
-    viewCount: number;
-    seoScore: number | null;
-  };
-  translation: {
-    title: string;
-    slug: string;
-  } | null;
+  post: { id: string; status: string; viewCount: number; seoScore: number | null };
+  translation: { title: string; slug: string } | null;
   author: { id: string; name: string | null } | null;
   categories: { id: string; slug: string; name: string | null }[];
 }
-
 interface Props {
   locale: Locale;
   blogT: BlogTranslations;
   rows: AdminPostRow[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPrevPage: boolean;
-  };
+  meta: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean };
   baseAdminUrl: string;
   basePublicUrl: string;
   canPublish: boolean;
@@ -57,14 +27,12 @@ interface Props {
 }
 
 const { blogT, rows, meta, baseAdminUrl, basePublicUrl, canPublish, canDelete, organizationId } = Astro.props;
-
 function buildPageUrl(page: number): string {
   const url = new URL(Astro.url.href);
   if (page === 1) url.searchParams.delete("page");
   else url.searchParams.set("page", String(page));
   return url.pathname + url.search;
 }
-
 function statusVariant(status: string) {
   switch (status) {
     case "PUBLISHED": return "success";
@@ -74,44 +42,32 @@ function statusVariant(status: string) {
     default: return "outline";
   }
 }
-
 const pages: number[] = [];
 for (let i = 1; i <= meta.totalPages; i++) {
-  if (i === 1 || i === meta.totalPages || (i >= meta.page - 1 && i <= meta.page + 1)) {
-    pages.push(i);
-  }
+  if (i === 1 || i === meta.totalPages || (i >= meta.page - 1 && i <= meta.page + 1)) pages.push(i);
 }
 ---
 
 <div class="space-y-4">
   <div class="flex items-center justify-between gap-3 flex-wrap">
     <h2 class="font-heading text-lg font-semibold">{blogT.admin.posts}</h2>
-    <Button size="sm" href={`${baseAdminUrl}/new`}>
-      <Icon name="mdi:plus" class="size-4" />
-      {blogT.admin.newPost}
-    </Button>
+    <Button size="sm" href={`${baseAdminUrl}/new`}><Icon name="mdi:plus" class="size-4" />{blogT.admin.newPost}</Button>
   </div>
 
   <Table>
-    <TableHeader>
-      <TableRow>
-        <TableHead>{blogT.admin.fields.title}</TableHead>
-        <TableHead>{blogT.admin.status}</TableHead>
-        <TableHead>{blogT.admin.seoScore}</TableHead>
-        <TableHead>{blogT.admin.views}</TableHead>
-        <TableHead>{blogT.admin.actions}</TableHead>
-      </TableRow>
-    </TableHeader>
+    <TableHeader><TableRow>
+      <TableHead>{blogT.admin.fields.title}</TableHead>
+      <TableHead>{blogT.admin.status}</TableHead>
+      <TableHead>{blogT.admin.seoScore}</TableHead>
+      <TableHead>{blogT.admin.views}</TableHead>
+      <TableHead>{blogT.admin.actions}</TableHead>
+    </TableRow></TableHeader>
     <TableBody>
       {rows.map((row) => {
         const editUrl = `${baseAdminUrl}/${row.post.id}/edit`;
         const primaryCategorySlug = row.categories[0]?.slug ?? null;
-        const publicUrl = row.translation
-          ? buildBlogPostHref(basePublicUrl, row.translation.slug, primaryCategorySlug)
-          : null;
-        const publicPathLabel = row.translation
-          ? (primaryCategorySlug ? `/${primaryCategorySlug}/${row.translation.slug}` : `/${row.translation.slug}`)
-          : "—";
+        const publicUrl = row.translation ? buildBlogPostHref(basePublicUrl, row.translation.slug, primaryCategorySlug) : null;
+        const publicPathLabel = row.translation ? (primaryCategorySlug ? `/${primaryCategorySlug}/${row.translation.slug}` : `/${row.translation.slug}`) : "—";
         return (
           <TableRow>
             <TableCell>
@@ -119,62 +75,22 @@ for (let i = 1; i <= meta.totalPages; i++) {
                 <p class="font-medium">{row.translation?.title ?? row.post.id}</p>
                 <p class="text-xs text-muted-foreground">{publicPathLabel}</p>
                 {row.author?.name && <p class="text-xs text-muted-foreground">{row.author.name}</p>}
-                {row.categories.length > 0 && (
-                  <div class="flex flex-wrap gap-1 pt-1">
-                    {row.categories.slice(0, 3).map((category) => (
-                      <Badge variant="outline" size="sm">{category.name ?? category.slug}</Badge>
-                    ))}
-                  </div>
-                )}
+                {row.categories.length > 0 && <div class="flex flex-wrap gap-1 pt-1">{row.categories.slice(0, 3).map((category) => <Badge variant="outline" size="sm">{category.name ?? category.slug}</Badge>)}</div>}
               </div>
             </TableCell>
-            <TableCell>
-              <Badge variant={statusVariant(row.post.status)} size="sm">
-                {blogT.statuses[row.post.status as keyof typeof blogT.statuses] ?? row.post.status}
-              </Badge>
-            </TableCell>
+            <TableCell><Badge variant={statusVariant(row.post.status)} size="sm">{blogT.statuses[row.post.status as keyof typeof blogT.statuses] ?? row.post.status}</Badge></TableCell>
             <TableCell>{row.post.seoScore ?? "—"}</TableCell>
             <TableCell>{row.post.viewCount}</TableCell>
             <TableCell>
               <div class="flex items-center gap-1 flex-wrap">
-                <Button size="icon-sm" variant="ghost" href={editUrl} aria-label={blogT.admin.editPost}>
-                  <Icon name="mdi:pencil" class="size-4" />
-                </Button>
-                {publicUrl && (
-                  <Button size="icon-sm" variant="ghost" href={publicUrl} aria-label={blogT.admin.preview}>
-                    <Icon name="mdi:open-in-new" class="size-4" />
-                  </Button>
-                )}
-                {row.post.status !== "PUBLISHED" && canPublish && (
-                  <Button size="icon-sm" variant="ghost" class="publish-btn text-success" data-post-id={row.post.id} aria-label={blogT.admin.publish}>
-                    <Icon name="mdi:publish" class="size-4" />
-                  </Button>
-                )}
-                {row.post.status === "PUBLISHED" && canPublish && (
-                  <Button size="icon-sm" variant="ghost" class="unpublish-btn" data-post-id={row.post.id} aria-label={blogT.admin.unpublish ?? blogT.admin.publish}>
-                    <Icon name="mdi:publish-off" class="size-4" />
-                  </Button>
-                )}
-                {(row.post.status === "DRAFT" || row.post.status === "PUBLISHED") && canPublish && (
-                  <Button size="icon-sm" variant="ghost" class="archive-btn" data-post-id={row.post.id} aria-label={blogT.admin.archive ?? blogT.admin.delete}>
-                    <Icon name="mdi:archive" class="size-4" />
-                  </Button>
-                )}
-                {(row.post.status === "ARCHIVED" || row.post.status === "DELETED") && canPublish && (
-                  <Button size="icon-sm" variant="ghost" class="restore-btn" data-post-id={row.post.id} aria-label={blogT.admin.restore ?? blogT.admin.editPost}>
-                    <Icon name="mdi:restore" class="size-4" />
-                  </Button>
-                )}
-                {canPublish && (
-                  <Button size="icon-sm" variant="ghost" class="duplicate-btn" data-post-id={row.post.id} aria-label={blogT.admin.duplicate ?? blogT.admin.newPost}>
-                    <Icon name="mdi:content-copy" class="size-4" />
-                  </Button>
-                )}
-                {canDelete && (
-                  <Button size="icon-sm" variant="ghost" class="delete-btn text-error" data-post-id={row.post.id} aria-label={blogT.admin.delete}>
-                    <Icon name="mdi:delete" class="size-4" />
-                  </Button>
-                )}
+                <Button size="icon-sm" variant="ghost" href={editUrl} aria-label={blogT.admin.editPost}><Icon name="mdi:pencil" class="size-4" /></Button>
+                {publicUrl && <Button size="icon-sm" variant="ghost" href={publicUrl} aria-label={blogT.admin.preview}><Icon name="mdi:open-in-new" class="size-4" /></Button>}
+                {row.post.status !== "PUBLISHED" && canPublish && <Button size="icon-sm" variant="ghost" class="publish-btn text-success" data-post-id={row.post.id} aria-label={blogT.admin.publish}><Icon name="mdi:publish" class="size-4" /></Button>}
+                {row.post.status === "PUBLISHED" && canPublish && <Button size="icon-sm" variant="ghost" class="unpublish-btn" data-post-id={row.post.id} aria-label={blogT.admin.publish}><Icon name="mdi:publish-off" class="size-4" /></Button>}
+                {(row.post.status === "DRAFT" || row.post.status === "PUBLISHED") && canPublish && <Button size="icon-sm" variant="ghost" class="archive-btn" data-post-id={row.post.id} aria-label={blogT.admin.archive}><Icon name="mdi:archive" class="size-4" /></Button>}
+                {(row.post.status === "ARCHIVED" || row.post.status === "DELETED") && canPublish && <Button size="icon-sm" variant="ghost" class="restore-btn" data-post-id={row.post.id} aria-label={blogT.admin.editPost}><Icon name="mdi:restore" class="size-4" /></Button>}
+                {canPublish && <Button size="icon-sm" variant="ghost" class="duplicate-btn" data-post-id={row.post.id} aria-label={blogT.admin.newPost}><Icon name="mdi:content-copy" class="size-4" /></Button>}
+                {canDelete && <Button size="icon-sm" variant="ghost" class="delete-btn text-error" data-post-id={row.post.id} aria-label={blogT.admin.delete}><Icon name="mdi:delete" class="size-4" /></Button>}
               </div>
             </TableCell>
           </TableRow>
@@ -183,43 +99,13 @@ for (let i = 1; i <= meta.totalPages; i++) {
     </TableBody>
   </Table>
 
-  {meta.totalPages > 1 && (
-    <Pagination class="mt-6">
-      <PaginationContent>
-        {meta.hasPrevPage && (
-          <PaginationItem><PaginationPrevious href={buildPageUrl(meta.page - 1)} /></PaginationItem>
-        )}
-        {pages.map((p, idx) => {
-          const prev = pages[idx - 1];
-          const showEllipsis = prev && p - prev > 1;
-          return (
-            <>
-              {showEllipsis && <PaginationItem><span class="px-2 text-muted-foreground">…</span></PaginationItem>}
-              <PaginationItem>
-                <PaginationLink href={buildPageUrl(p)} isActive={p === meta.page}>{p}</PaginationLink>
-              </PaginationItem>
-            </>
-          );
-        })}
-        {meta.hasNextPage && <PaginationItem><PaginationNext href={buildPageUrl(meta.page + 1)} /></PaginationItem>}
-      </PaginationContent>
-    </Pagination>
-  )}
+  {meta.totalPages > 1 && <Pagination class="mt-6"><PaginationContent>
+    {meta.hasPrevPage && <PaginationItem><PaginationPrevious href={buildPageUrl(meta.page - 1)} /></PaginationItem>}
+    {pages.map((p, idx) => { const prev = pages[idx - 1]; const showEllipsis = prev && p - prev > 1; return <><>{showEllipsis && <PaginationItem><span class="px-2 text-muted-foreground">…</span></PaginationItem>}</><PaginationItem><PaginationLink href={buildPageUrl(p)} isActive={p === meta.page}>{p}</PaginationLink></PaginationItem></>; })}
+    {meta.hasNextPage && <PaginationItem><PaginationNext href={buildPageUrl(meta.page + 1)} /></PaginationItem>}
+  </PaginationContent></Pagination>}
 
-  <input
-    type="hidden"
-    id="admin-post-list-data"
-    value={organizationId ?? ""}
-    data-organization-id={organizationId ?? ""}
-    data-t-error={blogT.admin.feedback.genericError}
-    data-t-published={blogT.admin.feedback.published}
-    data-t-deleted={blogT.admin.feedback.deleted}
-    data-t-confirm-delete={blogT.admin.feedback.confirmDeletePost}
-    data-t-confirm-duplicate={blogT.admin.feedback.confirmDuplicatePost ?? blogT.admin.feedback.confirmDeletePost}
-    data-t-unpublished={blogT.admin.feedback.unpublished ?? blogT.admin.feedback.published}
-    data-t-archived={blogT.admin.feedback.archived ?? blogT.admin.feedback.deleted}
-    data-t-restored={blogT.admin.feedback.restored ?? blogT.admin.feedback.published}
-  />
+  <input type="hidden" id="admin-post-list-data" value={organizationId ?? ""} data-organization-id={organizationId ?? ""} data-t-error={blogT.admin.feedback.genericError} data-t-published={blogT.admin.feedback.published} data-t-deleted={blogT.admin.feedback.deleted} data-t-confirm-delete={blogT.admin.feedback.confirmDeletePost} />
 </div>
 
 <script>
@@ -230,7 +116,6 @@ for (let i = 1; i <= meta.totalPages; i++) {
     const dataEl = document.getElementById('admin-post-list-data') as HTMLInputElement | null;
     const orgId = dataEl?.dataset.organizationId || undefined;
     const errorText = dataEl?.dataset.tError ?? '';
-    const getText = (name: string, fallback = '') => dataEl?.dataset[name] ?? fallback;
 
     const bind = <T extends HTMLElement>(selector: string, handler: (element: T) => void) => {
       document.querySelectorAll<T>(selector).forEach((element) => {
@@ -257,10 +142,7 @@ for (let i = 1; i <= meta.totalPages; i++) {
     bind<HTMLButtonElement>('.unpublish-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.unpublishBlogPost({ id, organizationId: orgId }))));
     bind<HTMLButtonElement>('.archive-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.archiveBlogPost({ id, organizationId: orgId }))));
     bind<HTMLButtonElement>('.restore-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.restoreBlogPost({ id, organizationId: orgId }))));
-    bind<HTMLButtonElement>('.duplicate-btn', (btn) => btn.addEventListener('click', () => {
-      if (!confirm(getText('tConfirmDuplicate'))) return;
-      run(btn, (id) => actions.duplicateBlogPost({ id, organizationId: orgId })).then(() => {});
-    }));
+    bind<HTMLButtonElement>('.duplicate-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.duplicateBlogPost({ id, organizationId: orgId }))));
     bind<HTMLButtonElement>('.delete-btn', (btn) => btn.addEventListener('click', () => {
       if (!confirm(dataEl?.dataset.tConfirmDelete ?? '')) return;
       run(btn, (id) => actions.deleteBlogPost({ id, organizationId: orgId }));
