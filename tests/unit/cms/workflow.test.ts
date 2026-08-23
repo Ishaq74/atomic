@@ -19,14 +19,17 @@ const workflow: WorkflowDefinition<State> = {
 };
 
 describe("cms workflow", () => {
-  it("accepts self transitions", () => {
-    expect(canTransition(workflow, "DRAFT", "DRAFT")).toBe(true);
-  });
-
   it("accepts legal transitions", () => {
     expect(canTransition(workflow, "DRAFT", "PUBLISHED")).toBe(true);
     expect(canTransition(workflow, "PUBLISHED", "DRAFT")).toBe(true);
     expect(canTransition(workflow, "DELETED", "DRAFT")).toBe(true);
+  });
+
+  it("rejects undeclared self-transitions", () => {
+    expect(canTransition(workflow, "DRAFT", "DRAFT")).toBe(false);
+    expect(() => assertTransition(workflow, "DRAFT", "DRAFT")).toThrow(
+      "Invalid workflow transition: DRAFT -> DRAFT",
+    );
   });
 
   it("rejects illegal direct publishing", () => {
