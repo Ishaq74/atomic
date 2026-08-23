@@ -2,9 +2,9 @@
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { LOCALES, LOCALE_LABELS, type Locale } from "@i18n/config";
 import type { BlogTranslations } from "@i18n/config";
-import { Card, CardContent, CardHeader, CardTitle } from "@atoms/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@atoms/tabs";
 import AdminResourceShell from "@organisms/AdminResourceShell.astro";
+import AdminResourceStats from "@molecules/AdminResourceStats.astro";
 import AdminPostList from "./AdminPostList.astro";
 import AdminTaxonomyManager from "./AdminTaxonomyManager.astro";
 import AdminModerationQueue from "./AdminModerationQueue.astro";
@@ -46,57 +46,51 @@ function buildLocaleHref(targetLocale: Locale): string { return `${getRelativeLo
 ---
 
 <div data-admin-resource={blogPostAdminResource.id} data-admin-entity={blogPostAdminResource.entity}>
-<AdminResourceShell title={title} description={blogT.admin.title}>
-  <Fragment slot="actions">
-    <NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} organizationId={organizationId ?? null} />
-  </Fragment>
+  <AdminResourceShell title={title} description={blogT.admin.title}>
+    <Fragment slot="actions">
+      <NotificationBell blogT={blogT} userId={userId} baseAdminUrl={baseAdminUrl} organizationId={organizationId ?? null} />
+    </Fragment>
 
-  <div class="space-y-6 p-4 sm:p-6">
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-      <div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>
-          {LOCALES.map((loc) => (
-            <a
-              href={buildLocaleHref(loc)}
-              aria-current={loc === locale ? "page" : undefined}
-              class:list={[
-                "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors",
-                {
-                  "border-primary bg-primary text-primary-foreground": loc === locale,
-                  "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale,
-                },
-              ]}
-            >
-              {LOCALE_LABELS[loc]}
-            </a>
-          ))}
+    <div class="space-y-6 p-4 sm:p-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{localeSwitcherT.title}</span>
+            {LOCALES.map((loc) => (
+              <a href={buildLocaleHref(loc)} aria-current={loc === locale ? "page" : undefined} class:list={["inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors", { "border-primary bg-primary text-primary-foreground": loc === locale, "border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground": loc !== locale }]}>{LOCALE_LABELS[loc]}</a>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
 
-    <Tabs defaultValue="posts">
-      <TabsList>
-        <TabsTrigger value="posts" defaultActive>{blogT.admin.posts}</TabsTrigger>
-        <TabsTrigger value="categories">{blogT.admin.categories}</TabsTrigger>
-        <TabsTrigger value="tags">{blogT.admin.tags}</TabsTrigger>
-        <TabsTrigger value="moderation">{blogT.admin.moderation}</TabsTrigger>
-        <TabsTrigger value="stats">{blogT.admin.stats}</TabsTrigger>
-      </TabsList>
-      <TabsContent value="posts" defaultActive class="pt-4">
-        <AdminPostList locale={locale} blogT={blogT} rows={posts} meta={postsMeta} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} organizationId={organizationId} filterOptions={filterOptions} />
-      </TabsContent>
-      <TabsContent value="categories" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="category" items={categories} organizationId={organizationId} /></TabsContent>
-      <TabsContent value="tags" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="tag" items={tags} organizationId={organizationId} /></TabsContent>
-      <TabsContent value="moderation" class="pt-4"><AdminModerationQueue blogT={blogT} moderation={moderation} organizationId={organizationId} /></TabsContent>
-      <TabsContent value="stats" class="pt-4">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {[[blogT.admin.posts, stats.total], [blogT.statuses.PUBLISHED, stats.published], [blogT.statuses.DRAFT, stats.draft], [blogT.admin.archive, stats.archived], [blogT.statuses.DELETED, stats.deleted], [blogT.featured, stats.featured], [blogT.sticky, stats.sticky], [blogT.admin.views, stats.views], [blogT.admin.moderation, moderationCount]].map(([label, value]) => (
-            <Card><CardHeader><CardTitle class="text-sm text-muted-foreground">{label}</CardTitle></CardHeader><CardContent><p class="text-3xl font-bold">{value}</p></CardContent></Card>
-          ))}
-        </div>
-      </TabsContent>
-    </Tabs>
-  </div>
-</AdminResourceShell>
+      <Tabs defaultValue="posts">
+        <TabsList>
+          <TabsTrigger value="posts" defaultActive>{blogT.admin.posts}</TabsTrigger>
+          <TabsTrigger value="categories">{blogT.admin.categories}</TabsTrigger>
+          <TabsTrigger value="tags">{blogT.admin.tags}</TabsTrigger>
+          <TabsTrigger value="moderation">{blogT.admin.moderation}</TabsTrigger>
+          <TabsTrigger value="stats">{blogT.admin.stats}</TabsTrigger>
+        </TabsList>
+        <TabsContent value="posts" defaultActive class="pt-4">
+          <AdminPostList locale={locale} blogT={blogT} rows={posts} meta={postsMeta} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} organizationId={organizationId} filterOptions={filterOptions} />
+        </TabsContent>
+        <TabsContent value="categories" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="category" items={categories} organizationId={organizationId} /></TabsContent>
+        <TabsContent value="tags" class="pt-4"><AdminTaxonomyManager locale={locale} blogT={blogT} kind="tag" items={tags} organizationId={organizationId} /></TabsContent>
+        <TabsContent value="moderation" class="pt-4"><AdminModerationQueue blogT={blogT} moderation={moderation} organizationId={organizationId} /></TabsContent>
+        <TabsContent value="stats" class="pt-4">
+          <AdminResourceStats stats={[
+            { label: blogT.admin.posts, value: stats.total },
+            { label: blogT.statuses.PUBLISHED, value: stats.published },
+            { label: blogT.statuses.DRAFT, value: stats.draft },
+            { label: blogT.admin.archive, value: stats.archived },
+            { label: blogT.statuses.DELETED, value: stats.deleted },
+            { label: blogT.featured, value: stats.featured },
+            { label: blogT.sticky, value: stats.sticky },
+            { label: blogT.admin.views, value: stats.views },
+            { label: blogT.admin.moderation, value: moderationCount },
+          ]} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  </AdminResourceShell>
 </div>
