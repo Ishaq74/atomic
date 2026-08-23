@@ -2,7 +2,8 @@
 import { requireAuth } from "@/lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { getBlogTranslations } from "@i18n/utils";
-import { getBlogCategories, getBlogPostForAdmin, getBlogTags } from "@database/loaders/blog.loader";
+import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
+import { getBlogPostEditorData } from "@database/loaders/blog-admin-editor.loader";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
@@ -27,7 +28,7 @@ const blogT = await getBlogTranslations(locale);
 const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
 const basePublicUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
 const [postAdminData, categoryRows, tagRows] = await Promise.all([
-  getBlogPostForAdmin(postId),
+  getBlogPostEditorData(postId, locale),
   getBlogCategories(org.id, locale),
   getBlogTags(org.id, locale),
 ]);
