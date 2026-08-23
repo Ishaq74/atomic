@@ -14,6 +14,7 @@ export const blogModule: AtomicModuleDefinition = {
   id: "blog",
   entity: "blog_post",
   capabilities: defineModuleCapabilities({
+    content: true,
     localization: true,
     media: true,
     seo: true,
@@ -22,9 +23,11 @@ export const blogModule: AtomicModuleDefinition = {
     publication: true,
     revisions: true,
     locks: true,
+    engagement: true,
     moderation: true,
     notifications: true,
     audit: true,
+    cache: true,
   }),
   capabilityProviders: defineModuleCapabilityProviders(blogCapabilityProviders satisfies AtomicModuleCapabilityProviders),
   presentations: defineModulePresentations({
