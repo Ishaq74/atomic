@@ -4,10 +4,11 @@ import { blogModule } from "@/lib/blog/module";
 import { blogPostAdminResource } from "@/lib/blog/admin-resource";
 
 describe("Atomic module contracts", () => {
-  it("registers Blog with the expected platform capabilities", () => {
+  it("registers Blog with the complete platform capability surface", () => {
     expect(blogModule.id).toBe("blog");
     expect(blogModule.entity).toBe("blog_post");
     expect(blogModule.capabilities).toEqual({
+      content: true,
       localization: true,
       media: true,
       seo: true,
@@ -16,9 +17,11 @@ describe("Atomic module contracts", () => {
       publication: true,
       revisions: true,
       locks: true,
+      engagement: true,
       moderation: true,
       notifications: true,
       audit: true,
+      cache: true,
     });
   });
 
