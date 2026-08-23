@@ -1,5 +1,5 @@
 import { registerModule } from "./module-registry";
-import { blogModule } from "@/lib/blog/module";
+import { blogModule } from "@/modules/blog/module";
 
 let bootstrapped = false;
 
