@@ -1,7 +1,8 @@
 ---
 import { requirePermission } from "@/lib/auth-guards";
 import { getBlogTranslations } from "@i18n/utils";
-import { getBlogCategories, getBlogPostForAdmin, getBlogTags } from "@database/loaders/blog.loader";
+import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
+import { getBlogPostEditorData } from "@database/loaders/blog-admin-editor.loader";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
@@ -19,7 +20,7 @@ const basePublicUrl = `/${locale}/${blogT.routes.blog}`;
 if (!postId) return Astro.redirect(baseAdminUrl);
 
 const [postAdminData, categoryRows, tagRows] = await Promise.all([
-  getBlogPostForAdmin(postId),
+  getBlogPostEditorData(postId, locale),
   getBlogCategories(null, locale),
   getBlogTags(null, locale),
 ]);
