@@ -1,14 +1,14 @@
 ---
 import { Icon } from "astro-icon/components";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@i18n/config";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/core/localization";
 import type { BlogTranslations } from "@i18n/config";
-import type { BlogPostStatus } from "@/lib/blog/constants";
-import { buildBlogPostHref } from "@/lib/blog/utils";
+import type { BlogPostStatus } from "@/modules/blog/domain";
+import { buildBlogPostHref } from "@/modules/blog/utils";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@atoms/table";
 import { Badge } from "@atoms/badge";
 import Button from "@atoms/button/Button.astro";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@atoms/pagination";
-import DataView from "@molecules/DataView/DataView.astro";
+import { DataView } from "@/core/admin";
 
 interface AdminPostRow { post: { id: string; status: BlogPostStatus; viewCount: number; seoScore: number | null; isFeatured: boolean; isSticky: boolean; publishedAt: Date | null; createdAt: Date; updatedAt: Date }; translation: { title: string; slug: string } | null; author: { id: string; name: string | null } | null; categories: { id: string; slug: string; name: string | null }[] }
 interface FilterOptions { categories: { id: string; name: string }[]; tags: { id: string; name: string }[]; authors: { id: string; name: string | null }[] }
