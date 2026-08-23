@@ -1,255 +1,41 @@
 import { updateSiteSettings, upsertSiteSettings } from "./admin/site";
-import {
-  createSocialLink,
-  updateSocialLink,
-  deleteSocialLink,
-  reorderSocialLinks,
-} from "./admin/social";
+import { createSocialLink, updateSocialLink, deleteSocialLink, reorderSocialLinks } from "./admin/social";
 import { updateContactInfo } from "./admin/contact";
 import { updateOpeningHours } from "./admin/hours";
-import {
-  createNavigationMenu,
-  updateNavigationMenu,
-  deleteNavigationMenu,
-} from "./admin/menus";
-import {
-  createNavigationItem,
-  updateNavigationItem,
-  deleteNavigationItem,
-  reorderNavigationItems,
-} from "./admin/navigation";
-import {
-  createPage,
-  updatePage,
-  deletePage,
-  publishPage,
-  schedulePage,
-  unschedulePage,
-  scheduleUnpublishPage,
-  unscheduleUnpublishPage,
-  restoreFromTrash,
-  permanentlyDeletePage,
-  bulkPublishPages,
-  bulkArchivePages,
-  bulkRestorePages,
-  bulkDeletePages,
-  clonePage,
-  lockPage,
-  unlockPage,
-} from "./admin/pages";
-import {
-  createSection,
-  updateSection,
-  deleteSection,
-  reorderSections,
-} from "./admin/sections";
+import { createNavigationMenu, updateNavigationMenu, deleteNavigationMenu } from "./admin/menus";
+import { createNavigationItem, updateNavigationItem, deleteNavigationItem, reorderNavigationItems } from "./admin/navigation";
+import { createPage, updatePage, deletePage, publishPage, schedulePage, unschedulePage, scheduleUnpublishPage, unscheduleUnpublishPage, restoreFromTrash, permanentlyDeletePage, bulkPublishPages, bulkArchivePages, bulkRestorePages, bulkDeletePages, clonePage, lockPage, unlockPage } from "./admin/pages";
+import { createSection, updateSection, deleteSection, reorderSections } from "./admin/sections";
 import { createTheme, updateTheme, deleteTheme } from "./admin/theme";
 import { updateConsentSettings } from "./admin/consent";
-import {
-  createMediaFolder,
-  updateMediaFolder,
-  deleteMediaFolder,
-  uploadMediaFile,
-  renameMediaFile,
-  moveMediaFile,
-  deleteMediaFile,
-  upsertMediaFileAlt,
-  deleteMediaFileAlt,
-} from "./admin/media";
-import {
-  createPageVersion,
-  listPageVersions,
-  restorePageVersion,
-} from "./admin/versions";
-import {
-  listOrgRoles,
-  createOrgRole,
-  updateOrgRole,
-  deleteOrgRole,
-  updateMemberRole,
-} from "./admin/roles";
-import {
-  orgListRoles,
-  orgCreateRole,
-  orgUpdateRole,
-  orgDeleteRole,
-  orgUpdateMemberRole,
-} from "./org/roles";
-import {
-  createBlogPost,
-  updateBlogPost,
-  deleteBlogPost,
-  publishBlogPost,
-  lockBlogPost,
-  unlockBlogPost,
-  listBlogPostRevisions,
-  recordBlogPostView,
-  createBlogCategory,
-  updateBlogCategory,
-  deleteBlogCategory,
-  createBlogTag,
-  updateBlogTag,
-  deleteBlogTag,
-  createBlogComment,
-  moderateBlogComment,
-  createBlogReview,
-  moderateBlogReview,
-  voteBlogReviewHelpful,
-  toggleBlogReaction,
-  toggleBlogFavorite,
-  createBlogReport,
-  updateBlogReport,
-  getBlogModerationQueue,
-  markBlogNotificationRead,
-  markAllBlogNotificationsRead,
-  createBlogLink,
-  updateBlogLink,
-  deleteBlogLink,
-  createBlogGallery,
-  updateBlogGallery,
-  deleteBlogGallery,
-  addGalleryMedia,
-  removeGalleryMedia,
-  updateUserProfile,
-  subscribeBlogNewsletter,
-  confirmBlogSubscription,
-  unsubscribeBlogNewsletter,
-  checkBlogPostLinks,
-  resolveBlogInternalLink,
-} from "./blog";
+import { createMediaFolder, updateMediaFolder, deleteMediaFolder, uploadMediaFile, renameMediaFile, moveMediaFile, deleteMediaFile, upsertMediaFileAlt, deleteMediaFileAlt } from "./admin/media";
+import { createPageVersion, listPageVersions, restorePageVersion } from "./admin/versions";
+import { listOrgRoles, createOrgRole, updateOrgRole, deleteOrgRole, updateMemberRole } from "./admin/roles";
+import { orgListRoles, orgCreateRole, orgUpdateRole, orgDeleteRole, orgUpdateMemberRole } from "./org/roles";
+import { createBlogPost, updateBlogPost, deleteBlogPost, publishBlogPost, lockBlogPost, unlockBlogPost, listBlogPostRevisions, recordBlogPostView, createBlogCategory, updateBlogCategory, deleteBlogCategory, createBlogTag, updateBlogTag, deleteBlogTag, createBlogComment, moderateBlogComment, createBlogReview, moderateBlogReview, voteBlogReviewHelpful, toggleBlogReaction, toggleBlogFavorite, createBlogReport, updateBlogReport, getBlogModerationQueue, markBlogNotificationRead, markAllBlogNotificationsRead, createBlogLink, updateBlogLink, deleteBlogLink, createBlogGallery, updateBlogGallery, deleteBlogGallery, addGalleryMedia, removeGalleryMedia, updateUserProfile, subscribeBlogNewsletter, confirmBlogSubscription, unsubscribeBlogNewsletter, checkBlogPostLinks, resolveBlogInternalLink } from "./blog";
+import { createService, updateService } from "./services/service";
+import { publishService, unpublishService, archiveService, restoreService, deleteService, duplicateService, lockService, unlockService, listServiceRevisions, restoreServiceRevision } from "./services/lifecycle";
+import { toggleServiceFavorite, createServiceReview, createServiceComment, createServiceReport, voteServiceReviewHelpful } from "./services/engagement";
+import { createServiceAvailability, updateServiceAvailability, deleteServiceAvailability } from "./services/availability";
 
 export const server = {
-  // ─── Site ────────────────────────────────────────────────────────
-  updateSiteSettings,
-  upsertSiteSettings,
-
-  // ─── Réseaux sociaux ─────────────────────────────────────────────
-  createSocialLink,
-  updateSocialLink,
-  deleteSocialLink,
-  reorderSocialLinks,
-
-  // ─── Contact ─────────────────────────────────────────────────────
-  updateContactInfo,
-
-  // ─── Horaires ────────────────────────────────────────────────────
-  updateOpeningHours,
-
-  // ─── Navigation (menus) ──────────────────────────────────────────
-  createNavigationMenu,
-  updateNavigationMenu,
-  deleteNavigationMenu,
-
-  // ─── Navigation (items) ──────────────────────────────────────────
-  createNavigationItem,
-  updateNavigationItem,
-  deleteNavigationItem,
-  reorderNavigationItems,
-
-  // ─── Pages ───────────────────────────────────────────────────────
-  createPage,
-  updatePage,
-  deletePage,
-  publishPage,
-  schedulePage,
-  unschedulePage,
-  scheduleUnpublishPage,
-  unscheduleUnpublishPage,
-  restoreFromTrash,
-  permanentlyDeletePage,
-  bulkPublishPages,
-  bulkArchivePages,
-  bulkRestorePages,
-  bulkDeletePages,
-  clonePage,
-  lockPage,
-  unlockPage,
-
-  // ─── Sections ────────────────────────────────────────────────────
-  createSection,
-  updateSection,
-  deleteSection,
-  reorderSections,
-
-  // ─── Thème ───────────────────────────────────────────────────────
-  createTheme,
-  updateTheme,
-  deleteTheme,
-
-  // ─── Consentement cookies ────────────────────────────────────────
+  updateSiteSettings, upsertSiteSettings,
+  createSocialLink, updateSocialLink, deleteSocialLink, reorderSocialLinks,
+  updateContactInfo, updateOpeningHours,
+  createNavigationMenu, updateNavigationMenu, deleteNavigationMenu,
+  createNavigationItem, updateNavigationItem, deleteNavigationItem, reorderNavigationItems,
+  createPage, updatePage, deletePage, publishPage, schedulePage, unschedulePage, scheduleUnpublishPage, unscheduleUnpublishPage, restoreFromTrash, permanentlyDeletePage, bulkPublishPages, bulkArchivePages, bulkRestorePages, bulkDeletePages, clonePage, lockPage, unlockPage,
+  createSection, updateSection, deleteSection, reorderSections,
+  createTheme, updateTheme, deleteTheme,
   updateConsentSettings,
-
-  // ─── Média ───────────────────────────────────────────────────────
-  createMediaFolder,
-  updateMediaFolder,
-  deleteMediaFolder,
-  uploadMediaFile,
-  renameMediaFile,
-  moveMediaFile,
-  deleteMediaFile,
-  upsertMediaFileAlt,
-  deleteMediaFileAlt,
-
-  // ─── Versioning pages ────────────────────────────────────────────
-  createPageVersion,
-  listPageVersions,
-  restorePageVersion,
-
-  // ─── Rôles (RBAC org — admin) ─────────────────────────────────────
-  listOrgRoles,
-  createOrgRole,
-  updateOrgRole,
-  deleteOrgRole,
-  updateMemberRole,
-
-  // ─── Rôles (RBAC org — owner/admin) ──────────────────────────────
-  orgListRoles,
-  orgCreateRole,
-  orgUpdateRole,
-  orgDeleteRole,
-  orgUpdateMemberRole,
-
-  // ─── Blog ────────────────────────────────────────────────────────
-  createBlogPost,
-  updateBlogPost,
-  deleteBlogPost,
-  publishBlogPost,
-  lockBlogPost,
-  unlockBlogPost,
-  listBlogPostRevisions,
-  recordBlogPostView,
-  createBlogCategory,
-  updateBlogCategory,
-  deleteBlogCategory,
-  createBlogTag,
-  updateBlogTag,
-  deleteBlogTag,
-  createBlogComment,
-  moderateBlogComment,
-  createBlogReview,
-  moderateBlogReview,
-  voteBlogReviewHelpful,
-  toggleBlogReaction,
-  toggleBlogFavorite,
-  createBlogReport,
-  updateBlogReport,
-  getBlogModerationQueue,
-  markBlogNotificationRead,
-  markAllBlogNotificationsRead,
-
-  // ─── Blog (liens / galeries / profil / newsletter) ──────────────
-  createBlogLink,
-  updateBlogLink,
-  deleteBlogLink,
-  checkBlogPostLinks,
-  resolveBlogInternalLink,
-  createBlogGallery,
-  updateBlogGallery,
-  deleteBlogGallery,
-  addGalleryMedia,
-  removeGalleryMedia,
-  updateUserProfile,
-  subscribeBlogNewsletter,
-  confirmBlogSubscription,
-  unsubscribeBlogNewsletter,
+  createMediaFolder, updateMediaFolder, deleteMediaFolder, uploadMediaFile, renameMediaFile, moveMediaFile, deleteMediaFile, upsertMediaFileAlt, deleteMediaFileAlt,
+  createPageVersion, listPageVersions, restorePageVersion,
+  listOrgRoles, createOrgRole, updateOrgRole, deleteOrgRole, updateMemberRole,
+  orgListRoles, orgCreateRole, orgUpdateRole, orgDeleteRole, orgUpdateMemberRole,
+  createBlogPost, updateBlogPost, deleteBlogPost, publishBlogPost, lockBlogPost, unlockBlogPost, listBlogPostRevisions, recordBlogPostView,
+  createBlogCategory, updateBlogCategory, deleteBlogCategory, createBlogTag, updateBlogTag, deleteBlogTag, createBlogComment, moderateBlogComment, createBlogReview, moderateBlogReview, voteBlogReviewHelpful, toggleBlogReaction, toggleBlogFavorite, createBlogReport, updateBlogReport, getBlogModerationQueue, markBlogNotificationRead, markAllBlogNotificationsRead,
+  createBlogLink, updateBlogLink, deleteBlogLink, checkBlogPostLinks, resolveBlogInternalLink, createBlogGallery, updateBlogGallery, deleteBlogGallery, addGalleryMedia, removeGalleryMedia, updateUserProfile, subscribeBlogNewsletter, confirmBlogSubscription, unsubscribeBlogNewsletter,
+  createService, updateService, publishService, unpublishService, archiveService, restoreService, deleteService, duplicateService, lockService, unlockService, listServiceRevisions, restoreServiceRevision,
+  toggleServiceFavorite, createServiceReview, createServiceComment, createServiceReport, voteServiceReviewHelpful,
+  createServiceAvailability, updateServiceAvailability, deleteServiceAvailability,
 };
