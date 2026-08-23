@@ -1,5 +1,4 @@
 import type { Locale } from "@i18n/config";
-import { ActionError } from "astro:actions";
 
 export const BLOG_POST_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"] as const;
 export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number];
@@ -13,10 +12,7 @@ export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly Blo
 
 export function assertValidBlogPostTransition(from: BlogPostStatus, to: BlogPostStatus): void {
   if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
-    throw new ActionError({
-      code: "BAD_REQUEST",
-      message: `Invalid blog post status transition: ${from} → ${to}.`,
-    });
+    throw new Error(`Invalid blog post status transition: ${from} → ${to}.`);
   }
 }
 
