@@ -36,7 +36,7 @@ for (let i = 1; i <= meta.totalPages; i += 1) { if (i === 1 || i === meta.totalP
 ---
 <div class="space-y-4">
   <div class="flex items-center justify-between gap-3 flex-wrap"><h2 class="font-heading text-lg font-semibold">{blogT.admin.posts}</h2>{canCreate && <Button size="sm" href={`${baseAdminUrl}/new`}><Icon name="mdi:plus" class="size-4" />{blogT.admin.newPost}</Button>}</div>
-  <DataView tableLabel={blogT.labels.table ?? "Table"} cardsLabel={blogT.labels.cards ?? "Cards"}>
+  <DataView showModeSelector={false}>
     <Fragment slot="toolbar-start">
       <form method="get" class="grid w-full gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-5" aria-label={blogT.labels.search}>
         <input name="search" value={current.search} placeholder={blogT.labels.search} class="h-9 rounded-md border bg-background px-3 text-sm lg:col-span-2" />
