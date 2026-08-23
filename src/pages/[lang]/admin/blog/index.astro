@@ -33,7 +33,9 @@ const filters = {
 const baseAdminUrl = `/${locale}/admin/blog`;
 const basePublicUrl = `/${locale}/${blogT.routes.blog}`;
 const globalTenant = resolveBlogTenant({});
-const [canPublish, canDelete] = await Promise.all([
+const [canCreate, canUpdate, canPublish, canDelete] = await Promise.all([
+  hasBlogPermission(Astro, globalTenant, { blog: ["create"] }),
+  hasBlogPermission(Astro, globalTenant, { blog: ["update"] }),
   hasBlogPermission(Astro, globalTenant, { blog: ["publish"] }),
   hasBlogPermission(Astro, globalTenant, { blog: ["delete"] }),
 ]);
@@ -53,6 +55,6 @@ const filterOptions = { categories: categories.map(({ id, name }) => ({ id, name
 <BaseLayout title={blogT.admin.title} description={blogT.admin.title}>
   <AuthLayout title={blogT.admin.title}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
-    <BlogAdminPage locale={locale} blogT={blogT} title={blogT.admin.title} posts={rows} postsMeta={meta} stats={stats} moderationCount={moderationCount} categories={categories} tags={tags} moderation={moderation} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} userId={user.id} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
+    <BlogAdminPage locale={locale} blogT={blogT} title={blogT.admin.title} posts={rows} postsMeta={meta} stats={stats} moderationCount={moderationCount} categories={categories} tags={tags} moderation={moderation} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} userId={user.id} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} filterOptions={filterOptions} />
   </AuthLayout>
 </BaseLayout>
