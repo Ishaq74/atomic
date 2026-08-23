@@ -1,4 +1,5 @@
 import type { AtomicModuleDefinition } from "./module-contract";
+import type { AdminResourceListDefinition } from "@/core/admin/filter-contract";
 
 export type ResourceAction =
   | "create"
@@ -46,6 +47,7 @@ export interface AdminResourceDefinition {
   readonly management: Readonly<ResourceManagementCapabilities>;
   readonly actions: Readonly<ResourceActionCapabilities>;
   readonly presentation?: Readonly<ResourcePresentationVariants>;
+  readonly list?: Readonly<AdminResourceListDefinition>;
   /** Permission namespace used by the domain's existing RBAC adapter. */
   readonly permissionNamespace?: string;
 }
@@ -75,4 +77,11 @@ export function assertResourceCompatibility(
   if (resource.management.search && !resource.management.list) throw new Error(`Resource ${resource.id} enables search without list capability.`);
   if (resource.management.sort && !resource.management.list) throw new Error(`Resource ${resource.id} enables sort without list capability.`);
   if (resource.management.pagination && !resource.management.list) throw new Error(`Resource ${resource.id} enables pagination without list capability.`);
+
+  if (resource.list?.defaultSort && !resource.management.sort) {
+    throw new Error(`Resource ${resource.id} defines a default sort without sort capability.`);
+  }
+  if (resource.list && !resource.management.list) {
+    throw new Error(`Resource ${resource.id} defines list configuration without list capability.`);
+  }
 }

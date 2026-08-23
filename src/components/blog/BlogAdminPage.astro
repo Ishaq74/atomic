@@ -1,18 +1,16 @@
 ---
 import { getRelativeLocaleUrl } from "astro:i18n";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@i18n/config";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@/core/localization";
 import type { BlogTranslations } from "@i18n/config";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@atoms/tabs";
 import AdminResourceShell from "@organisms/AdminResourceShell.astro";
 import AdminResourceStats from "@molecules/AdminResourceStats.astro";
-import AdminPostList from "./AdminPostList.astro";
-import AdminTaxonomyManager from "./AdminTaxonomyManager.astro";
-import AdminModerationQueue from "./AdminModerationQueue.astro";
-import NotificationBell from "./NotificationBell.astro";
+import { AdminPostList, AdminModerationQueue, AdminTaxonomyManager } from "@/modules/blog/admin";
+import { NotificationBell } from "@/modules/blog/components/ui";
 import type { BlogAdminAggregateStats } from "@database/loaders/blog-admin.loader";
-import type { BlogPostListItem } from "@/lib/blog/types";
+import type { BlogPostListItem } from "@/modules/blog/domain";
 import type { getBlogModerationQueue } from "@database/loaders/blog.loader";
-import { blogPostAdminResource } from "@/lib/blog/admin-resource";
+import { blogPostAdminResource } from "@/modules/blog";
 
 interface PostRow extends Pick<BlogPostListItem, "post" | "translation" | "author" | "categories"> {}
 interface TaxonomyItem { id: string; slug: string; name: string; description?: string | null; color?: string | null; icon?: string | null; parentId?: string | null; sortOrder?: number | null; postCount: number; }
