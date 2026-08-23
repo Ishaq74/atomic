@@ -7,61 +7,41 @@ import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
 import AdminPostForm from "@/components/blog/AdminPostForm.astro";
+import type { BlogPostEditorData } from "@/lib/blog/editor-types";
 
 export const prerender = false;
-
 const result = await requireAuth(Astro);
-if ('redirect' in result) return result.redirect;
-
+if ("redirect" in result) return result.redirect;
 const { user, locale, authT } = result;
 const orgSlug = Astro.params.slug;
 const postId = Astro.params.id;
-if (!orgSlug || !postId) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
+if (!orgSlug || !postId) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
 
 const orgData = await fetchOrgData(Astro.request.headers, orgSlug);
-if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
-
+if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
 const { org, members } = orgData;
 const activeOrgRole = getUserOrgRole(members, user.id);
-if (activeOrgRole !== 'admin' && activeOrgRole !== 'owner') {
-  return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
-}
+if (activeOrgRole !== "admin" && activeOrgRole !== "owner") return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
 
 const blogT = await getBlogTranslations(locale);
 const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
 const basePublicUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
-
 const [postAdminData, categoryRows, tagRows] = await Promise.all([
   getBlogPostForAdmin(postId),
   getBlogCategories(org.id, locale),
   getBlogTags(org.id, locale),
 ]);
-
 if (!postAdminData || postAdminData.post.organizationId !== org.id) {
   Astro.response.status = 404;
-  return Astro.rewrite('/404');
+  return Astro.rewrite("/404");
 }
 
-const categories = categoryRows.map((item) => ({
-  id: item.id,
-  slug: item.slug,
-  label: item.translation?.name ?? item.slug,
-}));
-
-const tags = tagRows.map((item) => ({
-  id: item.id,
-  slug: item.slug,
-  label: item.translation?.name ?? item.slug,
-}));
-
-const editorData = {
+const categories = categoryRows.map((item) => ({ id: item.id, slug: item.slug, label: item.translation?.name ?? item.slug }));
+const tags = tagRows.map((item) => ({ id: item.id, slug: item.slug, label: item.translation?.name ?? item.slug }));
+const editorData: BlogPostEditorData = {
   post: postAdminData.post,
   translation: postAdminData.translations.find((translation) => translation.locale === locale) ?? null,
-  translations: postAdminData.translations.map((translation) => ({
-    locale: translation.locale,
-    title: translation.title,
-    slug: translation.slug,
-  })),
+  translations: postAdminData.translations.map((translation) => ({ locale: translation.locale, title: translation.title, slug: translation.slug })),
   categoryIds: postAdminData.categoryIds,
   tagIds: postAdminData.tagIds,
   galleries: postAdminData.galleries,
@@ -70,20 +50,9 @@ const editorData = {
   lock: postAdminData.lock,
 };
 ---
-
 <BaseLayout title={blogT.admin.editPost} description={authT.organizations.blog.description}>
   <AuthLayout title={org.name}>
     <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} activeItem="blog" orgRole={activeOrgRole} />
-    <AdminPostForm
-      locale={locale}
-      blogT={blogT}
-      mode="edit"
-      editorData={editorData as never}
-      categories={categories}
-      tags={tags}
-      baseAdminUrl={baseAdminUrl}
-      basePublicUrl={basePublicUrl}
-      organizationId={org.id}
-    />
+    <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} />
   </AuthLayout>
 </BaseLayout>
