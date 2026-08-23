@@ -31,6 +31,7 @@ type DbTransaction = Parameters<Db["transaction"]>[0] extends (tx: infer T, ...a
 const lifecycleInput = z.object({ id: z.uuid(), organizationId: blogOrganizationIdSchema });
 
 function assertTransition(from: BlogPostStatus, to: BlogPostStatus): void {
+  if (from === to) return;
   if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
     throw new ActionError({ code: "BAD_REQUEST", message: `Transition de statut invalide : ${from} → ${to}.` });
   }
@@ -176,10 +177,12 @@ export const restoreBlogPostRevision = defineAction({
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
     const user = await assertBlogPermission(context, tenant, { blog: ["update"] });
-    await assertPostInTenant(input.postId, tenant);
+    const post = await assertPostInTenant(input.postId, tenant);
     const db = getDrizzle();
     const [revision] = await db.select().from(blogPostRevisions).where(and(eq(blogPostRevisions.id, input.revisionId), eq(blogPostRevisions.postId, input.postId))).limit(1);
     if (!revision) throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." });
+
+    assertTransition(post.status as BlogPostStatus, revision.status as BlogPostStatus);
 
     await db.transaction(async (tx) => {
       const [translation] = await tx.select().from(blogPostTranslations).where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale))).limit(1);
