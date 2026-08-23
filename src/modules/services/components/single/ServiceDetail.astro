@@ -1,0 +1,27 @@
+---
+import type { ServiceDetail } from "@/modules/services/domain";
+import { formatServicePrice, formatServiceDuration, formatServiceRating } from "@/modules/services/utils";
+const { item, locale = "fr" } = Astro.props as { item: ServiceDetail; locale?: string };
+const title = item.translation?.title ?? "";
+const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
+const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
+---
+<article class="mx-auto max-w-5xl">
+  <header class="mb-8 space-y-4">
+    <div class="flex flex-wrap gap-2 text-sm text-muted-foreground">
+      {item.categories.map((category) => <a href={`/${locale}/services/${category.slug}`} class="rounded-full border px-3 py-1">{category.name ?? category.slug}</a>)}
+    </div>
+    <h1 class="text-4xl font-bold tracking-tight">{title}</h1>
+    {item.translation?.excerpt && <p class="max-w-3xl text-lg text-muted-foreground">{item.translation.excerpt}</p>}
+    <div class="flex flex-wrap gap-4 text-sm">
+      {item.provider?.name && <span>{item.provider.name}</span>}
+      {price && <span class="font-semibold">{price}</span>}
+      {formatServiceDuration(item.service.durationMinutes) && <span>{formatServiceDuration(item.service.durationMinutes)}</span>}
+      {item.service.maxParticipants && <span>{item.service.maxParticipants}</span>}
+      {rating !== null && <span>★ {rating} ({item.service.ratingCount})</span>}
+    </div>
+  </header>
+  <div class="prose max-w-none dark:prose-invert" set:html={item.translation?.content ?? ""}></div>
+  {item.availability.length > 0 && <section class="mt-10"><h2 class="text-2xl font-semibold">Disponibilités</h2><div class="mt-4 grid gap-3 sm:grid-cols-2">{item.availability.map((slot) => <div class="rounded-xl border p-4"><div>Jour {slot.dayOfWeek}</div><div>{slot.startTime} – {slot.endTime} ({slot.timezone})</div></div>)}</div></section>}
+  {item.tags.length > 0 && <footer class="mt-10 flex flex-wrap gap-2">{item.tags.map((tag) => <a href={`/${locale}/services/tags/${tag.slug}`} class="rounded-full bg-muted px-3 py-1 text-sm">#{tag.name ?? tag.slug}</a>)}</footer>}
+</article>
