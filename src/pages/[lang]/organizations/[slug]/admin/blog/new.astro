@@ -31,7 +31,7 @@ const tags = tagRows.map((item) => ({ id: item.id, slug: item.slug, label: item.
 <BaseLayout title={blogT.admin.newPost} description={authT.organizations.blog.description}>
   <AuthLayout title={org.name}>
     <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} activeItem="blog" orgRole="member" />
-    <AdminFormShell title={blogT.admin.newPost} description={authT.organizations.blog.description}>
+    <AdminFormShell>
       <AdminPostForm locale={locale} blogT={blogT} mode="create" categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} />
     </AdminFormShell>
   </AuthLayout>
