@@ -8,24 +8,18 @@ function postTenantScope(organizationId: string | null) {
 
 export async function getBlogAdminModerationCount(organizationId: string | null) {
   const db = getDrizzle();
-  const commentScope = postTenantScope(organizationId);
-  const [comments, reviews, reports] = await Promise.all([
-    db
-      .select({ count: count() })
-      .from(blogComments)
-      .innerJoin(blogPosts, eq(blogPosts.id, blogComments.postId))
-      .where(and(commentScope, or(eq(blogComments.status, "PENDING"), eq(blogComments.status, "SPAM")))),
-    db
-      .select({ count: count() })
-      .from(blogPostReviews)
-      .innerJoin(blogPosts, eq(blogPosts.id, blogPostReviews.postId))
-      .where(and(commentScope, eq(blogPostReviews.status, "PENDING"))),
-    db
-      .select({ count: count() })
-      .from(blogReports)
-      .leftJoin(blogPosts, eq(blogPosts.id, blogReports.postId))
-      .where(and(or(isNull(blogPosts.id), commentScope), eq(blogReports.status, "PENDING"))),
+  const scope = postTenantScope(organizationId);
+  const [comments, reviews, postReports, commentReports, reviewReports] = await Promise.all([
+    db.select({ count: count() }).from(blogComments).innerJoin(blogPosts, eq(blogPosts.id, blogComments.postId)).where(and(scope, or(eq(blogComments.status, "PENDING"), eq(blogComments.status, "SPAM")))),
+    db.select({ count: count() }).from(blogPostReviews).innerJoin(blogPosts, eq(blogPosts.id, blogPostReviews.postId)).where(and(scope, eq(blogPostReviews.status, "PENDING"))),
+    db.select({ count: count() }).from(blogReports).innerJoin(blogPosts, eq(blogPosts.id, blogReports.postId)).where(and(scope, eq(blogReports.status, "PENDING"))),
+    db.select({ count: count() }).from(blogReports).innerJoin(blogComments, eq(blogComments.id, blogReports.commentId)).innerJoin(blogPosts, eq(blogPosts.id, blogComments.postId)).where(and(scope, eq(blogReports.status, "PENDING"))),
+    db.select({ count: count() }).from(blogReports).innerJoin(blogPostReviews, eq(blogPostReviews.id, blogReports.reviewId)).innerJoin(blogPosts, eq(blogPosts.id, blogPostReviews.postId)).where(and(scope, eq(blogReports.status, "PENDING"))),
   ]);
 
-  return Number(comments[0]?.count ?? 0) + Number(reviews[0]?.count ?? 0) + Number(reports[0]?.count ?? 0);
+  return Number(comments[0]?.count ?? 0)
+    + Number(reviews[0]?.count ?? 0)
+    + Number(postReports[0]?.count ?? 0)
+    + Number(commentReports[0]?.count ?? 0)
+    + Number(reviewReports[0]?.count ?? 0);
 }
