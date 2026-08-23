@@ -1,0 +1,11 @@
+---
+import { formatServiceDuration, formatServicePrice, formatServiceRating } from "@/modules/services/utils";
+const { service, locale = "fr" } = Astro.props as { service: { priceMinor: number | null; currency: string | null; durationMinutes: number | null; maxParticipants: number | null; ratingAverage100: number; ratingCount: number; isMobile: boolean }; locale?: string };
+---
+<div class="flex flex-wrap gap-3 text-sm text-muted-foreground" aria-label="Service metadata">
+  {formatServicePrice(service.priceMinor, service.currency, locale) && <span>{formatServicePrice(service.priceMinor, service.currency, locale)}</span>}
+  {formatServiceDuration(service.durationMinutes) && <span>{formatServiceDuration(service.durationMinutes)}</span>}
+  {service.maxParticipants && <span>{service.maxParticipants}</span>}
+  {service.ratingCount > 0 && <span>★ {formatServiceRating(service.ratingAverage100)} ({service.ratingCount})</span>}
+  {service.isMobile && <span>Mobile</span>}
+</div>
