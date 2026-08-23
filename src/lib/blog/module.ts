@@ -18,6 +18,4 @@ export const blogModule: AtomicModuleDefinition<BlogPostListItem, BlogPostFilter
     notifications: true,
     audit: true,
   }),
-  entityType: {} as BlogPostListItem,
-  filterType: {} as BlogPostFilters,
 };
