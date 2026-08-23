@@ -1,17 +1,17 @@
 export {
   createBlogPost,
   updateBlogPost,
-  deleteBlogPost,
-  publishBlogPost,
   lockBlogPost,
   unlockBlogPost,
   listBlogPostRevisions,
 } from "./post";
 
 export {
+  publishBlogPost,
   unpublishBlogPost,
   archiveBlogPost,
   restoreBlogPost,
+  deleteBlogPost,
   duplicateBlogPost,
   restoreBlogPostRevision,
 } from "./lifecycle";
@@ -64,7 +64,6 @@ export {
 } from "./link";
 
 export { checkBlogPostLinks } from "./check-links";
-
 export { resolveBlogInternalLink } from "./internal-link";
 
 export {
