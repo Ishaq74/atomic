@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CMS_CAPABILITIES } from "@/lib/cms/capabilities";
 
 const capabilities = [
+  "content",
   "localization",
   "media",
   "seo",
@@ -10,9 +11,11 @@ const capabilities = [
   "publication",
   "revisions",
   "locks",
+  "engagement",
   "moderation",
   "notifications",
   "audit",
+  "cache",
 ] as const;
 
 describe("CMS capability catalog", () => {
@@ -26,9 +29,7 @@ describe("CMS capability catalog", () => {
       expect(definition.id).toBe(id);
       expect(definition.purpose.length).toBeGreaterThan(10);
       expect(definition.implementations.length).toBeGreaterThan(0);
-      for (const implementation of definition.implementations) {
-        expect(implementation.length).toBeGreaterThan(0);
-      }
+      for (const implementation of definition.implementations) expect(implementation.length).toBeGreaterThan(0);
     }
   });
 });
