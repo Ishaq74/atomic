@@ -1,5 +1,14 @@
-import type { AtomicModuleDefinition } from "@/lib/cms/module-contract";
-import { defineModuleCapabilities, defineModulePresentations } from "@/lib/cms/module-contract";
+import type {
+  AtomicModuleDefinition,
+  AtomicModuleCapabilityProviders,
+} from "@/lib/cms/module-contract";
+import {
+  assertModuleCapabilityProviders,
+  defineModuleCapabilities,
+  defineModuleCapabilityProviders,
+  defineModulePresentations,
+} from "@/lib/cms/module-contract";
+import { blogCapabilityProviders } from "@/lib/blog/capabilities";
 
 export const blogModule: AtomicModuleDefinition = {
   id: "blog",
@@ -17,6 +26,7 @@ export const blogModule: AtomicModuleDefinition = {
     notifications: true,
     audit: true,
   }),
+  capabilityProviders: defineModuleCapabilityProviders(blogCapabilityProviders satisfies AtomicModuleCapabilityProviders),
   presentations: defineModulePresentations({
     card: ["default", "compact", "featured"],
     list: ["default", "dense", "search"],
@@ -24,3 +34,5 @@ export const blogModule: AtomicModuleDefinition = {
     ui: ["author", "meta", "rating", "taxonomy", "publication"],
   }),
 };
+
+assertModuleCapabilityProviders(blogModule);
