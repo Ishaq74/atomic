@@ -20,8 +20,8 @@ export interface AtomicModuleDefinition<
   readonly id: string;
   readonly entity: string;
   readonly capabilities: Readonly<AtomicModuleCapabilities>;
-  readonly entityType: TEntity;
-  readonly filterType: TFilter;
+  readonly __entityType?: TEntity;
+  readonly __filterType?: TFilter;
 }
 
 export type ModuleCapability = keyof AtomicModuleCapabilities;
