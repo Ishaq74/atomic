@@ -4,6 +4,7 @@ import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { getBlogTranslations } from "@i18n/utils";
 import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
 import { getBlogPostEditorData } from "@database/loaders/blog-admin-editor.loader";
+import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
@@ -17,12 +18,12 @@ const { user, locale, authT } = result;
 const orgSlug = Astro.params.slug;
 const postId = Astro.params.id;
 if (!orgSlug || !postId) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
-
 const orgData = await fetchOrgData(Astro.request.headers, orgSlug);
 if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
 const { org, members } = orgData;
 const activeOrgRole = getUserOrgRole(members, user.id);
-if (activeOrgRole !== "admin" && activeOrgRole !== "owner") return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
+const tenant = resolveBlogTenant({ organizationId: org.id });
+if (!(await hasBlogPermission(Astro, tenant, { blog: ["update"] }))) return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
 
 const blogT = await getBlogTranslations(locale);
 const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
@@ -32,11 +33,7 @@ const [postAdminData, categoryRows, tagRows] = await Promise.all([
   getBlogCategories(org.id, locale),
   getBlogTags(org.id, locale),
 ]);
-if (!postAdminData || postAdminData.post.organizationId !== org.id) {
-  Astro.response.status = 404;
-  return Astro.rewrite("/404");
-}
-
+if (!postAdminData || postAdminData.post.organizationId !== org.id) { Astro.response.status = 404; return Astro.rewrite("/404"); }
 const categories = categoryRows.map((item) => ({ id: item.id, slug: item.slug, label: item.translation?.name ?? item.slug }));
 const tags = tagRows.map((item) => ({ id: item.id, slug: item.slug, label: item.translation?.name ?? item.slug }));
 const editorData: BlogPostEditorData = {
