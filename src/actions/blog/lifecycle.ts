@@ -11,105 +11,136 @@ import {
   blogPostSeo,
   blogPostGalleries,
   blogPostGalleryMedia,
+  blogPostLinks,
 } from "@database/schemas";
 import { LOCALES } from "@i18n/config";
-import type { BlogPostStatus } from "@/lib/blog/constants";
+import { BLOG_POST_TRANSITIONS, type BlogPostStatus } from "@/lib/blog/constants";
 import {
   assertBlogPermission,
   assertPostInTenant,
   auditBlog,
   blogOrganizationIdSchema,
+  blogRateLimit,
   invalidateBlogCache,
   resolveBlogTenant,
 } from "./_helpers";
 
-const lifecycleInput = z.object({
-  id: z.uuid(),
-  organizationId: blogOrganizationIdSchema,
-});
-
-const transitionMatrix: Record<BlogPostStatus, readonly BlogPostStatus[]> = {
-  DRAFT: ["PUBLISHED", "ARCHIVED", "DELETED"],
-  PUBLISHED: ["DRAFT", "ARCHIVED", "DELETED"],
-  ARCHIVED: ["DRAFT", "DELETED"],
-  DELETED: ["DRAFT"],
-};
+const lifecycleInput = z.object({ id: z.uuid(), organizationId: blogOrganizationIdSchema });
 
 function assertTransition(from: BlogPostStatus, to: BlogPostStatus): void {
-  if (!transitionMatrix[from].includes(to)) {
-    throw new ActionError({
-      code: "BAD_REQUEST",
-      message: `Transition de statut invalide : ${from} → ${to}.`,
-    });
+  if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
+    throw new ActionError({ code: "BAD_REQUEST", message: `Transition de statut invalide : ${from} → ${to}.` });
   }
 }
 
+function revisionStatus(status: BlogPostStatus): "DRAFT" | "PUBLISHED" | "ARCHIVED" {
+  return status === "PUBLISHED" || status === "ARCHIVED" ? status : "DRAFT";
+}
+
+async function appendRevision(
+  tx: Parameters<Parameters<ReturnType<typeof getDrizzle>["transaction"]>[0]>[0],
+  postId: string,
+  userId: string,
+  status: BlogPostStatus,
+  revisionNote: string,
+  locale?: string,
+) {
+  const [translation] = await tx
+    .select()
+    .from(blogPostTranslations)
+    .where(and(eq(blogPostTranslations.postId, postId), locale ? eq(blogPostTranslations.locale, locale) : eq(blogPostTranslations.locale, LOCALES[0])))
+    .orderBy(desc(blogPostTranslations.updatedAt), desc(blogPostTranslations.id))
+    .limit(1);
+
+  if (!translation) return;
+  await tx.insert(blogPostRevisions).values({
+    postId,
+    authorId: userId,
+    locale: translation.locale,
+    title: translation.title,
+    slug: translation.slug,
+    content: translation.content,
+    excerpt: translation.excerpt,
+    status: revisionStatus(status),
+    revisionNote,
+  });
+}
+
+async function transitionPost(
+  input: z.infer<typeof lifecycleInput>,
+  context: Parameters<NonNullable<Parameters<typeof defineAction>[0]>["handler"]>[1],
+  to: BlogPostStatus,
+  permission: "publish" | "update",
+  action: string,
+  note: string,
+) {
+  const tenant = resolveBlogTenant(input);
+  const user = await assertBlogPermission(context, tenant, { blog: [permission] });
+  blogRateLimit(context, user.id, `post-${action.toLowerCase()}`);
+  const post = await assertPostInTenant(input.id, tenant);
+  assertTransition(post.status as BlogPostStatus, to);
+
+  const db = getDrizzle();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(blogPosts)
+      .set({
+        status: to,
+        publishedAt: to === "PUBLISHED" ? new Date() : null,
+        updatedBy: user.id,
+      })
+      .where(eq(blogPosts.id, input.id));
+    await appendRevision(tx, input.id, user.id, to, note);
+  });
+
+  auditBlog(context, user.id, action, {
+    resource: "blog_posts",
+    resourceId: input.id,
+    metadata: { organizationId: tenant.organizationId, from: post.status, to },
+  });
+  invalidateBlogCache();
+  return { success: true };
+}
+
+export const publishBlogPost = defineAction({
+  input: lifecycleInput,
+  handler: async (input, context) => transitionPost(input, context, "PUBLISHED", "publish", "BLOG_POST_PUBLISH", "Publication"),
+});
+
 export const unpublishBlogPost = defineAction({
   input: lifecycleInput,
-  handler: async (input, context) => {
-    const tenant = resolveBlogTenant(input);
-    const user = await assertBlogPermission(context, tenant, { blog: ["publish"] });
-    const post = await assertPostInTenant(input.id, tenant);
-    assertTransition(post.status as BlogPostStatus, "DRAFT");
-
-    const db = getDrizzle();
-    await db
-      .update(blogPosts)
-      .set({ status: "DRAFT", publishedAt: null, updatedBy: user.id })
-      .where(eq(blogPosts.id, input.id));
-
-    auditBlog(context, user.id, "BLOG_POST_UNPUBLISH", {
-      resource: "blog_posts",
-      resourceId: input.id,
-      metadata: { organizationId: tenant.organizationId },
-    });
-    invalidateBlogCache();
-    return { success: true };
-  },
+  handler: async (input, context) => transitionPost(input, context, "DRAFT", "publish", "BLOG_POST_UNPUBLISH", "Dépublication"),
 });
 
 export const archiveBlogPost = defineAction({
   input: lifecycleInput,
-  handler: async (input, context) => {
-    const tenant = resolveBlogTenant(input);
-    const user = await assertBlogPermission(context, tenant, { blog: ["update"] });
-    const post = await assertPostInTenant(input.id, tenant);
-    assertTransition(post.status as BlogPostStatus, "ARCHIVED");
-
-    const db = getDrizzle();
-    await db
-      .update(blogPosts)
-      .set({ status: "ARCHIVED", publishedAt: null, updatedBy: user.id })
-      .where(eq(blogPosts.id, input.id));
-
-    auditBlog(context, user.id, "BLOG_POST_ARCHIVE", {
-      resource: "blog_posts",
-      resourceId: input.id,
-      metadata: { organizationId: tenant.organizationId },
-    });
-    invalidateBlogCache();
-    return { success: true };
-  },
+  handler: async (input, context) => transitionPost(input, context, "ARCHIVED", "update", "BLOG_POST_ARCHIVE", "Archivage"),
 });
 
 export const restoreBlogPost = defineAction({
   input: lifecycleInput,
+  handler: async (input, context) => transitionPost(input, context, "DRAFT", "update", "BLOG_POST_RESTORE", "Restauration"),
+});
+
+export const deleteBlogPost = defineAction({
+  input: z.object({ id: z.uuid(), organizationId: blogOrganizationIdSchema }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
-    const user = await assertBlogPermission(context, tenant, { blog: ["update"] });
+    const user = await assertBlogPermission(context, tenant, { blog: ["delete"] });
+    blogRateLimit(context, user.id, "post-delete");
     const post = await assertPostInTenant(input.id, tenant);
-    assertTransition(post.status as BlogPostStatus, "DRAFT");
+    assertTransition(post.status as BlogPostStatus, "DELETED");
 
     const db = getDrizzle();
-    await db
-      .update(blogPosts)
-      .set({ status: "DRAFT", publishedAt: null, updatedBy: user.id })
-      .where(eq(blogPosts.id, input.id));
+    await db.transaction(async (tx) => {
+      await tx.update(blogPosts).set({ status: "DELETED", publishedAt: null, updatedBy: user.id }).where(eq(blogPosts.id, input.id));
+      await appendRevision(tx, input.id, user.id, "DELETED", "Suppression");
+    });
 
-    auditBlog(context, user.id, "BLOG_POST_RESTORE", {
+    auditBlog(context, user.id, "BLOG_POST_DELETE", {
       resource: "blog_posts",
       resourceId: input.id,
-      metadata: { organizationId: tenant.organizationId },
+      metadata: { organizationId: tenant.organizationId, from: post.status, to: "DELETED" },
     });
     invalidateBlogCache();
     return { success: true };
@@ -124,77 +155,41 @@ export const duplicateBlogPost = defineAction({
     const source = await assertPostInTenant(input.id, tenant);
     const db = getDrizzle();
 
-    const translations = await db
-      .select()
-      .from(blogPostTranslations)
-      .where(eq(blogPostTranslations.postId, input.id))
-      .orderBy(blogPostTranslations.locale);
-    if (translations.length === 0) {
-      throw new ActionError({ code: "BAD_REQUEST", message: "Impossible de dupliquer un article sans traduction." });
-    }
+    const [translations, categories, tags, seo, galleries, links] = await Promise.all([
+      db.select().from(blogPostTranslations).where(eq(blogPostTranslations.postId, input.id)).orderBy(ascLocale()),
+      db.select({ categoryId: blogPostCategories.categoryId }).from(blogPostCategories).where(eq(blogPostCategories.postId, input.id)),
+      db.select({ tagId: blogPostTags.tagId }).from(blogPostTags).where(eq(blogPostTags.postId, input.id)),
+      db.select().from(blogPostSeo).where(eq(blogPostSeo.postId, input.id)),
+      db.select().from(blogPostGalleries).where(eq(blogPostGalleries.postId, input.id)),
+      db.select().from(blogPostLinks).where(eq(blogPostLinks.sourcePostId, input.id)),
+    ]);
 
-    const categories = await db
-      .select({ categoryId: blogPostCategories.categoryId })
-      .from(blogPostCategories)
-      .where(eq(blogPostCategories.postId, input.id));
-    const tags = await db
-      .select({ tagId: blogPostTags.tagId })
-      .from(blogPostTags)
-      .where(eq(blogPostTags.postId, input.id));
-    const seo = await db
-      .select()
-      .from(blogPostSeo)
-      .where(eq(blogPostSeo.postId, input.id));
-    const galleries = await db
-      .select()
-      .from(blogPostGalleries)
-      .where(eq(blogPostGalleries.postId, input.id));
+    if (!translations.length) throw new ActionError({ code: "BAD_REQUEST", message: "Impossible de dupliquer un article sans traduction." });
 
-    const suffix = "-copy";
-    const canonicalBase = `${source.slug}${suffix}`;
-    let canonicalSlug = canonicalBase;
-    for (let i = 2; ; i += 1) {
-      const orgCondition = tenant.organizationId === null
-        ? isNull(blogPosts.organizationId)
-        : eq(blogPosts.organizationId, tenant.organizationId);
-      const [collision] = await db
-        .select({ id: blogPosts.id })
-        .from(blogPosts)
-        .where(and(eq(blogPosts.slug, canonicalSlug), orgCondition))
-        .limit(1);
-      if (!collision) break;
-      canonicalSlug = `${canonicalBase}-${i}`;
-    }
-
+    const canonicalSlug = await uniqueCopySlug(db, tenant.organizationId, source.slug);
     const duplicated = await db.transaction(async (tx) => {
-      const [post] = await tx
-        .insert(blogPosts)
-        .values({
-          organizationId: tenant.organizationId,
-          authorId: source.authorId,
-          slug: canonicalSlug,
-          status: "DRAFT",
-          featuredImageId: source.featuredImageId,
-          isFeatured: source.isFeatured,
-          isSticky: false,
-          commentStatus: source.commentStatus,
-          allowReviews: source.allowReviews,
-          seoScore: source.seoScore,
-          publishedAt: null,
-          updatedBy: user.id,
-        })
-        .returning();
+      const [post] = await tx.insert(blogPosts).values({
+        organizationId: tenant.organizationId,
+        authorId: source.authorId,
+        slug: canonicalSlug,
+        status: "DRAFT",
+        featuredImageId: source.featuredImageId,
+        isFeatured: source.isFeatured,
+        isSticky: false,
+        commentStatus: source.commentStatus,
+        allowReviews: source.allowReviews,
+        seoScore: source.seoScore,
+        publishedAt: null,
+        updatedBy: user.id,
+      }).returning();
 
       for (const translation of translations) {
-        const translationSlug = translation.locale === LOCALES[0]
-          ? canonicalSlug
-          : `${translation.slug}${suffix}`;
         await tx.insert(blogPostTranslations).values({
           postId: post.id,
           organizationId: tenant.organizationId,
           locale: translation.locale,
           title: translation.title,
-          slug: translationSlug,
+          slug: translation.locale === LOCALES[0] ? canonicalSlug : await uniqueTranslationCopySlug(tx, tenant.organizationId, translation.locale, translation.slug),
           content: translation.content,
           excerpt: translation.excerpt,
           metaTitle: translation.metaTitle,
@@ -207,147 +202,87 @@ export const duplicateBlogPost = defineAction({
         });
       }
 
-      if (categories.length) {
-        await tx.insert(blogPostCategories).values(
-          categories.map(({ categoryId }) => ({ postId: post.id, categoryId })),
-        );
-      }
-      if (tags.length) {
-        await tx.insert(blogPostTags).values(
-          tags.map(({ tagId }) => ({ postId: post.id, tagId })),
-        );
-      }
-      if (seo.length) {
-        await tx.insert(blogPostSeo).values(
-          seo.map(({ id: _id, postId: _postId, ...values }) => ({ postId: post.id, ...values })),
-        );
-      }
+      if (categories.length) await tx.insert(blogPostCategories).values(categories.map(({ categoryId }) => ({ postId: post.id, categoryId })));
+      if (tags.length) await tx.insert(blogPostTags).values(tags.map(({ tagId }) => ({ postId: post.id, tagId })));
+      if (seo.length) await tx.insert(blogPostSeo).values(seo.map(({ id: _id, postId: _postId, ...rest }) => ({ postId: post.id, ...rest })));
 
       for (const gallery of galleries) {
-        const [newGallery] = await tx
-          .insert(blogPostGalleries)
-          .values({
-            postId: post.id,
-            title: gallery.title,
-            description: gallery.description,
-            sortOrder: gallery.sortOrder,
-          })
-          .returning();
-        const media = await db
-          .select()
-          .from(blogPostGalleryMedia)
-          .where(eq(blogPostGalleryMedia.galleryId, gallery.id));
-        if (media.length) {
-          await tx.insert(blogPostGalleryMedia).values(
-            media.map(({ galleryId: _galleryId, ...item }) => ({ galleryId: newGallery.id, ...item })),
-          );
+        const [newGallery] = await tx.insert(blogPostGalleries).values({ postId: post.id, title: gallery.title, description: gallery.description, sortOrder: gallery.sortOrder }).returning();
+        const media = await tx.select().from(blogPostGalleryMedia).where(eq(blogPostGalleryMedia.galleryId, gallery.id));
+        if (media.length) await tx.insert(blogPostGalleryMedia).values(media.map(({ galleryId: _old, ...item }) => ({ galleryId: newGallery.id, ...item })));
+      }
+
+      // Copy only outgoing editorial links whose target is still in the same tenant.
+      if (links.length) {
+        for (const link of links) {
+          const [target] = await tx.select({ id: blogPosts.id }).from(blogPosts).where(and(eq(blogPosts.id, link.targetPostId), tenantScope(tenant.organizationId))).limit(1);
+          if (target && target.id !== post.id) await tx.insert(blogPostLinks).values({ sourcePostId: post.id, targetPostId: target.id, linkType: link.linkType, sortOrder: link.sortOrder });
         }
       }
 
-      await tx.insert(blogPostRevisions).values({
-        postId: post.id,
-        authorId: user.id,
-        locale: translations[0].locale,
-        title: translations[0].title,
-        slug: canonicalSlug,
-        content: translations[0].content,
-        excerpt: translations[0].excerpt,
-        status: "DRAFT",
-        revisionNote: "Duplication de l'article",
-      });
-
+      await appendRevision(tx, post.id, user.id, "DRAFT", "Duplication initiale", translations[0].locale);
       return post;
     });
 
-    auditBlog(context, user.id, "BLOG_POST_CREATE", {
-      resource: "blog_posts",
-      resourceId: duplicated.id,
-      metadata: { organizationId: tenant.organizationId, duplicatedFrom: input.id },
-    });
+    auditBlog(context, user.id, "BLOG_POST_CREATE", { resource: "blog_posts", resourceId: duplicated.id, metadata: { organizationId: tenant.organizationId, duplicatedFrom: input.id } });
     invalidateBlogCache();
     return { id: duplicated.id, slug: duplicated.slug };
   },
 });
 
 export const restoreBlogPostRevision = defineAction({
-  input: z.object({
-    postId: z.uuid(),
-    revisionId: z.uuid(),
-    organizationId: blogOrganizationIdSchema,
-  }),
+  input: z.object({ postId: z.uuid(), revisionId: z.uuid(), organizationId: blogOrganizationIdSchema }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
     const user = await assertBlogPermission(context, tenant, { blog: ["update"] });
     await assertPostInTenant(input.postId, tenant);
     const db = getDrizzle();
-
-    const [revision] = await db
-      .select()
-      .from(blogPostRevisions)
-      .where(and(eq(blogPostRevisions.id, input.revisionId), eq(blogPostRevisions.postId, input.postId)))
-      .limit(1);
-    if (!revision) {
-      throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." });
-    }
+    const [revision] = await db.select().from(blogPostRevisions).where(and(eq(blogPostRevisions.id, input.revisionId), eq(blogPostRevisions.postId, input.postId))).limit(1);
+    if (!revision) throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." });
 
     await db.transaction(async (tx) => {
-      const [translation] = await tx
-        .select()
-        .from(blogPostTranslations)
-        .where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale)))
-        .limit(1);
-
+      const [translation] = await tx.select().from(blogPostTranslations).where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale))).limit(1);
       if (translation) {
-        await tx
-          .update(blogPostTranslations)
-          .set({
-            title: revision.title,
-            slug: revision.slug,
-            content: revision.content,
-            excerpt: revision.excerpt,
-          })
-          .where(eq(blogPostTranslations.id, translation.id));
+        await tx.update(blogPostTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(eq(blogPostTranslations.id, translation.id));
       } else {
-        await tx.insert(blogPostTranslations).values({
-          postId: input.postId,
-          organizationId: tenant.organizationId,
-          locale: revision.locale,
-          title: revision.title,
-          slug: revision.slug,
-          content: revision.content,
-          excerpt: revision.excerpt,
-        });
+        await tx.insert(blogPostTranslations).values({ postId: input.postId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt });
       }
-
-      await tx
-        .update(blogPosts)
-        .set({
-          slug: revision.slug,
-          status: revision.status,
-          publishedAt: revision.status === "PUBLISHED" ? new Date() : null,
-          updatedBy: user.id,
-        })
-        .where(eq(blogPosts.id, input.postId));
-
-      await tx.insert(blogPostRevisions).values({
-        postId: input.postId,
-        authorId: user.id,
-        locale: revision.locale,
-        title: revision.title,
-        slug: revision.slug,
-        content: revision.content,
-        excerpt: revision.excerpt,
-        status: revision.status,
-        revisionNote: `Restauration de la révision ${revision.id}`,
-      });
+      const status = revision.status;
+      await tx.update(blogPosts).set({ slug: revision.slug, status, publishedAt: status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
+      await appendRevision(tx, input.postId, user.id, status, `Restauration de la révision ${revision.id}`, revision.locale);
     });
 
-    auditBlog(context, user.id, "BLOG_POST_UPDATE", {
-      resource: "blog_posts",
-      resourceId: input.postId,
-      metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId },
-    });
+    auditBlog(context, user.id, "BLOG_POST_UPDATE", { resource: "blog_posts", resourceId: input.postId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } });
     invalidateBlogCache();
     return { success: true };
   },
 });
+
+function tenantScope(organizationId: string | null) {
+  return organizationId === null ? isNull(blogPosts.organizationId) : eq(blogPosts.organizationId, organizationId);
+}
+
+function ascLocale() {
+  return blogPostTranslations.locale;
+}
+
+async function uniqueCopySlug(db: ReturnType<typeof getDrizzle>, organizationId: string | null, sourceSlug: string) {
+  const base = `${sourceSlug}-copy`;
+  let candidate = base;
+  for (let i = 2; ; i += 1) {
+    const [collision] = await db.select({ id: blogPosts.id }).from(blogPosts).where(and(eq(blogPosts.slug, candidate), tenantScope(organizationId))).limit(1);
+    if (!collision) return candidate;
+    candidate = `${base}-${i}`;
+  }
+}
+
+async function uniqueTranslationCopySlug(tx: any, organizationId: string | null, locale: string, sourceSlug: string) {
+  const base = `${sourceSlug}-copy`;
+  let candidate = base;
+  for (let i = 2; ; i += 1) {
+    const org = organizationId === null ? isNull(blogPostTranslations.organizationId) : eq(blogPostTranslations.organizationId, organizationId);
+    const [collision] = await tx.select({ id: blogPostTranslations.id }).from(blogPostTranslations).where(and(eq(blogPostTranslations.slug, candidate), eq(blogPostTranslations.locale, locale), org)).limit(1);
+    if (!collision) return candidate;
+    candidate = `${base}-${i}`;
+  }
+}
