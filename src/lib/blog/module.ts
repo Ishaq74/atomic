@@ -1,8 +1,7 @@
 import type { AtomicModuleDefinition } from "@/lib/cms/module-contract";
 import { defineModuleCapabilities } from "@/lib/cms/module-contract";
-import type { BlogPostFilters, BlogPostListItem } from "@/lib/blog/types";
 
-export const blogModule: AtomicModuleDefinition<BlogPostListItem, BlogPostFilters> = {
+export const blogModule: AtomicModuleDefinition = {
   id: "blog",
   entity: "blog_post",
   capabilities: defineModuleCapabilities({
