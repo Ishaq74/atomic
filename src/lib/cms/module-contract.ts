@@ -1,5 +1,6 @@
 /** Capabilities that a first-class Atomic module may opt into. */
 export interface AtomicModuleCapabilities {
+  content: boolean;
   localization: boolean;
   media: boolean;
   seo: boolean;
@@ -8,13 +9,16 @@ export interface AtomicModuleCapabilities {
   publication: boolean;
   revisions: boolean;
   locks: boolean;
+  engagement: boolean;
   moderation: boolean;
   notifications: boolean;
   audit: boolean;
+  cache: boolean;
 }
 
 /** Concrete platform implementation references used by an opted-in module. */
 export interface AtomicModuleCapabilityProviders {
+  readonly content: string;
   readonly localization: string;
   readonly media: string;
   readonly seo: string;
@@ -23,9 +27,11 @@ export interface AtomicModuleCapabilityProviders {
   readonly publication: string;
   readonly revisions: string;
   readonly locks: string;
+  readonly engagement: string;
   readonly moderation: string;
   readonly notifications: string;
   readonly audit: string;
+  readonly cache: string;
 }
 
 /** Standard presentation grammar for first-class modules. */
@@ -36,12 +42,6 @@ export interface AtomicModulePresentations {
   readonly ui: readonly string[];
 }
 
-/**
- * Domain modules own entities and semantics. Platform capabilities are shared
- * and explicitly opted into. Every enabled capability must name the actual
- * Atomic implementation that provides it. This is intentionally metadata, not
- * a second service layer: existing Atomic implementations remain authoritative.
- */
 export interface AtomicModuleDefinition {
   readonly id: string;
   readonly entity: string;
