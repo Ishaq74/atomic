@@ -1,7 +1,7 @@
-import type { AdminResourceDefinition } from "@/lib/cms/resource-contract";
-import type { BlogPostFilters, BlogPostListItem } from "@/lib/blog/types";
+import { assertResourceCompatibility, type AdminResourceDefinition } from "@/lib/cms/resource-contract";
+import { blogModule } from "@/lib/blog/module";
 
-export const blogPostAdminResource: AdminResourceDefinition<BlogPostFilters, BlogPostListItem> = {
+export const blogPostAdminResource: AdminResourceDefinition = {
   id: "blog-post",
   entity: "blog_post",
   actions: {
@@ -22,3 +22,5 @@ export const blogPostAdminResource: AdminResourceDefinition<BlogPostFilters, Blo
     single: ["default"],
   },
 };
+
+assertResourceCompatibility(blogModule, blogPostAdminResource);
