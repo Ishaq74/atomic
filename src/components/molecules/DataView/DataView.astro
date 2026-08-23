@@ -25,24 +25,19 @@ const {
 <div class:list={['data-view', className]} data-mode="auto">
   <div class="mb-4 flex flex-wrap items-center gap-3">
     <slot name="toolbar-start" />
-    <div class="ml-auto flex items-center gap-3">
-      <slot name="toolbar-end" />
-      {showModeSelector && (
+    {showModeSelector ? (
+      <div class="ml-auto flex items-center gap-3">
+        <slot name="toolbar-end" />
         <NativeSelect class="data-view-mode w-auto text-sm" aria-label={`${tableLabel} / ${cardsLabel}`}>
           <NativeSelectOption value="table">{tableLabel}</NativeSelectOption>
           <NativeSelectOption value="cards">{cardsLabel}</NativeSelectOption>
         </NativeSelect>
-      )}
-    </div>
+      </div>
+    ) : <slot name="toolbar-end" />}
   </div>
 
-  <div class="data-view-table" data-view="table">
-    <slot name="table" />
-  </div>
-
-  <div class="data-view-cards" data-view="cards">
-    <slot name="cards" />
-  </div>
+  <div class="data-view-table" data-view="table"><slot name="table" /></div>
+  <div class="data-view-cards" data-view="cards"><slot name="cards" /></div>
 </div>
 
 <style>
