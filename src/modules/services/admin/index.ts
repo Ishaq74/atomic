@@ -1,0 +1,1 @@
+export { serviceAdminResource } from "./resource";
