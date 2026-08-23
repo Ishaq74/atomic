@@ -23,11 +23,13 @@ const {
 
 <script>
   const dirtyForms = new WeakMap<HTMLFormElement, { dirty: boolean; submitted: boolean }>();
+  const trackedForms = new Set<HTMLFormElement>();
   let beforeUnloadBound = false;
 
   function bindAdminForm(form: HTMLFormElement) {
     if (dirtyForms.has(form)) return;
     dirtyForms.set(form, { dirty: false, submitted: false });
+    trackedForms.add(form);
 
     const markDirty = () => {
       const state = dirtyForms.get(form);
@@ -50,6 +52,10 @@ const {
   }
 
   function initAdminFormShell() {
+    for (const form of trackedForms) {
+      if (!form.isConnected) trackedForms.delete(form);
+    }
+
     document.querySelectorAll<HTMLElement>("[data-admin-form-shell]").forEach((shell) => {
       const selector = shell.dataset.formSelector ?? "form[data-admin-form]";
       shell.querySelectorAll<HTMLFormElement>(selector).forEach(bindAdminForm);
@@ -58,9 +64,9 @@ const {
     if (!beforeUnloadBound) {
       beforeUnloadBound = true;
       window.addEventListener("beforeunload", (event) => {
-        for (const form of document.querySelectorAll<HTMLFormElement>("form[data-admin-form], form#blog-post-form")) {
+        for (const form of trackedForms) {
           const state = dirtyForms.get(form);
-          if (state?.dirty && !state.submitted) {
+          if (state?.dirty && !state.submitted && form.isConnected) {
             event.preventDefault();
             event.returnValue = "";
             return;
