@@ -21,6 +21,13 @@ describe("Atomic module contracts", () => {
     });
   });
 
+  it("binds every enabled capability to an existing Atomic implementation", () => {
+    for (const capability of Object.keys(blogModule.capabilities) as Array<keyof typeof blogModule.capabilities>) {
+      expect(blogModule.capabilities[capability]).toBe(true);
+      expect(blogModule.capabilityProviders[capability]).toMatch(/^src\//);
+    }
+  });
+
   it("declares the shared cards/lists/single/ui presentation grammar", () => {
     expect(blogModule.presentations).toEqual({
       card: ["default", "compact", "featured"],
