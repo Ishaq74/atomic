@@ -9,7 +9,7 @@ Every future module such as Blog, Services, Formations, Courses or Shop owns its
 Each module declares:
 
 - a stable `id` and canonical `entity`;
-- explicit platform capabilities such as localization, media, SEO, taxonomy, search, publication, revisions, locks, moderation, notifications and audit;
+- explicit platform capabilities: content, localization, media, SEO, taxonomy, search, publication, revisions, locks, engagement, moderation, notifications, audit and cache;
 - a presentation grammar shared across public, search and admin contexts: `card`, `list`, `single`, `ui`.
 
 The module registry is explicit and deterministic. Registration happens once during application bootstrap; module discovery is not dynamic or filesystem-driven.
@@ -46,25 +46,29 @@ Shared UI primitives must remain domain-neutral. A Blog table and a Product tabl
 
 The platform owns cross-module behavior for:
 
+- content editing/rendering/sanitization/internal-link resolution;
 - authentication, RBAC and tenant isolation;
 - audit;
 - media storage, validation and lifecycle;
 - localization and localized routing;
 - SEO metadata and structured data;
-- taxonomy primitives;
+- taxonomy primitives and hierarchy invariants;
 - search/indexing;
 - publication workflows;
 - revisions and editing locks;
+- engagement capabilities such as comments, reviews, reactions and favorites;
 - moderation;
 - notifications;
 - caching and invalidation;
-- administrative resource UX.
+- administrative resource UX, responsive data views and dirty-form protection.
+
+The current implementations remain authoritative in their established Atomic locations. The CMS capability catalog binds modules to those implementations without duplicating services merely to make the filesystem look uniform.
 
 ## Workflow rule
 
 The workflow core validates transitions. Each module defines its own states and legal transitions. Workflow execution remains in the domain action because authorization, revisions, audit and cache invalidation are domain-specific.
 
-The Blog now consumes the shared workflow definition; its legacy standalone workflow module was removed to avoid competing sources of truth.
+The Blog consumes the shared workflow definition; its legacy standalone workflow module was removed to avoid competing sources of truth.
 
 ## Transaction boundary
 
