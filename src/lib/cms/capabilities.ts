@@ -3,11 +3,15 @@ import type { ModuleCapability } from "./module-contract";
 export interface CmsCapabilityDefinition {
   readonly id: ModuleCapability;
   readonly purpose: string;
-  /** Authoritative implementation locations in the existing Atomic platform. */
   readonly implementations: readonly string[];
 }
 
 export const CMS_CAPABILITIES: Readonly<Record<ModuleCapability, CmsCapabilityDefinition>> = {
+  content: {
+    id: "content",
+    purpose: "Shared editorial content editing, rendering, sanitization and internal-link resolution.",
+    implementations: ["src/components/content/ContentEditor.astro", "src/components/content/RichContent.astro", "src/lib/content/editor-helpers.ts", "src/lib/content/internal-link-resolver.ts"],
+  },
   localization: {
     id: "localization",
     purpose: "Locale validation, localized routing and localized editorial UI/content.",
@@ -25,8 +29,8 @@ export const CMS_CAPABILITIES: Readonly<Record<ModuleCapability, CmsCapabilityDe
   },
   taxonomy: {
     id: "taxonomy",
-    purpose: "Explicit category/tag structures, localized terms and domain relations.",
-    implementations: ["src/database/schemas/blog.schema.ts", "src/database/loaders/blog.loader.ts", "src/actions/blog/category.ts", "src/actions/blog/tag.ts"],
+    purpose: "Explicit category/tag structures, localized terms and domain relations with shared hierarchy invariants.",
+    implementations: ["src/database/schemas/blog.schema.ts", "src/database/loaders/blog.loader.ts", "src/actions/blog/category.ts", "src/actions/blog/tag.ts", "src/lib/cms/taxonomy.ts"],
   },
   search: {
     id: "search",
@@ -48,6 +52,11 @@ export const CMS_CAPABILITIES: Readonly<Record<ModuleCapability, CmsCapabilityDe
     purpose: "Concurrent-editor protection with expiry and refresh semantics.",
     implementations: ["src/database/schemas/blog.schema.ts", "src/actions/blog/post.ts", "src/components/blog/AdminPostForm.astro"],
   },
+  engagement: {
+    id: "engagement",
+    purpose: "Domain-opt-in comments, reviews, reactions and favorites primitives.",
+    implementations: ["src/database/schemas/blog.schema.ts", "src/actions/blog/comment.ts", "src/actions/blog/review.ts", "src/actions/blog/reaction.ts"],
+  },
   moderation: {
     id: "moderation",
     purpose: "Comments/reviews/reports moderation and tenant-scoped moderation queues.",
@@ -62,6 +71,11 @@ export const CMS_CAPABILITIES: Readonly<Record<ModuleCapability, CmsCapabilityDe
     id: "audit",
     purpose: "Structured audit events shared by platform and domain actions.",
     implementations: ["src/lib/audit.ts", "src/actions/blog/_helpers.ts"],
+  },
+  cache: {
+    id: "cache",
+    purpose: "Shared cache reads and targeted invalidation used by CMS loaders/actions.",
+    implementations: ["src/database/cache.ts", "src/actions/blog/_helpers.ts", "src/database/loaders/blog.loader.ts"],
   },
 };
 
