@@ -8,6 +8,7 @@ export * from "@/modules/blog/validation";
 export * from "@/modules/blog/permissions";
 export * from "@/modules/blog/search";
 export * from "@/modules/blog/seo";
+export * from "@/modules/blog/utils";
 export * from "@/modules/blog/i18n";
 export * from "@/modules/blog/components/cards";
 export * from "@/modules/blog/components/lists";
