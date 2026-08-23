@@ -1,0 +1,41 @@
+---
+interface Props {
+  message: string;
+  formSelector?: string;
+}
+
+const { message, formSelector = "form[data-admin-form]" } = Astro.props;
+---
+
+<script define:vars={{ message, formSelector }}>
+  function initDirtyGuards() {
+    document.querySelectorAll<HTMLFormElement>(formSelector).forEach((form) => {
+      if (form.dataset.dirtyGuardBound === "true") return;
+      form.dataset.dirtyGuardBound = "true";
+      let dirty = false;
+      let submitted = false;
+      const markDirty = () => { if (!submitted) dirty = true; };
+      form.addEventListener("input", markDirty);
+      form.addEventListener("change", markDirty);
+      form.addEventListener("submit", () => { submitted = true; dirty = false; });
+      form.addEventListener("reset", () => { dirty = false; });
+      window.addEventListener("beforeunload", (event) => {
+        if (!dirty || submitted) return;
+        event.preventDefault();
+        event.returnValue = message;
+      });
+      document.addEventListener("astro:before-preparation", (event) => {
+        if (!dirty || submitted) return;
+        const navigation = event as CustomEvent<{ loader: { href: URL } }>;
+        if (window.confirm(message)) {
+          dirty = false;
+          return;
+        }
+        navigation.preventDefault?.();
+      });
+    });
+  }
+
+  initDirtyGuards();
+  document.addEventListener("astro:after-swap", initDirtyGuards);
+</script>
