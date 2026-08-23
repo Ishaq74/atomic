@@ -10,6 +10,7 @@ import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
 import BlogAdminPage from "@/components/blog/BlogAdminPage.astro";
 import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
+import { LOCALES, type Locale } from "@i18n/config";
 
 export const prerender = false;
 const result = await requireAuth(Astro);
@@ -34,8 +35,11 @@ const blogT = await getBlogTranslations(locale);
 const p = Astro.url.searchParams;
 const page = Math.max(1, Number(p.get("page") ?? "1") || 1);
 const boolParam = (key: string) => p.get(key) === null ? undefined : p.get(key) === "true";
+const requestedLocale = p.get("translationLocale") as Locale | null;
+const translationLocale = requestedLocale && LOCALES.includes(requestedLocale) ? requestedLocale : locale;
 const filters = {
   page,
+  translationLocale,
   search: p.get("search") || undefined,
   status: (p.get("status") || undefined) as import("@/lib/blog/constants").BlogPostStatus | undefined,
   categoryId: p.get("categoryId") || undefined,
