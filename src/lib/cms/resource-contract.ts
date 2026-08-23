@@ -17,7 +17,17 @@ export interface ResourcePresentationVariants {
   readonly single?: readonly string[];
 }
 
-export interface ResourceCapabilities {
+/** Product-management capabilities shared by every admin resource. */
+export interface ResourceManagementCapabilities {
+  readonly list?: boolean;
+  readonly search?: boolean;
+  readonly filters?: boolean;
+  readonly sort?: boolean;
+  readonly pagination?: boolean;
+  readonly stats?: boolean;
+}
+
+export interface ResourceActionCapabilities {
   readonly create?: boolean;
   readonly read?: boolean;
   readonly update?: boolean;
@@ -33,15 +43,14 @@ export interface ResourceCapabilities {
 export interface AdminResourceDefinition {
   readonly id: string;
   readonly entity: string;
-  readonly actions: Readonly<ResourceCapabilities>;
+  readonly management: Readonly<ResourceManagementCapabilities>;
+  readonly actions: Readonly<ResourceActionCapabilities>;
   readonly presentation?: Readonly<ResourcePresentationVariants>;
+  /** Permission namespace used by the domain's existing RBAC adapter. */
+  readonly permissionNamespace?: string;
 }
 
-export type ResourceActionResult =
-  | { readonly ok: true }
-  | { readonly ok: false; readonly reason: string };
-
-const ACTION_CAPABILITY_REQUIREMENTS: Readonly<Partial<Record<keyof ResourceCapabilities, keyof AtomicModuleDefinition["capabilities"]>>> = {
+const ACTION_CAPABILITY_REQUIREMENTS: Readonly<Partial<Record<keyof ResourceActionCapabilities, keyof AtomicModuleDefinition["capabilities"]>>> = {
   publish: "publication",
   unpublish: "publication",
   archive: "publication",
@@ -57,8 +66,13 @@ export function assertResourceCompatibility(
   }
 
   for (const [action, capability] of Object.entries(ACTION_CAPABILITY_REQUIREMENTS)) {
-    if (resource.actions[action as keyof ResourceCapabilities] === true && module.capabilities[capability! as keyof AtomicModuleDefinition["capabilities"]] !== true) {
+    if (resource.actions[action as keyof ResourceActionCapabilities] === true && module.capabilities[capability! as keyof AtomicModuleDefinition["capabilities"]] !== true) {
       throw new Error(`Resource ${resource.id} enables ${action}, but module ${module.id} does not enable ${capability}.`);
     }
   }
+
+  if (resource.management.filters && !resource.management.list) throw new Error(`Resource ${resource.id} enables filters without list capability.`);
+  if (resource.management.search && !resource.management.list) throw new Error(`Resource ${resource.id} enables search without list capability.`);
+  if (resource.management.sort && !resource.management.list) throw new Error(`Resource ${resource.id} enables sort without list capability.`);
+  if (resource.management.pagination && !resource.management.list) throw new Error(`Resource ${resource.id} enables pagination without list capability.`);
 }
