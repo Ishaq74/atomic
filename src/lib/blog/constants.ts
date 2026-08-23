@@ -19,12 +19,12 @@ export const BLOG_POST_WORKFLOW: WorkflowDefinition<BlogPostStatus> = {
   ],
 };
 
-export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = {
-  DRAFT: ["PUBLISHED", "ARCHIVED", "DELETED"],
-  PUBLISHED: ["DRAFT", "ARCHIVED", "DELETED"],
-  ARCHIVED: ["DRAFT", "DELETED"],
-  DELETED: ["DRAFT"],
-};
+export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = Object.fromEntries(
+  BLOG_POST_STATUSES.map((status) => [
+    status,
+    BLOG_POST_WORKFLOW.transitions.filter((transition) => transition.from === status).map((transition) => transition.to),
+  ]),
+) as Record<BlogPostStatus, readonly BlogPostStatus[]>;
 
 export function canTransitionBlogPost(from: BlogPostStatus, to: BlogPostStatus): boolean {
   return canTransition(BLOG_POST_WORKFLOW, from, to);
