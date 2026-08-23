@@ -8,7 +8,7 @@ import {
   defineModuleCapabilityProviders,
   defineModulePresentations,
 } from "@/lib/cms/module-contract";
-import { blogCapabilityProviders } from "@/lib/blog/capabilities";
+import { blogCapabilityProviders } from "@/modules/blog/capabilities";
 
 export const blogModule: AtomicModuleDefinition = {
   id: "blog",
