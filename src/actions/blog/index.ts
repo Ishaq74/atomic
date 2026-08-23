@@ -8,6 +8,14 @@ export {
   listBlogPostRevisions,
 } from "./post";
 
+export {
+  unpublishBlogPost,
+  archiveBlogPost,
+  restoreBlogPost,
+  duplicateBlogPost,
+  restoreBlogPostRevision,
+} from "./lifecycle";
+
 export { recordBlogPostView } from "./view";
 
 export {
