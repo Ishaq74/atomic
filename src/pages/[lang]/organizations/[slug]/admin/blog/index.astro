@@ -2,7 +2,8 @@
 import { requireAuth } from "@/lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { getBlogTranslations } from "@i18n/utils";
-import { getBlogCategories, getBlogTags, getBlogModerationQueue, getBlogPostsForAdmin } from "@database/loaders/blog.loader";
+import { getBlogCategories, getBlogTags, getBlogModerationQueue } from "@database/loaders/blog.loader";
+import { getBlogAdminPostData } from "@database/loaders/blog-admin.loader";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
@@ -10,86 +11,38 @@ import BlogAdminPage from "@/components/blog/BlogAdminPage.astro";
 import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 
 export const prerender = false;
-
 const result = await requireAuth(Astro);
-if ('redirect' in result) return result.redirect;
-
+if ("redirect" in result) return result.redirect;
 const { user, locale, authT } = result;
 const orgSlug = Astro.params.slug;
-if (!orgSlug) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
-
+if (!orgSlug) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
 const orgData = await fetchOrgData(Astro.request.headers, orgSlug);
-if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes['dashboard']}`);
-
+if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
 const { org, members } = orgData;
 const activeOrgRole = getUserOrgRole(members, user.id);
 const tenant = resolveBlogTenant({ organizationId: org.id });
 const [canAccessBlog, canPublish, canDelete] = await Promise.all([
-  hasBlogPermission(Astro, tenant, {
-    blog: ["read"],
-    blogCategory: ["read"],
-    blogTag: ["read"],
-    blogComment: ["read"],
-    blogReview: ["read"],
-  }),
+  hasBlogPermission(Astro, tenant, { blog: ["read"], blogCategory: ["read"], blogTag: ["read"], blogComment: ["read"], blogReview: ["read"] }),
   hasBlogPermission(Astro, tenant, { blog: ["publish"] }),
   hasBlogPermission(Astro, tenant, { blog: ["delete"] }),
 ]);
-if (!canAccessBlog) {
-  return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
-}
-
+if (!canAccessBlog) return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
 const blogT = await getBlogTranslations(locale);
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
 const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
 const basePublicUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
-
-const [{ rows, meta }, categoryRows, tagRows, moderation] = await Promise.all([
-  getBlogPostsForAdmin(org.id, locale, { page }),
+const [{ rows, meta, stats }, categoryRows, tagRows, moderation] = await Promise.all([
+  getBlogAdminPostData(org.id, locale, { page }),
   getBlogCategories(org.id, locale),
   getBlogTags(org.id, locale),
   getBlogModerationQueue(org.id, { limit: 10 }),
 ]);
-
-const categories = categoryRows.map((item) => ({
-  id: item.id,
-  slug: item.slug,
-  name: item.translation?.name ?? item.slug,
-  description: item.translation?.description ?? null,
-  color: item.color,
-  icon: item.icon,
-  parentId: item.parentId,
-  sortOrder: item.sortOrder,
-  postCount: item.postCount,
-}));
-
-const tags = tagRows.map((item) => ({
-  id: item.id,
-  slug: item.slug,
-  name: item.translation?.name ?? item.slug,
-  color: item.color,
-  postCount: item.postCount,
-}));
+const categories = categoryRows.map((item) => ({ id: item.id, slug: item.slug, name: item.translation?.name ?? item.slug, description: item.translation?.description ?? null, color: item.color, icon: item.icon, parentId: item.parentId, sortOrder: item.sortOrder, postCount: item.postCount }));
+const tags = tagRows.map((item) => ({ id: item.id, slug: item.slug, name: item.translation?.name ?? item.slug, color: item.color, postCount: item.postCount }));
 ---
-
 <BaseLayout title={`${authT.organizations.blog.title} — ${org.name}`} description={authT.organizations.blog.description}>
   <AuthLayout title={org.name}>
     <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} activeItem="blog" orgRole={activeOrgRole} />
-    <BlogAdminPage
-      locale={locale}
-      blogT={blogT}
-      title={`${authT.organizations.blog.title} — ${org.name}`}
-      posts={rows as never}
-      postsMeta={meta}
-      categories={categories}
-      tags={tags}
-      moderation={moderation as never}
-      baseAdminUrl={baseAdminUrl}
-      basePublicUrl={basePublicUrl}
-      organizationId={org.id}
-      userId={user.id}
-      canPublish={canPublish}
-      canDelete={canDelete}
-    />
+    <BlogAdminPage locale={locale} blogT={blogT} title={`${authT.organizations.blog.title} — ${org.name}`} posts={rows} postsMeta={meta} stats={stats} categories={categories} tags={tags} moderation={moderation as never} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} userId={user.id} canPublish={canPublish} canDelete={canDelete} />
   </AuthLayout>
 </BaseLayout>
