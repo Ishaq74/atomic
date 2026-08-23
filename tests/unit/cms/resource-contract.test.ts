@@ -5,6 +5,7 @@ const moduleDefinition = {
   id: "blog",
   entity: "blog_post",
   capabilities: {
+    content: true,
     localization: true,
     media: true,
     seo: true,
@@ -13,9 +14,27 @@ const moduleDefinition = {
     publication: true,
     revisions: true,
     locks: true,
+    engagement: true,
     moderation: true,
     notifications: true,
     audit: true,
+    cache: true,
+  },
+  capabilityProviders: {
+    content: "content",
+    localization: "localization",
+    media: "media",
+    seo: "seo",
+    taxonomy: "taxonomy",
+    search: "search",
+    publication: "publication",
+    revisions: "revisions",
+    locks: "locks",
+    engagement: "engagement",
+    moderation: "moderation",
+    notifications: "notifications",
+    audit: "audit",
+    cache: "cache",
   },
   presentations: {
     card: ["default"],
@@ -41,7 +60,10 @@ describe("Atomic admin resource contract", () => {
       entity: "blog_post",
       actions: { publish: true },
     };
-    const withoutPublication = { ...moduleDefinition, capabilities: { ...moduleDefinition.capabilities, publication: false } } as const;
+    const withoutPublication = {
+      ...moduleDefinition,
+      capabilities: { ...moduleDefinition.capabilities, publication: false },
+    } as const;
     expect(() => assertResourceCompatibility(withoutPublication, resource)).toThrow("does not enable publication");
   });
 
@@ -52,5 +74,14 @@ describe("Atomic admin resource contract", () => {
       actions: { read: true },
     };
     expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("owns blog_post");
+  });
+
+  it("rejects list-dependent management without list support", () => {
+    const resource: AdminResourceDefinition = {
+      id: "resource",
+      entity: "blog_post",
+      management: { search: true },
+    };
+    expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("without list capability");
   });
 });
