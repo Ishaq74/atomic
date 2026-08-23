@@ -1,0 +1,30 @@
+---
+interface Action {
+  id: string;
+  label: string;
+  disabled?: boolean;
+  destructive?: boolean;
+}
+interface Props {
+  selectedCount: number;
+  actions?: readonly Action[];
+}
+const { selectedCount, actions = [] } = Astro.props;
+---
+{selectedCount > 0 ? (
+  <div class="flex flex-wrap items-center gap-2 rounded-lg border bg-background p-3" data-admin-resource-bulk-actions>
+    <span class="text-sm font-medium">{selectedCount}</span>
+    <span class="text-sm text-muted-foreground"><slot name="selected-label">selected</slot></span>
+    {actions.map((action) => (
+      <button
+        type="button"
+        class:list={["inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium", action.destructive ? "text-error hover:bg-error/10" : "hover:bg-muted"]}
+        data-bulk-action={action.id}
+        disabled={action.disabled}
+      >
+        {action.label}
+      </button>
+    ))}
+    <slot name="custom-actions" />
+  </div>
+) : null}
