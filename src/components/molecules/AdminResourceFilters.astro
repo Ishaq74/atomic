@@ -1,0 +1,10 @@
+---
+interface Props {
+  label?: string;
+}
+const { label } = Astro.props;
+---
+
+<form method="get" class="grid w-full gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-5" aria-label={label}>
+  <slot />
+</form>
