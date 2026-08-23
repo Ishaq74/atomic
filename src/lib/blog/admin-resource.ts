@@ -4,6 +4,14 @@ import { blogModule } from "@/lib/blog/module";
 export const blogPostAdminResource: AdminResourceDefinition = {
   id: "blog-post",
   entity: "blog_post",
+  management: {
+    list: true,
+    search: true,
+    filters: true,
+    sort: true,
+    pagination: true,
+    stats: true,
+  },
   actions: {
     create: true,
     read: true,
@@ -21,6 +29,7 @@ export const blogPostAdminResource: AdminResourceDefinition = {
     list: ["default", "dense"],
     single: ["default"],
   },
+  permissionNamespace: "blog",
 };
 
 assertResourceCompatibility(blogModule, blogPostAdminResource);
