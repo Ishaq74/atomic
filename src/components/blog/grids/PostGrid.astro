@@ -1,9 +1,7 @@
 ---
-import type { Locale } from "@i18n/config";
-import type { BlogTranslations } from "@i18n/config";
-import type { BlogPostListItem } from "@lib/blog/types";
-import PostCardGrid from "@/components/blog/cards/PostCardGrid.astro";
-import PostCardHorizontal from "@/components/blog/cards/PostCardHorizontal.astro";
+import type { Locale, BlogTranslations } from "@/i18n/config";
+import type { BlogPostListItem } from "@modules/blog/domain";
+import { PostCardGrid, PostCardHorizontal } from "@modules/blog/components/cards";
 
 interface Props {
   locale: Locale;
