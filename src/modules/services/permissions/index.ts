@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "astro/zod";
 import { getDrizzle } from "@database/drizzle";
 import { mediaFiles, serviceCategories, serviceTags, services } from "@database/schemas";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { statement } from "@/lib/permissions";
 
 export type ServicePermissions = { [K in keyof typeof statement]?: (typeof statement)[K][number][] };
@@ -70,8 +71,7 @@ export async function assertServiceMediaInTenant(mediaId: string, tenant: Servic
   return media;
 }
 
-export function serviceRateLimit(context: ActionAPIContext, userId: string, scope: string) {
-  const { checkRateLimit } = require("@/lib/rate-limit") as typeof import("@/lib/rate-limit");
+export function serviceRateLimit(_context: ActionAPIContext, userId: string, scope: string) {
   const key = `service-${scope.replace(/:/g, "_")}:${userId}`;
   const result = checkRateLimit(key, { window: 60, max: 30 });
   if (!result.allowed) throw new ActionError({ code: "TOO_MANY_REQUESTS", message: "Trop de requêtes. Veuillez réessayer dans quelques instants." });
