@@ -6,6 +6,7 @@ import { getBlogPostEditorData } from "@database/loaders/blog-admin-editor.loade
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
+import AdminFormShell from "@organisms/AdminFormShell.astro";
 import AdminPostForm from "@/components/blog/AdminPostForm.astro";
 import type { BlogPostEditorData } from "@/lib/blog/editor-types";
 
@@ -47,6 +48,8 @@ const editorData: BlogPostEditorData = {
 <BaseLayout title={blogT.admin.editPost} description={blogT.admin.title}>
   <AuthLayout title={blogT.admin.editPost}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
-    <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} />
+    <AdminFormShell title={blogT.admin.editPost} description={blogT.admin.title} message={blogT.admin.feedback.unsavedChanges}>
+      <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} />
+    </AdminFormShell>
   </AuthLayout>
 </BaseLayout>
