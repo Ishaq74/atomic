@@ -1,7 +1,24 @@
 import type { Locale } from "@i18n/config";
+import { ActionError } from "astro:actions";
 
 export const BLOG_POST_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"] as const;
 export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number];
+
+export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = {
+  DRAFT: ["PUBLISHED", "ARCHIVED", "DELETED"],
+  PUBLISHED: ["DRAFT", "ARCHIVED", "DELETED"],
+  ARCHIVED: ["DRAFT", "DELETED"],
+  DELETED: ["DRAFT"],
+};
+
+export function assertValidBlogPostTransition(from: BlogPostStatus, to: BlogPostStatus): void {
+  if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
+    throw new ActionError({
+      code: "BAD_REQUEST",
+      message: `Invalid blog post status transition: ${from} → ${to}.`,
+    });
+  }
+}
 
 export const BLOG_COMMENT_STATUSES = ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] as const;
 export type BlogCommentStatus = (typeof BLOG_COMMENT_STATUSES)[number];
@@ -41,28 +58,9 @@ export const BLOG_DEFAULTS = {
 } as const;
 
 export const BLOG_RESERVED_SLUGS = new Set([
-  "admin",
-  "api",
-  "auth",
-  "rss",
-  "sitemap",
-  "search",
-  "category",
-  "categories",
-  "tag",
-  "tags",
-  "author",
-  "authors",
-  "page",
-  "pages",
-  "new",
-  "edit",
-  "preview",
-  "index",
-  "create",
-  "delete",
-  "moderate",
-  "stats",
+  "admin", "api", "auth", "rss", "sitemap", "search", "category", "categories",
+  "tag", "tags", "author", "authors", "page", "pages", "new", "edit", "preview",
+  "index", "create", "delete", "moderate", "stats",
 ]);
 
 export const BLOG_SEO_LIMITS = {
