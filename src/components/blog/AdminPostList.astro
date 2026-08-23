@@ -118,6 +118,14 @@ for (let i = 1; i <= meta.totalPages; i++) {
               <div class="space-y-0.5">
                 <p class="font-medium">{row.translation?.title ?? row.post.id}</p>
                 <p class="text-xs text-muted-foreground">{publicPathLabel}</p>
+                {row.author?.name && <p class="text-xs text-muted-foreground">{row.author.name}</p>}
+                {row.categories.length > 0 && (
+                  <div class="flex flex-wrap gap-1 pt-1">
+                    {row.categories.slice(0, 3).map((category) => (
+                      <Badge variant="outline" size="sm">{category.name ?? category.slug}</Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </TableCell>
             <TableCell>
@@ -125,12 +133,10 @@ for (let i = 1; i <= meta.totalPages; i++) {
                 {blogT.statuses[row.post.status as keyof typeof blogT.statuses] ?? row.post.status}
               </Badge>
             </TableCell>
-            <TableCell>
-              {row.post.seoScore ?? "—"}
-            </TableCell>
+            <TableCell>{row.post.seoScore ?? "—"}</TableCell>
             <TableCell>{row.post.viewCount}</TableCell>
             <TableCell>
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1 flex-wrap">
                 <Button size="icon-sm" variant="ghost" href={editUrl} aria-label={blogT.admin.editPost}>
                   <Icon name="mdi:pencil" class="size-4" />
                 </Button>
@@ -139,25 +145,33 @@ for (let i = 1; i <= meta.totalPages; i++) {
                     <Icon name="mdi:open-in-new" class="size-4" />
                   </Button>
                 )}
-                {canPublish && row.post.status !== "PUBLISHED" && (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    class="publish-btn text-success"
-                    data-post-id={row.post.id}
-                    aria-label={blogT.admin.publish}
-                  >
+                {row.post.status !== "PUBLISHED" && canPublish && (
+                  <Button size="icon-sm" variant="ghost" class="publish-btn text-success" data-post-id={row.post.id} aria-label={blogT.admin.publish}>
                     <Icon name="mdi:publish" class="size-4" />
                   </Button>
                 )}
+                {row.post.status === "PUBLISHED" && canPublish && (
+                  <Button size="icon-sm" variant="ghost" class="unpublish-btn" data-post-id={row.post.id} aria-label={blogT.admin.unpublish ?? blogT.admin.publish}>
+                    <Icon name="mdi:publish-off" class="size-4" />
+                  </Button>
+                )}
+                {(row.post.status === "DRAFT" || row.post.status === "PUBLISHED") && canPublish && (
+                  <Button size="icon-sm" variant="ghost" class="archive-btn" data-post-id={row.post.id} aria-label={blogT.admin.archive ?? blogT.admin.delete}>
+                    <Icon name="mdi:archive" class="size-4" />
+                  </Button>
+                )}
+                {(row.post.status === "ARCHIVED" || row.post.status === "DELETED") && canPublish && (
+                  <Button size="icon-sm" variant="ghost" class="restore-btn" data-post-id={row.post.id} aria-label={blogT.admin.restore ?? blogT.admin.editPost}>
+                    <Icon name="mdi:restore" class="size-4" />
+                  </Button>
+                )}
+                {canPublish && (
+                  <Button size="icon-sm" variant="ghost" class="duplicate-btn" data-post-id={row.post.id} aria-label={blogT.admin.duplicate ?? blogT.admin.newPost}>
+                    <Icon name="mdi:content-copy" class="size-4" />
+                  </Button>
+                )}
                 {canDelete && (
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    class="delete-btn text-error"
-                    data-post-id={row.post.id}
-                    aria-label={blogT.admin.delete}
-                  >
+                  <Button size="icon-sm" variant="ghost" class="delete-btn text-error" data-post-id={row.post.id} aria-label={blogT.admin.delete}>
                     <Icon name="mdi:delete" class="size-4" />
                   </Button>
                 )}
@@ -173,33 +187,21 @@ for (let i = 1; i <= meta.totalPages; i++) {
     <Pagination class="mt-6">
       <PaginationContent>
         {meta.hasPrevPage && (
-          <PaginationItem>
-            <PaginationPrevious href={buildPageUrl(meta.page - 1)} />
-          </PaginationItem>
+          <PaginationItem><PaginationPrevious href={buildPageUrl(meta.page - 1)} /></PaginationItem>
         )}
         {pages.map((p, idx) => {
           const prev = pages[idx - 1];
           const showEllipsis = prev && p - prev > 1;
           return (
             <>
-              {showEllipsis && (
-                <PaginationItem>
-                  <span class="px-2 text-muted-foreground">…</span>
-                </PaginationItem>
-              )}
+              {showEllipsis && <PaginationItem><span class="px-2 text-muted-foreground">…</span></PaginationItem>}
               <PaginationItem>
-                <PaginationLink href={buildPageUrl(p)} isActive={p === meta.page}>
-                  {p}
-                </PaginationLink>
+                <PaginationLink href={buildPageUrl(p)} isActive={p === meta.page}>{p}</PaginationLink>
               </PaginationItem>
             </>
           );
         })}
-        {meta.hasNextPage && (
-          <PaginationItem>
-            <PaginationNext href={buildPageUrl(meta.page + 1)} />
-          </PaginationItem>
-        )}
+        {meta.hasNextPage && <PaginationItem><PaginationNext href={buildPageUrl(meta.page + 1)} /></PaginationItem>}
       </PaginationContent>
     </Pagination>
   )}
@@ -213,6 +215,10 @@ for (let i = 1; i <= meta.totalPages; i++) {
     data-t-published={blogT.admin.feedback.published}
     data-t-deleted={blogT.admin.feedback.deleted}
     data-t-confirm-delete={blogT.admin.feedback.confirmDeletePost}
+    data-t-confirm-duplicate={blogT.admin.feedback.confirmDuplicatePost ?? blogT.admin.feedback.confirmDeletePost}
+    data-t-unpublished={blogT.admin.feedback.unpublished ?? blogT.admin.feedback.published}
+    data-t-archived={blogT.admin.feedback.archived ?? blogT.admin.feedback.deleted}
+    data-t-restored={blogT.admin.feedback.restored ?? blogT.admin.feedback.published}
   />
 </div>
 
@@ -224,29 +230,41 @@ for (let i = 1; i <= meta.totalPages; i++) {
     const dataEl = document.getElementById('admin-post-list-data') as HTMLInputElement | null;
     const orgId = dataEl?.dataset.organizationId || undefined;
     const errorText = dataEl?.dataset.tError ?? '';
-    const publishedText = dataEl?.dataset.tPublished ?? '';
-    const deletedText = dataEl?.dataset.tDeleted ?? '';
-    const confirmDeleteText = dataEl?.dataset.tConfirmDelete ?? '';
+    const getText = (name: string, fallback = '') => dataEl?.dataset[name] ?? fallback;
 
-    document.querySelectorAll<HTMLButtonElement>('.publish-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.postId;
-        if (!id) return;
-        const { error } = await actions.publishBlogPost({ id, organizationId: orgId });
-        if (error) toast.error(error.message ?? errorText);
-        else { toast.success(publishedText); window.location.reload(); }
+    const bind = <T extends HTMLElement>(selector: string, handler: (element: T) => void) => {
+      document.querySelectorAll<T>(selector).forEach((element) => {
+        if (element.dataset.blogBound === 'true') return;
+        element.dataset.blogBound = 'true';
+        handler(element);
       });
-    });
+    };
 
-    document.querySelectorAll<HTMLButtonElement>('.delete-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const id = btn.dataset.postId;
-        if (!id || !confirm(confirmDeleteText)) return;
-        const { error } = await actions.deleteBlogPost({ id, organizationId: orgId });
+    const run = async (btn: HTMLButtonElement, operation: (id: string) => Promise<{ error?: { message?: string } }>) => {
+      const id = btn.dataset.postId;
+      if (!id) return;
+      btn.disabled = true;
+      try {
+        const { error } = await operation(id);
         if (error) toast.error(error.message ?? errorText);
-        else { toast.success(deletedText); window.location.reload(); }
-      });
-    });
+        else window.location.reload();
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    bind<HTMLButtonElement>('.publish-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.publishBlogPost({ id, organizationId: orgId }))));
+    bind<HTMLButtonElement>('.unpublish-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.unpublishBlogPost({ id, organizationId: orgId }))));
+    bind<HTMLButtonElement>('.archive-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.archiveBlogPost({ id, organizationId: orgId }))));
+    bind<HTMLButtonElement>('.restore-btn', (btn) => btn.addEventListener('click', () => run(btn, (id) => actions.restoreBlogPost({ id, organizationId: orgId }))));
+    bind<HTMLButtonElement>('.duplicate-btn', (btn) => btn.addEventListener('click', () => {
+      if (!confirm(getText('tConfirmDuplicate'))) return;
+      run(btn, (id) => actions.duplicateBlogPost({ id, organizationId: orgId })).then(() => {});
+    }));
+    bind<HTMLButtonElement>('.delete-btn', (btn) => btn.addEventListener('click', () => {
+      if (!confirm(dataEl?.dataset.tConfirmDelete ?? '')) return;
+      run(btn, (id) => actions.deleteBlogPost({ id, organizationId: orgId }));
+    }));
   }
 
   init();
