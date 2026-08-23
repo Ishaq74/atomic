@@ -11,3 +11,4 @@ export * from "./schemas/media.schema";
 export * from "./schemas/consent.schema";
 export * from "./schemas/blog.schema";
 export * from "./schemas/services.schema";
+export * from "./schemas/services-engagement.schema";
