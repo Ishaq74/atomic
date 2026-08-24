@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Locale } from "@i18n/config";
 import { getDrizzle } from "@database/drizzle";
 import { serviceCategories, serviceCategoryTranslations, serviceTags, serviceTagTranslations, serviceTranslations, services, serviceCategoryLinks, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo, mediaFiles, mediaFileAlts, user } from "@database/schemas";
@@ -35,14 +35,16 @@ export async function getServices(input: unknown = {}, locale: Locale = "fr", pu
   const db = getDrizzle();
   const conditions = [serviceTenantScope(filters.organizationId), eq(serviceTranslations.locale, filters.locale)];
   if (publicOnly) conditions.push(eq(services.status, "PUBLISHED")); else if (filters.status) conditions.push(eq(services.status, filters.status));
-  if (filters.search) conditions.push(ilike(serviceTranslations.title, `%${filters.search}%`));
+  if (filters.search) conditions.push(sql`service_translations.search_vector @@ websearch_to_tsquery(locale_to_regconfig(${filters.locale}), ${filters.search})`);
   if (filters.providerId) conditions.push(eq(services.providerId, filters.providerId));
   if (filters.featured !== undefined) conditions.push(eq(services.isFeatured, filters.featured));
   if (filters.mobile !== undefined) conditions.push(eq(services.isMobile, filters.mobile));
   if (filters.categoryId) conditions.push(inArray(services.id, db.select({ serviceId: serviceCategoryLinks.serviceId }).from(serviceCategoryLinks).where(eq(serviceCategoryLinks.categoryId, filters.categoryId))));
   if (filters.tagId) conditions.push(inArray(services.id, db.select({ serviceId: serviceTagLinks.serviceId }).from(serviceTagLinks).where(eq(serviceTagLinks.tagId, filters.tagId))));
   const orderColumn = filters.sortBy === "title" ? serviceTranslations.title : filters.sortBy === "priceMinor" ? services.priceMinor : filters.sortBy === "ratingAverage100" ? services.ratingAverage100 : filters.sortBy === "viewCount" ? services.viewCount : filters.sortBy === "publishedAt" ? services.publishedAt : filters.sortBy === "createdAt" ? services.createdAt : services.updatedAt;
-  const orderExpression = filters.sortOrder === "asc" ? asc(orderColumn) : desc(orderColumn);
+  const orderExpression = filters.search
+    ? desc(sql<number>`ts_rank(service_translations.search_vector, websearch_to_tsquery(locale_to_regconfig(${filters.locale}), ${filters.search}))`)
+    : filters.sortOrder === "asc" ? asc(orderColumn) : desc(orderColumn);
   const countRows = await db.select({ count: sql<number>`count(*)` }).from(services).innerJoin(serviceTranslations, eq(serviceTranslations.serviceId, services.id)).where(and(...conditions));
   const total = Number(countRows[0]?.count ?? 0);
   const rows = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } }).from(services).innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, filters.locale))).leftJoin(user, eq(user.id, services.providerId)).where(and(...conditions)).orderBy(orderExpression).limit(filters.limit).offset((filters.page - 1) * filters.limit);
