@@ -1,4 +1,4 @@
-import { and, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike, isNull } from "drizzle-orm";
 import type { Locale } from "@i18n/config";
 import { getDrizzle } from "@database/drizzle";
 import { organization, serviceTranslations, services } from "@database/schemas";
@@ -14,6 +14,10 @@ async function organizationRouteSegment(organizationId: string | null): Promise<
   return row?.slug ?? null;
 }
 
+function tenantScope(organizationId: string | null) {
+  return organizationId === null ? isNull(services.organizationId) : eq(services.organizationId, organizationId);
+}
+
 export const serviceInternalLinkResolver: InternalLinkResolver = {
   name: "services",
   async resolve(target: string, ctx: Context) {
@@ -22,24 +26,26 @@ export const serviceInternalLinkResolver: InternalLinkResolver = {
     const service = await getServiceBySlug(target, locale, organizationId);
     if (!service?.translation) return { href: "#", title: null, exists: false };
     const orgSegment = await organizationRouteSegment(organizationId);
-    const routeTenant = orgSegment ? orgSegment : null;
-    return { href: buildServiceUrl(locale, routeTenant, service.translation.slug, service.categories[0]?.slug ?? null), title: service.translation.title, exists: true };
+    return { href: buildServiceUrl(locale, orgSegment, service.translation.slug, service.categories[0]?.slug ?? null), title: service.translation.title, exists: true };
   },
   async listValidTargets(ctx: Context) {
     const organizationId = ctx.organizationId ?? null;
-    const db = getDrizzle();
-    const rows = await db.select({ slug: serviceTranslations.slug }).from(serviceTranslations).innerJoin(services, eq(services.id, serviceTranslations.serviceId)).where(and(eq(serviceTranslations.locale, ctx.locale as Locale), eq(services.status, "PUBLISHED"), organizationId === null ? sqlIsNull(services.organizationId) : eq(services.organizationId, organizationId)));
+    const rows = await getDrizzle()
+      .select({ slug: serviceTranslations.slug })
+      .from(serviceTranslations)
+      .innerJoin(services, eq(services.id, serviceTranslations.serviceId))
+      .where(and(eq(serviceTranslations.locale, ctx.locale as Locale), eq(services.status, "PUBLISHED"), tenantScope(organizationId)));
     return new Set(rows.map((row) => row.slug));
   },
   async search(query: string, ctx: Context) {
-    const db = getDrizzle();
     const organizationId = ctx.organizationId ?? null;
-    const rows = await db.select({ id: services.id, slug: serviceTranslations.slug, title: serviceTranslations.title }).from(serviceTranslations).innerJoin(services, eq(services.id, serviceTranslations.serviceId)).where(and(eq(serviceTranslations.locale, ctx.locale as Locale), eq(services.status, "PUBLISHED"), ilike(serviceTranslations.title, `%${query}%`), organizationId === null ? sqlIsNull(services.organizationId) : eq(services.organizationId, organizationId))).limit(Math.min(20, Math.max(1, ctx.limit ?? 10)));
+    const rows = await getDrizzle()
+      .select({ id: services.id, slug: serviceTranslations.slug, title: serviceTranslations.title })
+      .from(serviceTranslations)
+      .innerJoin(services, eq(services.id, serviceTranslations.serviceId))
+      .where(and(eq(serviceTranslations.locale, ctx.locale as Locale), eq(services.status, "PUBLISHED"), ilike(serviceTranslations.title, `%${query}%`), tenantScope(organizationId)))
+      .limit(Math.min(20, Math.max(1, ctx.limit ?? 10)));
     const orgSegment = await organizationRouteSegment(organizationId);
     return rows.map((row) => ({ id: row.id, label: row.title, href: buildServiceUrl(ctx.locale as Locale, orgSegment, row.slug) }));
   },
 };
-
-function sqlIsNull(column: Parameters<typeof and>[0] extends never ? never : typeof services.organizationId) {
-  return { toString: () => "" } as never;
-}
