@@ -10,14 +10,29 @@ const categoryTenantScope = (organizationId: string | null) => organizationId ==
 const tagTenantScope = (organizationId: string | null) => organizationId === null ? isNull(serviceTags.organizationId) : eq(serviceTags.organizationId, organizationId);
 
 function mapServiceDetail(row: { service: ServiceDetail["service"]; translation: ServiceDetail["translation"]; provider: ServiceDetail["provider"] }, categories: ServiceDetail["categories"], tags: ServiceDetail["tags"], media: ServiceDetail["media"], availability: ServiceDetail["availability"], seo: ServiceDetail["seo"]): ServiceDetail {
-  return { service: row.service, translation: row.translation, provider: row.provider, categories, tags, media, availability, seo };
+  return {
+    service: row.service,
+    translation: row.translation,
+    provider: row.provider,
+    categories,
+    tags,
+    media,
+    availability,
+    seo,
+  };
 }
 
 async function loadServiceDetailById(serviceId: string, locale: Locale, organizationId: string | null, publicOnly: boolean): Promise<ServiceDetail | null> {
   const db = getDrizzle();
   const conditions = [eq(services.id, serviceId), serviceTenantScope(organizationId), eq(serviceTranslations.locale, locale)];
   if (publicOnly) conditions.push(eq(services.status, "PUBLISHED"));
-  const [row] = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } }).from(services).innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, locale))).leftJoin(user, eq(user.id, services.providerId)).where(and(...conditions)).limit(1);
+  const [row] = await db
+    .select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } })
+    .from(services)
+    .innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, locale)))
+    .leftJoin(user, eq(user.id, services.providerId))
+    .where(and(...conditions))
+    .limit(1);
   if (!row) return null;
 
   const [categories, tags, media, availability, seo] = await Promise.all([
@@ -76,10 +91,39 @@ export async function getServices(input: unknown = {}, locale: Locale = "fr", pu
   const total = Number(countRows[0]?.count ?? 0);
   const rows = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } }).from(services).innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, filters.locale))).leftJoin(user, eq(user.id, services.providerId)).where(and(...conditions)).orderBy(orderExpression).limit(filters.limit).offset((filters.page - 1) * filters.limit);
   const ids = rows.map((row) => row.service.id);
-  const categoryRows = ids.length ? await db.select({ serviceId: serviceCategoryLinks.serviceId, id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, eq(serviceCategories.id, serviceCategoryLinks.categoryId)).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, filters.locale))).where(inArray(serviceCategoryLinks.serviceId, ids)) : [];
+
+  const [categoryRows, coverRows] = await Promise.all([
+    ids.length ? db.select({ serviceId: serviceCategoryLinks.serviceId, id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, eq(serviceCategories.id, serviceCategoryLinks.categoryId)).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, filters.locale))).where(inArray(serviceCategoryLinks.serviceId, ids)) : [],
+    ids.length ? db.select({ serviceId: services.id, mediaId: services.coverImageId, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(services).innerJoin(mediaFiles, eq(mediaFiles.id, services.coverImageId)).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, filters.locale))).where(inArray(services.id, ids)) : [],
+  ]);
+
   const categories = new Map<string, { id: string; slug: string; name: string | null }[]>();
   for (const category of categoryRows) categories.set(category.serviceId, [...(categories.get(category.serviceId) ?? []), { id: category.id, slug: category.slug, name: category.name ?? null }]);
-  const items: ServiceListItem[] = rows.map(({ service, translation, provider }) => ({ service, translation: translation ? { locale: translation.locale, title: translation.title, slug: translation.slug, excerpt: translation.excerpt } : null, provider, categories: categories.get(service.id) ?? [] }));
+  const coverMedia = new Map<string, { id: string; url: string; alt: string }>();
+  for (const cover of coverRows) if (cover.url) coverMedia.set(cover.serviceId, { id: cover.mediaId ?? "", url: cover.url, alt: cover.alt ?? "" });
+
+  const items: ServiceListItem[] = rows.map(({ service, translation, provider }) => ({
+    service,
+    translation: translation ? {
+      locale: translation.locale,
+      title: translation.title,
+      slug: translation.slug,
+      excerpt: translation.excerpt,
+      content: translation.content,
+      locationLabel: translation.locationLabel,
+      locationAddress: translation.locationAddress,
+      metaTitle: translation.metaTitle,
+      metaDescription: translation.metaDescription,
+      metaKeywords: translation.metaKeywords,
+      canonicalUrl: translation.canonicalUrl,
+      ogTitle: translation.ogTitle,
+      ogDescription: translation.ogDescription,
+      ogImageId: translation.ogImageId,
+    } : null,
+    provider,
+    categories: categories.get(service.id) ?? [],
+    coverMedia: coverMedia.get(service.id) ?? null,
+  }));
   return { items, page: filters.page, limit: filters.limit, total, totalPages: Math.max(1, Math.ceil(total / filters.limit)) };
 }
 
