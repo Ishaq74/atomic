@@ -5,6 +5,7 @@ import { getDrizzle } from "@database/drizzle";
 import { serviceComments, serviceFavorites, serviceReports, serviceReviews, serviceReviewHelpful } from "@database/schemas";
 import { assertServiceInTenant, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema, serviceRateLimit } from "./_helpers";
 import { auditService, invalidateServicesCache } from "./_helpers";
+import { createServiceNotification } from "./notification";
 
 const serviceIdInput = z.object({ serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema });
 
@@ -18,10 +19,11 @@ export const toggleServiceFavorite = defineAction({ input: serviceIdInput, handl
 export const createServiceReview = defineAction({
   input: serviceIdInput.extend({ rating: z.coerce.number().int().min(1).max(5), title: z.string().trim().max(180).optional(), content: z.string().trim().min(1).max(5000), isRecommended: z.boolean().default(true) }),
   handler: async (input, context) => {
-    const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "review");
+    const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); const service = await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "review");
     const db = getDrizzle(); const existing = (await db.select().from(serviceReviews).where(and(eq(serviceReviews.serviceId, input.serviceId), eq(serviceReviews.authorId, user.id))).limit(1))[0];
     if (existing) throw new ActionError({ code: "CONFLICT", message: "Vous avez déjà publié un avis pour ce service." });
     const [review] = await db.insert(serviceReviews).values({ serviceId: input.serviceId, authorId: user.id, rating: input.rating, title: input.title, content: input.content, isRecommended: input.isRecommended, status: "PENDING" }).returning({ id: serviceReviews.id });
+    if (review?.id) await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: "Nouvel avis", message: "Un nouvel avis a été soumis pour votre service." });
     auditService(context, user.id, "SERVICE_REVIEW_MODERATE", { resource: "serviceReviews", resourceId: review.id, metadata: { action: "CREATE" } }); return review;
   },
 });
@@ -29,13 +31,17 @@ export const createServiceReview = defineAction({
 export const createServiceComment = defineAction({
   input: serviceIdInput.extend({ parentId: z.uuid().optional().nullable(), content: z.string().trim().min(1).max(5000) }),
   handler: async (input, context) => {
-    const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "comment");
+    const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); const service = await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "comment");
     const db = getDrizzle();
+    let recipientId = service.providerId;
+    let type: "NEW_COMMENT" | "REPLY_TO_COMMENT" = "NEW_COMMENT";
     if (input.parentId) {
-      const [parent] = await db.select({ id: serviceComments.id }).from(serviceComments).where(and(eq(serviceComments.id, input.parentId), eq(serviceComments.serviceId, input.serviceId))).limit(1);
+      const [parent] = await db.select({ id: serviceComments.id, authorId: serviceComments.authorId }).from(serviceComments).where(and(eq(serviceComments.id, input.parentId), eq(serviceComments.serviceId, input.serviceId))).limit(1);
       if (!parent) throw new ActionError({ code: "NOT_FOUND", message: "Commentaire parent introuvable pour ce service." });
+      if (parent.authorId) { recipientId = parent.authorId; type = "REPLY_TO_COMMENT"; }
     }
     const [comment] = await db.insert(serviceComments).values({ serviceId: input.serviceId, authorId: user.id, parentId: input.parentId ?? null, content: input.content, status: "PENDING" }).returning({ id: serviceComments.id });
+    if (comment?.id) await createServiceNotification({ recipientId, serviceId: input.serviceId, actorId: user.id, type, commentId: comment.id, title: type === "REPLY_TO_COMMENT" ? "Nouvelle réponse" : "Nouveau commentaire", message: type === "REPLY_TO_COMMENT" ? "Une réponse a été ajoutée à votre commentaire." : "Un nouveau commentaire a été soumis pour votre service." });
     return comment;
   },
 });
@@ -60,11 +66,9 @@ export const createServiceReport = defineAction({
 
 export const voteServiceReviewHelpful = defineAction({ input: serviceIdInput.extend({ reviewId: z.uuid(), isHelpful: z.boolean() }), handler: async (input, context) => {
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceReview: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "review-helpful");
-  const db = getDrizzle();
-  const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1);
+  const db = getDrizzle(); const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1);
   if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Avis introuvable pour ce service." });
-  await db.insert(serviceReviewHelpful).values({ reviewId: input.reviewId, userId: user.id, isHelpful: input.isHelpful }).onConflictDoUpdate({ target: [serviceReviewHelpful.reviewId, serviceReviewHelpful.userId], set: { isHelpful: input.isHelpful } });
-  return { success: true };
+  await db.insert(serviceReviewHelpful).values({ reviewId: input.reviewId, userId: user.id, isHelpful: input.isHelpful }).onConflictDoUpdate({ target: [serviceReviewHelpful.reviewId, serviceReviewHelpful.userId], set: { isHelpful: input.isHelpful } }); return { success: true };
 } });
 
 export async function listApprovedServiceReviews(serviceId: string) {
