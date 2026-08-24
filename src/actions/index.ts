@@ -24,6 +24,7 @@ import { createServiceAttributeDefinition, setServiceAttributeValue } from "./se
 import { createServiceCategory, updateServiceCategory, deleteServiceCategory, createServiceTag, updateServiceTag, deleteServiceTag } from "./services/taxonomy";
 import { moderateServiceComment, moderateServiceReview, resolveServiceReport } from "./services/moderation";
 import { addServiceMedia, updateServiceMedia, removeServiceMedia } from "./services/media";
+import { resolveServiceInternalLink } from "./services/internal-link";
 
 export const server = {
   updateSiteSettings, upsertSiteSettings, createSocialLink, updateSocialLink, deleteSocialLink, reorderSocialLinks, updateContactInfo, updateOpeningHours,
@@ -36,5 +37,5 @@ export const server = {
   createService, updateService, publishService, unpublishService, archiveService, restoreService, deleteService, duplicateService, lockService, unlockService, listServiceRevisions, restoreServiceRevision,
   toggleServiceFavorite, createServiceReview, createServiceComment, createServiceReport, voteServiceReviewHelpful, createServiceAvailability, updateServiceAvailability, deleteServiceAvailability,
   toggleServiceReaction, listServiceNotifications, markServiceNotificationRead, markAllServiceNotificationsRead, recordServiceView, createServiceAttributeDefinition, setServiceAttributeValue,
-  createServiceCategory, updateServiceCategory, deleteServiceCategory, createServiceTag, updateServiceTag, deleteServiceTag, moderateServiceComment, moderateServiceReview, resolveServiceReport, addServiceMedia, updateServiceMedia, removeServiceMedia,
+  createServiceCategory, updateServiceCategory, deleteServiceCategory, createServiceTag, updateServiceTag, deleteServiceTag, moderateServiceComment, moderateServiceReview, resolveServiceReport, addServiceMedia, updateServiceMedia, removeServiceMedia, resolveServiceInternalLink,
 };
