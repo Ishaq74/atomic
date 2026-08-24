@@ -2,6 +2,7 @@
 import type { AuthTranslations, Locale } from '@i18n/config';
 import { getAuthUrl, getAdminUrl } from '@i18n/utils';
 import type { AdminSubpage } from '@i18n/utils';
+import { getServiceTranslations } from '@/modules/services/i18n';
 import ArrowLeftIcon from '@tabler/icons/outline/arrow-left.svg';
 import ChartBarIcon from '@tabler/icons/outline/chart-bar.svg';
 import UsersIcon from '@tabler/icons/outline/users.svg';
@@ -14,12 +15,14 @@ import MenuIcon from '@tabler/icons/outline/menu-2.svg';
 import LayoutIcon from '@tabler/icons/outline/layout.svg';
 import PhotoIcon from '@tabler/icons/outline/photo.svg';
 import PaletteIcon from '@tabler/icons/outline/palette.svg';
+import BriefcaseIcon from '@tabler/icons/outline/briefcase.svg';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, SidebarSeparator } from '@atoms/sidebar';
 
 interface Props { t: AuthTranslations; locale: Locale; activeItem?: AdminSubpage; }
 const { t, locale, activeItem } = Astro.props;
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
 const contentGroupLabel = t.admin.contentGroup ?? 'Content';
+const serviceT = getServiceTranslations(locale);
 const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof ChartBarIcon }[] = [
   { id: 'stats', title: t.admin.tabs.stats, url: getAdminUrl(locale, 'stats'), icon: ChartBarIcon },
   { id: 'users', title: t.admin.tabs.users, url: getAdminUrl(locale, 'users'), icon: UsersIcon },
@@ -29,7 +32,7 @@ const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof Cha
 ];
 const cmsItems: { id: AdminSubpage; title: string; url: string; icon: typeof SettingsIcon }[] = [
   { id: 'blog', title: t.admin.tabs.blog, url: getAdminUrl(locale, 'blog'), icon: FileTextIcon },
-  { id: 'services', title: 'Services', url: getAdminUrl(locale, 'services'), icon: SettingsIcon },
+  { id: 'services', title: serviceT.labels.services, url: getAdminUrl(locale, 'services'), icon: BriefcaseIcon },
   { id: 'site', title: t.admin.tabs.site, url: getAdminUrl(locale, 'site'), icon: SettingsIcon },
   { id: 'navigation', title: t.admin.tabs.navigation, url: getAdminUrl(locale, 'navigation'), icon: MenuIcon },
   { id: 'pages', title: t.admin.tabs.pages, url: getAdminUrl(locale, 'pages'), icon: LayoutIcon },
