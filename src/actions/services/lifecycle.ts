@@ -1,7 +1,7 @@
 import { defineAction, ActionError } from "astro:actions";
 import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
-import { services, serviceTranslations, serviceRevisions, serviceCategories, serviceCategoryLinks, serviceTags, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo } from "@database/schemas";
+import { services, serviceTranslations, serviceRevisions, serviceCategoryLinks, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo, serviceLocks } from "@database/schemas";
 import { assertServicePermission, assertServiceInTenant, resolveServiceTenant, serviceOrganizationIdSchema } from "./_helpers";
 import { assertValidServiceTransition } from "@/modules/services/workflow";
 import type { ServiceStatus } from "@/modules/services/domain";
@@ -10,25 +10,38 @@ import { z } from "astro/zod";
 
 const lifecycleInput = z.object({ id: z.uuid(), organizationId: serviceOrganizationIdSchema });
 
-async function transitionService(id: string, organizationId: string | null | undefined, to: ServiceStatus, context: Parameters<typeof assertServicePermission>[0], permission: "publish" | "update") {
+type LifecycleAuditAction = "SERVICE_PUBLISH" | "SERVICE_UNPUBLISH" | "SERVICE_ARCHIVE" | "SERVICE_RESTORE" | "SERVICE_DELETE";
+
+async function transitionService(
+  id: string,
+  organizationId: string | null | undefined,
+  to: ServiceStatus,
+  context: Parameters<typeof assertServicePermission>[0],
+  permission: "publish" | "update",
+  auditAction: LifecycleAuditAction,
+) {
   const tenant = resolveServiceTenant({ organizationId });
   const user = await assertServicePermission(context, tenant, { service: [permission] });
   const current = await assertServiceInTenant(id, tenant);
   assertValidServiceTransition(current.status as ServiceStatus, to);
   const db = getDrizzle();
   await db.transaction(async (tx) => {
-    await tx.update(services).set({ status: to, publishedAt: to === "PUBLISHED" ? new Date() : to === "DRAFT" ? null : undefined, updatedBy: user.id }).where(eq(services.id, id));
+    await tx.update(services).set({
+      status: to,
+      publishedAt: to === "PUBLISHED" ? new Date() : to === "DRAFT" ? null : undefined,
+      updatedBy: user.id,
+    }).where(eq(services.id, id));
   });
-  auditService(context, user.id, `BLOG_POST_${to === "PUBLISHED" ? "PUBLISH" : to === "DRAFT" ? "UNPUBLISH" : to === "ARCHIVED" ? "ARCHIVE" : "DELETE"}` as never, { resource: "services", resourceId: id, metadata: { organizationId: tenant.organizationId } });
+  auditService(context, user.id, auditAction, { resource: "services", resourceId: id, metadata: { organizationId: tenant.organizationId, from: current.status, to } });
   invalidateServicesCache();
   return { success: true };
 }
 
-export const publishService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "PUBLISHED", context, "publish") });
-export const unpublishService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DRAFT", context, "publish") });
-export const archiveService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "ARCHIVED", context, "update") });
-export const restoreService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DRAFT", context, "update") });
-export const deleteService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DELETED", context, "update") });
+export const publishService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "PUBLISHED", context, "publish", "SERVICE_PUBLISH") });
+export const unpublishService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DRAFT", context, "publish", "SERVICE_UNPUBLISH") });
+export const archiveService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "ARCHIVED", context, "update", "SERVICE_ARCHIVE") });
+export const restoreService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DRAFT", context, "update", "SERVICE_RESTORE") });
+export const deleteService = defineAction({ input: lifecycleInput, handler: (input, context) => transitionService(input.id, input.organizationId, "DELETED", context, "update", "SERVICE_DELETE") });
 
 export const duplicateService = defineAction({
   input: lifecycleInput,
@@ -43,12 +56,45 @@ export const duplicateService = defineAction({
     const media = await db.select().from(serviceMedia).where(eq(serviceMedia.serviceId, source.id));
     const availability = await db.select().from(serviceAvailability).where(eq(serviceAvailability.serviceId, source.id));
     const seo = await db.select().from(serviceSeo).where(eq(serviceSeo.serviceId, source.id));
-    const baseSlug = `${source.slug}-copy`;
     let duplicateId = "";
     await db.transaction(async (tx) => {
-      const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: user.id, slug: baseSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id });
+      const [created] = await tx.insert(services).values({
+        organizationId: tenant.organizationId,
+        providerId: user.id,
+        slug: `${source.slug}-copy`,
+        status: "DRAFT",
+        coverImageId: source.coverImageId,
+        priceMinor: source.priceMinor,
+        currency: source.currency,
+        durationMinutes: source.durationMinutes,
+        maxParticipants: source.maxParticipants,
+        isMobile: source.isMobile,
+        isFeatured: false,
+        seoScore: null,
+        publishedAt: null,
+        updatedBy: user.id,
+      }).returning({ id: services.id });
       duplicateId = created.id;
-      for (const translation of translations) await tx.insert(serviceTranslations).values({ serviceId: duplicateId, organizationId: tenant.organizationId, locale: translation.locale, title: `${translation.title} (copy)`, slug: `${translation.slug}-copy`, excerpt: translation.excerpt, content: translation.content, locationLabel: translation.locationLabel, locationAddress: translation.locationAddress, metaTitle: translation.metaTitle, metaDescription: translation.metaDescription, metaKeywords: translation.metaKeywords, canonicalUrl: null, ogTitle: translation.ogTitle, ogDescription: translation.ogDescription, ogImageId: translation.ogImageId });
+      for (const translation of translations) {
+        await tx.insert(serviceTranslations).values({
+          serviceId: duplicateId,
+          organizationId: tenant.organizationId,
+          locale: translation.locale,
+          title: `${translation.title} (copy)`,
+          slug: `${translation.slug}-copy`,
+          excerpt: translation.excerpt,
+          content: translation.content,
+          locationLabel: translation.locationLabel,
+          locationAddress: translation.locationAddress,
+          metaTitle: translation.metaTitle,
+          metaDescription: translation.metaDescription,
+          metaKeywords: translation.metaKeywords,
+          canonicalUrl: null,
+          ogTitle: translation.ogTitle,
+          ogDescription: translation.ogDescription,
+          ogImageId: translation.ogImageId,
+        });
+      }
       if (categories.length) await tx.insert(serviceCategoryLinks).values(categories.map((row) => ({ serviceId: duplicateId, categoryId: row.categoryId })));
       if (tags.length) await tx.insert(serviceTagLinks).values(tags.map((row) => ({ serviceId: duplicateId, tagId: row.tagId })));
       if (media.length) await tx.insert(serviceMedia).values(media.map((row) => ({ serviceId: duplicateId, mediaId: row.mediaId, kind: row.kind, altText: row.altText, caption: row.caption, sortOrder: row.sortOrder })));
@@ -57,7 +103,7 @@ export const duplicateService = defineAction({
       const first = translations[0];
       if (first) await tx.insert(serviceRevisions).values({ serviceId: duplicateId, authorId: user.id, locale: first.locale, title: `${first.title} (copy)`, slug: `${first.slug}-copy`, content: first.content, excerpt: first.excerpt, status: "DRAFT", revisionNote: "Duplication" });
     });
-    auditService(context, user.id, "BLOG_POST_CREATE", { resource: "services", resourceId: duplicateId, metadata: { organizationId: tenant.organizationId, duplicatedFrom: source.id } });
+    auditService(context, user.id, "SERVICE_DUPLICATE", { resource: "services", resourceId: duplicateId, metadata: { organizationId: tenant.organizationId, duplicatedFrom: source.id } });
     invalidateServicesCache();
     return { id: duplicateId };
   },
@@ -70,12 +116,12 @@ export const lockService = defineAction({
     const user = await assertServicePermission(context, tenant, { service: ["update"] });
     await assertServiceInTenant(input.id, tenant);
     const db = getDrizzle();
-    const existing = (await db.select().from(require("@database/schemas").serviceLocks).where(eq(require("@database/schemas").serviceLocks.serviceId, input.id)).limit(1))[0];
+    const existing = (await db.select().from(serviceLocks).where(eq(serviceLocks.serviceId, input.id)).limit(1))[0];
     const now = new Date();
-    if (existing && existing.userId !== user.id && existing.expiresAt > now) throw new ActionError({ code: "CONFLICT", message: "Ce service est en cours d'édition par un autre utilisateur." });
+    if (existing && existing.expiresAt > now && existing.userId !== user.id) throw new ActionError({ code: "CONFLICT", message: "Ce service est en cours d'édition par un autre utilisateur." });
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-    const { serviceLocks } = await import("@database/schemas");
-    await db.insert(serviceLocks).values({ serviceId: input.id, userId: user.id, sessionId: context.locals.session?.id ?? "unknown", expiresAt }).onConflictDoUpdate({ target: serviceLocks.serviceId, set: { userId: user.id, sessionId: context.locals.session?.id ?? "unknown", lockedAt: new Date(), expiresAt } });
+    await db.insert(serviceLocks).values({ serviceId: input.id, userId: user.id, sessionId: context.locals.session?.id ?? "unknown", expiresAt }).onConflictDoUpdate({ target: serviceLocks.serviceId, set: { userId: user.id, sessionId: context.locals.session?.id ?? "unknown", lockedAt: now, expiresAt } });
+    auditService(context, user.id, "SERVICE_LOCK", { resource: "services", resourceId: input.id });
     return { success: true, expiresAt };
   },
 });
@@ -86,8 +132,8 @@ export const unlockService = defineAction({
     const tenant = resolveServiceTenant(input);
     const user = await assertServicePermission(context, tenant, { service: ["update"] });
     await assertServiceInTenant(input.id, tenant);
-    const { serviceLocks } = await import("@database/schemas");
     await getDrizzle().delete(serviceLocks).where(and(eq(serviceLocks.serviceId, input.id), eq(serviceLocks.userId, user.id)));
+    auditService(context, user.id, "SERVICE_UNLOCK", { resource: "services", resourceId: input.id });
     return { success: true };
   },
 });
@@ -100,7 +146,7 @@ export const listServiceRevisions = defineAction({ input: lifecycleInput, handle
 } });
 
 export const restoreServiceRevision = defineAction({
-  input: z.object({ postId: z.uuid().optional(), serviceId: z.uuid(), revisionId: z.uuid(), organizationId: serviceOrganizationIdSchema }),
+  input: z.object({ revisionId: z.uuid(), serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema }),
   handler: async (input, context) => {
     const tenant = resolveServiceTenant(input);
     const user = await assertServicePermission(context, tenant, { service: ["update"] });
@@ -114,6 +160,7 @@ export const restoreServiceRevision = defineAction({
       await tx.update(serviceTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(and(eq(serviceTranslations.serviceId, input.serviceId), eq(serviceTranslations.locale, revision.locale)));
       await tx.insert(serviceRevisions).values({ serviceId: input.serviceId, authorId: user.id, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, status: revision.status, revisionNote: `Restauration de ${revision.id}` });
     });
+    auditService(context, user.id, "SERVICE_UPDATE", { resource: "services", resourceId: input.serviceId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } });
     invalidateServicesCache();
     return { success: true };
   },
