@@ -1,5 +1,5 @@
 import { defineAction, ActionError } from "astro:actions";
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, serviceSeo, serviceRevisions } from "@database/schemas";
 import { sanitizeHtml } from "@/lib/sanitize";
@@ -54,7 +54,7 @@ export const createService = defineAction({
       if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: "Un service avec ce slug existe déjà pour ce tenant/locale." });
       throw error;
     }
-    auditService(context, user.id, "BLOG_POST_CREATE", { resource: "services", resourceId: createdId, metadata: { organizationId: tenant.organizationId } });
+    auditService(context, user.id, "SERVICE_CREATE", { resource: "services", resourceId: createdId, metadata: { organizationId: tenant.organizationId } });
     invalidateServicesCache();
     return { id: createdId };
   },
@@ -86,23 +86,37 @@ export const updateService = defineAction({
       await db.transaction(async (tx) => {
         await tx.update(services).set({
           ...(input.slug ? { slug: input.slug } : {}),
-          coverImageId: input.coverImageId,
-          priceMinor: input.priceMinor,
-          currency: input.currency,
-          durationMinutes: input.durationMinutes,
-          maxParticipants: input.maxParticipants,
-          isMobile: input.isMobile,
-          isFeatured: input.isFeatured,
+          ...(input.coverImageId !== undefined ? { coverImageId: input.coverImageId } : {}),
+          ...(input.priceMinor !== undefined ? { priceMinor: input.priceMinor } : {}),
+          ...(input.currency !== undefined ? { currency: input.currency } : {}),
+          ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
+          ...(input.maxParticipants !== undefined ? { maxParticipants: input.maxParticipants } : {}),
+          ...(input.isMobile !== undefined ? { isMobile: input.isMobile } : {}),
+          ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}),
           seoScore,
           updatedBy: user.id,
         }).where(eq(services.id, input.id));
         if (locale) {
           if (existingTranslation) {
-            await tx.update(serviceTranslations).set({ title: input.title, slug: input.slug, content, excerpt, metaTitle: input.title ?? existingTranslation.metaTitle, metaDescription: input.metaDescription, metaKeywords: input.metaKeywords, canonicalUrl: input.canonicalUrl, ogTitle: input.ogTitle, ogDescription: input.ogDescription, ogImageId: input.ogImageId }).where(eq(serviceTranslations.id, existingTranslation.id));
+            await tx.update(serviceTranslations).set({
+              ...(input.title !== undefined ? { title: input.title } : {}),
+              ...(input.slug !== undefined ? { slug: input.slug } : {}),
+              ...(content !== undefined ? { content } : {}),
+              ...(input.excerpt !== undefined ? { excerpt } : {}),
+              ...(input.title !== undefined ? { metaTitle: input.title } : {}),
+              ...(input.metaDescription !== undefined ? { metaDescription: input.metaDescription } : {}),
+              ...(input.metaKeywords !== undefined ? { metaKeywords: input.metaKeywords } : {}),
+              ...(input.canonicalUrl !== undefined ? { canonicalUrl: input.canonicalUrl } : {}),
+              ...(input.ogTitle !== undefined ? { ogTitle: input.ogTitle } : {}),
+              ...(input.ogDescription !== undefined ? { ogDescription: input.ogDescription } : {}),
+              ...(input.ogImageId !== undefined ? { ogImageId: input.ogImageId } : {}),
+            }).where(eq(serviceTranslations.id, existingTranslation.id));
           } else {
             await tx.insert(serviceTranslations).values({ serviceId: input.id, organizationId: tenant.organizationId, locale, title: input.title!, slug: input.slug!, content: content!, excerpt, metaTitle: input.title, metaDescription: input.metaDescription, metaKeywords: input.metaKeywords, canonicalUrl: input.canonicalUrl, ogTitle: input.ogTitle, ogDescription: input.ogDescription, ogImageId: input.ogImageId });
           }
-          await tx.update(serviceSeo).set({ focusKeywordScore: seoScore }).where(and(eq(serviceSeo.serviceId, input.id), eq(serviceSeo.locale, locale)));
+          const [seoRow] = await tx.select({ id: serviceSeo.id }).from(serviceSeo).where(and(eq(serviceSeo.serviceId, input.id), eq(serviceSeo.locale, locale))).limit(1);
+          if (seoRow) await tx.update(serviceSeo).set({ focusKeywordScore: seoScore }).where(eq(serviceSeo.id, seoRow.id));
+          else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) {
           await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id));
@@ -120,7 +134,7 @@ export const updateService = defineAction({
       if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: "Un service avec ce slug existe déjà pour ce tenant/locale." });
       throw error;
     }
-    auditService(context, user.id, "BLOG_POST_UPDATE", { resource: "services", resourceId: input.id, metadata: { organizationId: tenant.organizationId } });
+    auditService(context, user.id, "SERVICE_UPDATE", { resource: "services", resourceId: input.id, metadata: { organizationId: tenant.organizationId } });
     invalidateServicesCache();
     return { id: input.id };
   },
