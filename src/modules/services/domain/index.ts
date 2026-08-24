@@ -3,6 +3,23 @@ export type ServiceStatus = (typeof SERVICE_STATUSES)[number];
 export type ServiceCategoryId = string;
 export type ServiceTagId = string;
 
+export interface ServiceTranslationDetail {
+  locale: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  content: string;
+  locationLabel: string | null;
+  locationAddress: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  metaKeywords: string | null;
+  canonicalUrl: string | null;
+  ogTitle: string | null;
+  ogDescription: string | null;
+  ogImageId: string | null;
+}
+
 export interface ServiceListItem {
   service: {
     id: string;
@@ -31,7 +48,7 @@ export interface ServiceListItem {
 
 export interface ServiceDetail {
   service: ServiceListItem["service"];
-  translation: ServiceListItem["translation"];
+  translation: ServiceTranslationDetail | null;
   provider: ServiceListItem["provider"];
   categories: ServiceListItem["categories"];
   tags: { id: string; slug: string; name: string | null }[];
