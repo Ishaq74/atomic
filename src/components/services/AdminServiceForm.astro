@@ -38,7 +38,7 @@ const focusKeyword = service?.seo?.focusKeyword ?? "";
 
     <section class="grid gap-4 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
       <div class="space-y-1.5"><Label for="service-price">{t.admin.fields.price}</Label><Input id="service-price" name="priceMinor" type="number" min="0" step="1" value={service?.service.priceMinor ?? ""} /></div>
-      <div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service?.service.currency ?? "EUR"} /></div>
+      <div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service ? service.service.currency ?? "" : "EUR"} /></div>
       <div class="space-y-1.5"><Label for="service-duration">{t.admin.fields.duration}</Label><Input id="service-duration" name="durationMinutes" type="number" min="1" value={service?.service.durationMinutes ?? ""} /></div>
       <div class="space-y-1.5"><Label for="service-capacity">{t.admin.fields.maxParticipants}</Label><Input id="service-capacity" name="maxParticipants" type="number" min="1" value={service?.service.maxParticipants ?? ""} /></div>
     </section>
@@ -80,8 +80,6 @@ const focusKeyword = service?.seo?.focusKeyword ?? "";
         slug: String(data.get("slug")),
         excerpt: String(data.get("excerpt") || "") || null,
         content: String(data.get("content")),
-        status: "DRAFT",
-        publishedAt: null,
         coverImageId: String(data.get("coverImageId") || "") || null,
         ogImageId: String(data.get("ogImageId") || "") || null,
         priceMinor: data.get("priceMinor") ? Number(data.get("priceMinor")) : null,
@@ -96,6 +94,8 @@ const focusKeyword = service?.seo?.focusKeyword ?? "";
         metaDescription: String(data.get("metaDescription") || "") || null,
         locationLabel: String(data.get("locationLabel") || "") || null,
         locationAddress: String(data.get("locationAddress") || "") || null,
+        focusKeyword: String(data.get("focusKeyword") || "") || null,
+        ...(form.dataset.mode === "create" ? { status: "DRAFT", publishedAt: null } : {}),
       };
       const result = form.dataset.mode === "edit" ? await actions.updateService({ ...payload, id: String(data.get("id")) }) : await actions.createService(payload);
       const status = form.querySelector<HTMLElement>("#service-form-status");
