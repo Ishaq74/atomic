@@ -1,4 +1,4 @@
-import { slugify } from "@/lib/blog/utils";
+import { slugify } from "@/core/content/text";
 import { buildServiceUrl, buildServiceCategoryUrl } from "./urls";
 
 export { slugify, buildServiceUrl, buildServiceCategoryUrl };
@@ -13,7 +13,7 @@ export function formatServiceDuration(minutes: number | null): string | null {
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   const remainder = minutes % 60;
-  return remainder ? `${hours} h ${remainder} min` : `${hours} h`;
+  return remainder ? `${hours} h ${minutes % 60} min` : `${hours} h`;
 }
 
 export function formatServiceRating(ratingAverage100: number): number {
