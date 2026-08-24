@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, serviceSeo, serviceRevisions } from "@database/schemas";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { generateExcerpt } from "@/lib/blog/utils";
+import { generateExcerpt } from "@/core/content/text";
 import { serviceFormSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
 import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
 import { auditService, invalidateServicesCache } from "./_helpers";
@@ -14,6 +14,7 @@ export const createService = defineAction({
     const tenant = resolveServiceTenant(input);
     const user = await assertServicePermission(context, tenant, { service: ["create"] });
     serviceRateLimit(context, user.id, "create");
+    if (input.status !== "DRAFT" || input.publishedAt !== null) throw new ActionError({ code: "BAD_REQUEST", message: "Un service doit être créé en brouillon. Utilisez la publication explicite ensuite." });
     const content = sanitizeHtml(input.content);
     const excerpt = input.excerpt?.trim() || generateExcerpt(content);
     const seoScore = calculateServiceSeoScore({ title: input.title, metaTitle: input.metaTitle, metaDescription: input.metaDescription, focusKeyword: input.focusKeyword });
@@ -25,12 +26,12 @@ export const createService = defineAction({
     let createdId = "";
     try {
       await db.transaction(async (tx) => {
-        const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: user.id, slug: input.slug, status: input.status, coverImageId: input.coverImageId ?? null, priceMinor: input.priceMinor ?? null, currency: input.currency ?? null, durationMinutes: input.durationMinutes ?? null, maxParticipants: input.maxParticipants ?? null, isMobile: input.isMobile, isFeatured: input.isFeatured, seoScore, publishedAt: input.status === "PUBLISHED" ? input.publishedAt ?? new Date() : null, updatedBy: user.id }).returning({ id: services.id });
+        const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: user.id, slug: input.slug, status: "DRAFT", coverImageId: input.coverImageId ?? null, priceMinor: input.priceMinor ?? null, currency: input.currency ?? null, durationMinutes: input.durationMinutes ?? null, maxParticipants: input.maxParticipants ?? null, isMobile: input.isMobile, isFeatured: input.isFeatured, seoScore, publishedAt: null, updatedBy: user.id }).returning({ id: services.id });
         createdId = created.id;
         await tx.insert(serviceTranslations).values({ serviceId: created.id, organizationId: tenant.organizationId, locale: input.locale, title: input.title, slug: input.slug, excerpt, content, locationLabel: input.locationLabel ?? null, locationAddress: input.locationAddress ?? null, ogImageId: input.ogImageId ?? null, metaTitle: input.metaTitle ?? input.title, metaDescription: input.metaDescription ?? null, metaKeywords: input.metaKeywords ?? null, canonicalUrl: input.canonicalUrl ?? null, ogTitle: input.ogTitle ?? null, ogDescription: input.ogDescription ?? null });
         if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: created.id, categoryId })));
         if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: created.id, tagId })));
-        await tx.insert(serviceRevisions).values({ serviceId: created.id, authorId: user.id, locale: input.locale, title: input.title, slug: input.slug, content, excerpt, status: input.status === "PUBLISHED" ? "PUBLISHED" : input.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Création initiale" });
+        await tx.insert(serviceRevisions).values({ serviceId: created.id, authorId: user.id, locale: input.locale, title: input.title, slug: input.slug, content, excerpt, status: "DRAFT", revisionNote: "Création initiale" });
         await tx.insert(serviceSeo).values({ serviceId: created.id, locale: input.locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
       });
     } catch (error) {
