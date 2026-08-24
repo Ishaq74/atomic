@@ -7,7 +7,7 @@ import { Checkbox } from "@atoms/checkbox";
 import Button from "@atoms/button/Button.astro";
 import MediaPicker from "@atoms/media-picker/MediaPicker.astro";
 import ContentEditor from "@components/content/ContentEditor.astro";
-import { getServiceTranslations } from "@/modules/services/i18n";
+import { getServiceTranslations, getServiceErrorMessage } from "@/modules/services/i18n";
 import { getServiceCategories, getServiceTags } from "@/modules/services/loaders";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail } from "@/modules/services/domain";
@@ -24,7 +24,15 @@ const [categoryRows, tagRows] = await Promise.all([getServiceCategories(locale, 
 const selectedCategoryIds = new Set(service?.categories.map((item) => item.id) ?? []);
 const selectedTagIds = new Set(service?.tags.map((item) => item.id) ?? []);
 const focusKeyword = service?.seo?.focusKeyword ?? "";
-const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, confirmArchive: t.admin.confirmArchive, actionError: t.admin.actionError });
+const actionLabels = JSON.stringify({
+  confirmDelete: t.admin.confirmDelete,
+  confirmArchive: t.admin.confirmArchive,
+  actionError: t.admin.actionError,
+  restoreRevision: t.admin.restoreRevision,
+  saved: t.admin.saved,
+  lock: t.admin.lock,
+  unlock: t.admin.unlock,
+});
 ---
 <AdminFormShell formSelector="form[data-service-form]" title={service ? t.admin.editService : t.admin.newService}>
   <div data-service-admin-root data-organization-id={organizationId ?? ""} data-service-id={service?.service.id ?? ""} data-base-admin-url={baseAdminUrl} data-action-labels={actionLabels}>
@@ -35,8 +43,8 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
       {service.service.status === "ARCHIVED" && <Button type="button" data-service-lifecycle="restore">{t.admin.restore}</Button>}
       {service.service.status !== "DELETED" && <Button type="button" variant="outline" data-service-lifecycle="duplicate">{t.admin.duplicate}</Button>}
       {service.service.status !== "DELETED" && <Button type="button" variant="outline" data-service-lifecycle="delete">{t.admin.delete}</Button>}
-      <Button type="button" variant="outline" data-service-lock="lock">{t.admin.fields.publication}</Button>
-      <Button type="button" variant="outline" data-service-lock="unlock">{t.admin.save}</Button>
+      <Button type="button" variant="outline" data-service-lock="lock">{t.admin.lock}</Button>
+      <Button type="button" variant="outline" data-service-lock="unlock">{t.admin.unlock}</Button>
     </div></div></section>}
 
     <form id="service-form" data-service-form data-mode={service ? "edit" : "create"} class="space-y-6">
@@ -78,28 +86,31 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
 
       <section class="space-y-4 rounded-xl border p-4"><h2 class="font-semibold">{t.admin.fields.media}</h2><div class="space-y-2">{service?.media.map((media) => <div class="flex items-center justify-between gap-3 rounded-lg border p-3"><div class="min-w-0"><p class="truncate text-sm font-medium">{media.mediaId}</p><p class="text-xs text-muted-foreground">{media.altText}</p></div><Button type="button" variant="outline" data-remove-media={media.mediaId}>{t.admin.delete}</Button></div>)}</div>{service && <div class="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto]"><Input data-new-media="id" placeholder={t.admin.fields.media} /><Input data-new-media="alt" placeholder={t.admin.fields.title} /><Button type="button" data-add-media>{t.admin.save}</Button></div>}</section>
 
-      {service && <section class="space-y-4 rounded-xl border p-4"><div class="flex items-center justify-between gap-3"><div><h2 class="font-semibold">{t.admin.fields.publication}</h2><p class="text-sm text-muted-foreground">{t.admin.preview}</p></div><Button type="button" variant="outline" data-load-revisions>{t.admin.preview}</Button></div><div data-revisions-container class="space-y-2" aria-live="polite"></div></section>}
+      {service && <section class="space-y-4 rounded-xl border p-4"><div class="flex items-center justify-between gap-3"><div><h2 class="font-semibold">{t.admin.fields.publication}</h2><p class="text-sm text-muted-foreground">{t.admin.preview}</p></div><Button type="button" variant="outline" data-load-revisions>{t.admin.restoreRevision}</Button></div><div data-revisions-container class="space-y-2" aria-live="polite"></div></section>}
 
-      <div class="flex flex-wrap justify-end gap-3 border-t pt-5"><Button type="button" variant="outline" href={baseAdminUrl}>{t.admin.preview}</Button><Button type="submit">{t.admin.save}</Button></div>
+      <div class="flex flex-wrap justify-end gap-3 border-t pt-5"><Button type="button" variant="outline" href={baseAdminUrl}>{t.admin.cancel}</Button><Button type="submit">{t.admin.save}</Button></div>
       <p id="service-form-status" class="text-sm" aria-live="polite"></p>
     </form>
   </div>
 </AdminFormShell>
 <script>
   import { actions } from "astro:actions";
+  import { getServiceErrorMessage } from "@/modules/services/i18n";
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-service-admin-root]")) {
-    const labels = JSON.parse(root.dataset.actionLabels ?? "{}") as { confirmDelete?: string; confirmArchive?: string; actionError?: string };
+    const labels = JSON.parse(root.dataset.actionLabels ?? "{}") as { confirmDelete: string; confirmArchive: string; actionError: string; restoreRevision: string; saved: string; lock: string; unlock: string };
     const organizationId = root.dataset.organizationId || null;
     const serviceId = root.dataset.serviceId || null;
     const baseAdminUrl = root.dataset.baseAdminUrl ?? window.location.pathname.replace(/\/[^/]+$/, "");
     const form = root.querySelector<HTMLFormElement>("form[data-service-form]");
     const status = root.querySelector<HTMLElement>("#service-form-status");
 
+    const errorMessage = (result: { error?: { code?: string } } | null | undefined) => result?.error ? getServiceErrorMessage(document.documentElement.lang || "fr", result.error.code) : labels.actionError;
+
     async function lifecycle(action: "publish" | "unpublish" | "archive" | "restore" | "duplicate" | "delete") {
       if (!serviceId) return;
-      if (action === "delete" && !window.confirm(labels.confirmDelete ?? "Delete")) return;
-      if (action === "archive" && !window.confirm(labels.confirmArchive ?? "Archive")) return;
+      if (action === "delete" && !window.confirm(labels.confirmDelete)) return;
+      if (action === "archive" && !window.confirm(labels.confirmArchive)) return;
       const result = action === "publish"
         ? await actions.publishService({ id: serviceId, organizationId })
         : action === "unpublish"
@@ -111,7 +122,8 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
               : action === "duplicate"
                 ? await actions.duplicateService({ id: serviceId, organizationId })
                 : await actions.deleteService({ id: serviceId, organizationId });
-      if (result.error) { if (status) status.textContent = result.error.message; return; }
+      if (result.error) { if (status) status.textContent = errorMessage(result); return; }
+      if (status) status.textContent = labels.saved;
       if (action === "duplicate" && result.data?.id) window.location.href = `${baseAdminUrl}/${result.data.id}/edit`; else window.location.reload();
     }
 
@@ -121,7 +133,7 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
       if (!serviceId) return;
       const action = button.dataset.serviceLock;
       const result = action === "lock" ? await actions.lockService({ id: serviceId, organizationId }) : await actions.unlockService({ id: serviceId, organizationId });
-      if (status) status.textContent = result.error ? result.error.message : "";
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved;
     }));
 
     form?.addEventListener("submit", async (event) => {
@@ -142,7 +154,7 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
         ...(form.dataset.mode === "create" ? { status: "DRAFT" as const, publishedAt: null } : {}),
       };
       const result = form.dataset.mode === "edit" ? await actions.updateService({ ...payload, id: String(data.get("id")) }) : await actions.createService(payload);
-      if (status) status.textContent = result.error ? result.error.message : "";
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved;
       if (!result.error && result.data?.id && form.dataset.mode !== "edit") window.location.href = `${baseAdminUrl}/${result.data.id}/edit`;
     });
 
@@ -158,25 +170,25 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
     root.querySelector<HTMLButtonElement>("[data-add-availability]")?.addEventListener("click", async () => {
       if (!serviceId) return;
       const result = await actions.createServiceAvailability({ serviceId, organizationId, dayOfWeek: Number(root.querySelector<HTMLInputElement>('[data-new-availability="day"]')?.value), startTime: root.querySelector<HTMLInputElement>('[data-new-availability="start"]')?.value ?? "", endTime: root.querySelector<HTMLInputElement>('[data-new-availability="end"]')?.value ?? "", timezone: root.querySelector<HTMLInputElement>('[data-new-availability="timezone"]')?.value ?? "UTC" });
-      if (status) status.textContent = result.error ? result.error.message : ""; if (!result.error) window.location.reload();
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
     });
 
     root.querySelectorAll<HTMLButtonElement>("[data-delete-availability]").forEach((button) => button.addEventListener("click", async () => {
-      if (!serviceId || !window.confirm(labels.confirmDelete ?? "Delete")) return;
+      if (!serviceId || !window.confirm(labels.confirmDelete)) return;
       const result = await actions.deleteServiceAvailability({ id: button.dataset.deleteAvailability ?? "", serviceId, organizationId });
-      if (status) status.textContent = result.error ? result.error.message : ""; if (!result.error) window.location.reload();
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
     }));
 
     root.querySelector<HTMLButtonElement>("[data-add-media]")?.addEventListener("click", async () => {
       if (!serviceId) return;
       const result = await actions.addServiceMedia({ serviceId, organizationId, mediaId: root.querySelector<HTMLInputElement>('[data-new-media="id"]')?.value ?? "", altText: root.querySelector<HTMLInputElement>('[data-new-media="alt"]')?.value ?? "", kind: "GALLERY", sortOrder: 0 });
-      if (status) status.textContent = result.error ? result.error.message : ""; if (!result.error) window.location.reload();
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
     });
 
     root.querySelectorAll<HTMLButtonElement>("[data-remove-media]").forEach((button) => button.addEventListener("click", async () => {
-      if (!serviceId || !window.confirm(labels.confirmDelete ?? "Delete")) return;
+      if (!serviceId || !window.confirm(labels.confirmDelete)) return;
       const result = await actions.removeServiceMedia({ serviceId, organizationId, mediaId: button.dataset.removeMedia ?? "" });
-      if (status) status.textContent = result.error ? result.error.message : ""; if (!result.error) window.location.reload();
+      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
     }));
 
     root.querySelector<HTMLButtonElement>("[data-load-revisions]")?.addEventListener("click", async () => {
@@ -184,9 +196,9 @@ const actionLabels = JSON.stringify({ confirmDelete: t.admin.confirmDelete, conf
       const result = await actions.listServiceRevisions({ id: serviceId, organizationId });
       const container = root.querySelector<HTMLElement>("[data-revisions-container]");
       if (!container) return;
-      if (result.error) { container.textContent = result.error.message; return; }
-      container.innerHTML = (result.data ?? []).map((revision) => `<div class="flex items-center justify-between gap-2 rounded-lg border p-3"><div><p class="text-sm font-medium">${revision.title}</p><p class="text-xs text-muted-foreground">${revision.status} · ${new Date(revision.createdAt).toLocaleString()}</p></div><button type="button" class="restore-revision rounded-md border px-2 py-1 text-xs" data-revision-id="${revision.id}">${labels.actionError ? "Restore" : "Restore"}</button></div>`).join("");
-      container.querySelectorAll<HTMLButtonElement>(".restore-revision").forEach((button) => button.addEventListener("click", async () => { const restore = await actions.restoreServiceRevision({ revisionId: button.dataset.revisionId ?? "", serviceId, organizationId }); if (status) status.textContent = restore.error ? restore.error.message : ""; if (!restore.error) window.location.reload(); }));
+      if (result.error) { container.textContent = errorMessage(result); return; }
+      container.innerHTML = (result.data ?? []).map((revision) => `<div class="flex items-center justify-between gap-2 rounded-lg border p-3"><div><p class="text-sm font-medium">${revision.title}</p><p class="text-xs text-muted-foreground">${revision.status} · ${new Date(revision.createdAt).toLocaleString()}</p></div><button type="button" class="restore-revision rounded-md border px-2 py-1 text-xs" data-revision-id="${revision.id}">${labels.restoreRevision}</button></div>`).join("");
+      container.querySelectorAll<HTMLButtonElement>(".restore-revision").forEach((button) => button.addEventListener("click", async () => { const restore = await actions.restoreServiceRevision({ revisionId: button.dataset.revisionId ?? "", serviceId, organizationId }); if (status) status.textContent = restore.error ? errorMessage(restore) : labels.saved; if (!restore.error) window.location.reload(); }));
     });
   }
 </script>
