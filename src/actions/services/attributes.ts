@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
 import { getDrizzle } from "@database/drizzle";
