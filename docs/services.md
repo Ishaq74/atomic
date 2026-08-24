@@ -1,0 +1,114 @@
+# Services CMS module
+
+Services is a first-class Atomic CMS module. It follows the same module, admin-resource, capability, tenant, presentation and lifecycle contracts as Blog while keeping service-specific domain semantics inside `src/modules/services`.
+
+## Architecture
+
+```text
+src/modules/services/
+├── admin/        # Admin resource + admin loaders
+├── actions/      # Action exports
+├── components/   # Card/list/single/ui presentation boundaries
+├── domain/       # Service domain types and statuses
+├── i18n/         # FR/EN/ES/AR module translations
+├── loaders/      # Public and detail loaders
+├── permissions/  # Tenant + RBAC boundaries
+├── schema/       # Module schema boundary
+├── search/       # Search integration
+├── seo/          # Service SEO helpers
+├── utils/        # URLs and formatting
+├── validation/   # Runtime input contracts
+├── capabilities.ts
+├── module.ts
+└── workflow.ts
+```
+
+Shared infrastructure remains authoritative. Services reuses Atomic's content, media, taxonomy, audit, cache, SEO, workflow, revision and permission boundaries instead of creating parallel CMS infrastructure.
+
+## Domain
+
+Core tables are defined in `src/database/schemas/services.schema.ts`. They cover:
+
+- services and localized translations
+- hierarchical categories and tags
+- category/tag associations
+- shared media associations
+- weekly availability
+- revisions and editorial locks
+- SEO metadata
+- favorites
+- reviews and helpful votes
+- comments and moderation reports
+- view statistics
+
+`src/database/schemas/services-engagement.schema.ts` adds reactions, notifications and configurable service attributes.
+
+## Tenant model
+
+A service is either global (`organizationId = NULL`) or belongs to exactly one organization. Every read and mutation that handles a service identifier resolves the tenant first and checks that the target belongs to the requested tenant before authorization-dependent work continues.
+
+Organization membership never derives from a client-supplied organization id. Better Auth permissions are checked against the authenticated session and requested tenant.
+
+## Editorial lifecycle
+
+```text
+DRAFT -> PUBLISHED
+PUBLISHED -> DRAFT
+PUBLISHED -> ARCHIVED
+ARCHIVED -> DRAFT
+DRAFT/ARCHIVED -> DELETED
+```
+
+Publication is exposed through explicit lifecycle actions. `updateService` intentionally rejects direct status/publishedAt mutation so content editing cannot bypass lifecycle rules.
+
+Locks are lease-based and expire after 30 minutes. Revisions are append-only snapshots and can be restored through the lifecycle action.
+
+## Public routes
+
+```text
+/{lang}/services
+/{lang}/services/{categorySlug}
+/{lang}/services/{categorySlug}/{slug}
+/{lang}/services/tags/{tagSlug}
+
+/{lang}/organizations/{slug}/services
+/{lang}/organizations/{slug}/services/{categorySlug}/{slug}
+```
+
+Only `PUBLISHED` services are visible through public loaders.
+
+## Admin routes
+
+```text
+/{lang}/admin/services
+/{lang}/admin/services/new
+/{lang}/admin/services/{id}/edit
+
+/{lang}/organizations/{slug}/admin/services
+/{lang}/organizations/{slug}/admin/services/new
+/{lang}/organizations/{slug}/admin/services/{id}/edit
+```
+
+The admin resource provides list/search/filter/sort/pagination/stats management and explicit create/update/duplicate/publish/unpublish/archive/restore/delete/lock/unlock/revision operations.
+
+## Engagement and moderation
+
+Favorites are idempotent per user/service. Reviews are unique per author/service and enter the moderation queue as `PENDING`. Approved-review aggregates are recalculated into `ratingAverage100` and `ratingCount`. Comments can be threaded but a parent comment must belong to the same service. Reports have exactly one target enforced by the database constraint and are checked against the owning service before resolution.
+
+Reactions are one per user/service and changing the reaction replaces the previous value. Notifications are recipient-scoped and, for reads, tenant-scoped through the service owning the notification.
+
+## Internal links
+
+Services registers the `services` internal-link resolver. The resolver is tenant-aware, locale-aware and only exposes published services. It powers internal-link search and validation without coupling the shared content editor directly to the Services module.
+
+## Validation and security
+
+Runtime validation covers supported locales, canonical slugs, monetary bounds, duration/capacity bounds, UUID references, metadata lengths, pagination limits and availability intervals. Content is sanitized before persistence. Public view recording is rate-limited by client IP and only accepts published services.
+
+## Database migration
+
+The module is materialized by `src/database/migrations/0006_services_module.sql` and registered as migration entry `0006_services_module`. The migration includes all core and engagement tables, foreign keys, indexes and integrity checks required by the TypeScript schema.
+
+## Tests
+
+Unit coverage includes module/admin contracts, workflow transitions, runtime validation, taxonomy cycle prevention and service formatting utilities. Database-dependent behavior should additionally be exercised by the repository's integration/e2e pipeline against PostgreSQL.
