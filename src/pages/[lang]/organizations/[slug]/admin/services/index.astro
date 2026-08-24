@@ -6,9 +6,10 @@ import { requireAuth } from "@/lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { hasServicePermission, resolveServiceTenant } from "@/modules/services/permissions";
 import { getServiceAdminData, getServiceAdminStats } from "@/modules/services/admin";
+import { getServiceCategories, getServiceProviders, getServiceTags } from "@/modules/services/loaders";
 import { getServiceTranslations } from "@/modules/services/i18n";
 import AdminServiceList from "@/components/services/AdminServiceList.astro";
-import type { Locale } from "@i18n/config";
+import { LOCALES } from "@i18n/config";
 export const prerender = false;
 const result = await requireAuth(Astro);
 if ("redirect" in result) return result.redirect;
@@ -22,39 +23,13 @@ const orgRole = getUserOrgRole(members, user.id);
 const tenant = resolveServiceTenant({ organizationId: org.id });
 const canRead = await hasServicePermission(Astro, tenant, { service: ["read"] });
 if (!canRead) return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
-const t = getServiceTranslations(locale as Locale);
+const t = getServiceTranslations(locale);
 const p = Astro.url.searchParams;
 const page = Math.max(1, Number(p.get("page") ?? "1") || 1);
-const data = await getServiceAdminData(org.id, locale as Locale, { page, limit: 20, search: p.get("search") || undefined, status: p.get("status") || undefined });
-const stats = await getServiceAdminStats(org.id);
-const [canCreate, canUpdate, canPublish, canDelete] = await Promise.all([
-  hasServicePermission(Astro, tenant, { service: ["create"] }),
-  hasServicePermission(Astro, tenant, { service: ["update"] }),
-  hasServicePermission(Astro, tenant, { service: ["publish"] }),
-  hasServicePermission(Astro, tenant, { service: ["delete"] }),
-]);
+const featured = p.has("featured") ? p.get("featured") === "true" : undefined;
+const mobile = p.has("mobile") ? p.get("mobile") === "true" : undefined;
+const filterInput = { page, limit: 20, search: p.get("search") || undefined, status: p.get("status") || undefined, categoryId: p.get("categoryId") || undefined, tagId: p.get("tagId") || undefined, providerId: p.get("providerId") || undefined, featured, mobile, locale: p.get("locale") || undefined, sortBy: p.get("sortBy") || undefined, sortOrder: p.get("sortOrder") || undefined };
+const [data, stats, categoryOptions, tagOptions, providerOptions] = await Promise.all([getServiceAdminData(org.id, locale, filterInput), getServiceAdminStats(org.id), getServiceCategories(locale, org.id), getServiceTags(locale, org.id), getServiceProviders(org.id)]);
+const [canCreate, canUpdate, canPublish, canDelete] = await Promise.all([hasServicePermission(Astro, tenant, { service: ["create"] }), hasServicePermission(Astro, tenant, { service: ["update"] }), hasServicePermission(Astro, tenant, { service: ["publish"] }), hasServicePermission(Astro, tenant, { service: ["delete"] })]);
 ---
-<BaseLayout title={`${t.admin.title} — ${org.name}`} description={t.meta.description}>
-  <AuthLayout title={org.name}>
-    <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} />
-    <main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <AdminServiceList
-        locale={locale as Locale}
-        items={data.items}
-        total={stats.total}
-        published={stats.published}
-        draft={stats.draft}
-        featured={stats.featured}
-        views={stats.views}
-        page={data.page}
-        totalPages={data.totalPages}
-        baseUrl={`/${locale}/organizations/${org.slug}/admin/services`}
-        organizationId={org.id}
-        canCreate={canCreate}
-        canUpdate={canUpdate}
-        canPublish={canPublish}
-        canDelete={canDelete}
-      />
-    </main>
-  </AuthLayout>
-</BaseLayout>
+<BaseLayout title={`${t.admin.title} — ${org.name}`} description={t.meta.description}><AuthLayout title={org.name}><OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} /><main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceList locale={locale} items={data.items} total={stats.total} published={stats.published} featured={stats.featured} views={stats.views} page={data.page} totalPages={data.totalPages} baseUrl={`/${locale}/organizations/${org.slug}/admin/services`} organizationId={org.id} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} categoryOptions={categoryOptions} tagOptions={tagOptions} providerOptions={providerOptions} localeOptions={LOCALES} /></main></AuthLayout></BaseLayout>
