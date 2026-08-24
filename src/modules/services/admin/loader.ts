@@ -1,4 +1,4 @@
-import { and, count, eq, isNull, or, sum } from "drizzle-orm";
+import { and, count, eq, isNull, sum } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceReviews, serviceComments, serviceReports, serviceCategories, serviceCategoryTranslations, serviceTags, serviceTagTranslations } from "@database/schemas";
 import { getServices, getServiceByIdAdmin } from "@/modules/services/loaders";
@@ -38,18 +38,13 @@ export async function getServiceAdminTaxonomy(organizationId: string | null, loc
 
 export async function getServiceModerationQueue(organizationId: string | null) {
   const db = getDrizzle();
-  const [reviews, comments, reports] = await Promise.all([
+  const [reviews, comments, directReports, commentReports, reviewReports] = await Promise.all([
     db.select({ review: serviceReviews }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(tenantScope(organizationId), eq(serviceReviews.status, "PENDING"))).orderBy(serviceReviews.createdAt).limit(100),
     db.select({ comment: serviceComments }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(tenantScope(organizationId), eq(serviceComments.status, "PENDING"))).orderBy(serviceComments.createdAt).limit(100),
-    db.select({ report: serviceReports })
-      .from(serviceReports)
-      .leftJoin(services, eq(services.id, serviceReports.serviceId))
-      .leftJoin(serviceComments, eq(serviceComments.id, serviceReports.commentId))
-      .leftJoin(serviceReviews, eq(serviceReviews.id, serviceReports.reviewId))
-      .leftJoin(services.as("report_comment_service"), eq(sql`TRUE`, sql`FALSE`))
-      .where(and(eq(serviceReports.status, "PENDING"), organizationId === null ? or(eq(services.organizationId, null), eq(serviceComments.serviceId, serviceComments.serviceId)) : or(eq(services.organizationId, organizationId), eq(serviceComments.serviceId, serviceReports.commentId), eq(serviceReviews.serviceId, serviceReports.reviewId))))
-      .orderBy(serviceReports.createdAt)
-      .limit(100),
+    db.select({ report: serviceReports }).from(serviceReports).innerJoin(services, eq(services.id, serviceReports.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
+    db.select({ report: serviceReports }).from(serviceReports).innerJoin(serviceComments, eq(serviceComments.id, serviceReports.commentId)).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
+    db.select({ report: serviceReports }).from(serviceReports).innerJoin(serviceReviews, eq(serviceReviews.id, serviceReports.reviewId)).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
   ]);
+  const reports = [...directReports, ...commentReports, ...reviewReports].sort((a, b) => a.report.createdAt.getTime() - b.report.createdAt.getTime()).slice(0, 100);
   return { reviews, comments, reports };
 }
