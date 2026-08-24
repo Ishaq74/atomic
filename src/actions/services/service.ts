@@ -4,7 +4,7 @@ import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, serviceSeo, serviceRevisions } from "@database/schemas";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { generateExcerpt } from "@/lib/blog/utils";
-import { serviceFormSchema, serviceOrganizationIdSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
+import { serviceFormSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
 import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
 import { auditService, invalidateServicesCache } from "./_helpers";
 
@@ -60,7 +60,7 @@ export const updateService = defineAction({
     const existingTranslation = locale ? (await db.select().from(serviceTranslations).where(and(eq(serviceTranslations.serviceId, input.id), eq(serviceTranslations.locale, locale))).limit(1))[0] : null;
     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content;
     const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt;
-    const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword });
+    const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword ?? existingTranslation?.focusKeyword });
     if (locale && !existingTranslation && (!input.title || !input.slug || !content)) throw new ActionError({ code: "BAD_REQUEST", message: "Le titre, le slug et le contenu sont requis pour une nouvelle traduction." });
     try {
       await db.transaction(async (tx) => {
@@ -72,7 +72,7 @@ export const updateService = defineAction({
             await tx.insert(serviceTranslations).values({ serviceId: input.id, organizationId: tenant.organizationId, locale, title: input.title!, slug: input.slug!, content: content!, excerpt, locationLabel: input.locationLabel ?? null, locationAddress: input.locationAddress ?? null, metaTitle: input.metaTitle ?? input.title, metaDescription: input.metaDescription ?? null, metaKeywords: input.metaKeywords ?? null, canonicalUrl: input.canonicalUrl ?? null, ogTitle: input.ogTitle ?? null, ogDescription: input.ogDescription ?? null, ogImageId: input.ogImageId ?? null });
           }
           const [seoRow] = await tx.select({ id: serviceSeo.id }).from(serviceSeo).where(and(eq(serviceSeo.serviceId, input.id), eq(serviceSeo.locale, locale))).limit(1);
-          if (seoRow) await tx.update(serviceSeo).set({ focusKeyword: input.focusKeyword ?? undefined, focusKeywordScore: seoScore }).where(eq(serviceSeo.id, seoRow.id));
+          if (seoRow) await tx.update(serviceSeo).set({ focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : undefined, focusKeywordScore: seoScore }).where(eq(serviceSeo.id, seoRow.id));
           else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
@@ -87,9 +87,4 @@ export const updateService = defineAction({
     invalidateServicesCache();
     return { id: input.id };
   },
-});
-
-export const deleteService = defineAction({
-  input: serviceOrganizationIdSchema.transform(() => ({})),
-  handler: async () => { throw new ActionError({ code: "BAD_REQUEST", message: "Utilisez l'action de suppression explicite du lifecycle." }); },
 });
