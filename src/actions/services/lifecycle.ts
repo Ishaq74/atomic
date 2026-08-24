@@ -1,4 +1,4 @@
-import { defineAction, ActionError } from "astro:actions";
+import { ActionError, defineAction } from "astro:actions";
 import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceRevisions, serviceCategoryLinks, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo, serviceLocks } from "@database/schemas";
@@ -19,9 +19,7 @@ async function transitionService(id: string, organizationId: string | null | und
   assertValidServiceTransition(current.status as ServiceStatus, to);
   const db = getDrizzle();
   await db.transaction(async (tx) => { await tx.update(services).set({ status: to, publishedAt: to === "PUBLISHED" ? new Date() : to === "DRAFT" ? null : undefined, updatedBy: user.id }).where(eq(services.id, id)); });
-  if (to === "PUBLISHED") {
-    await createServiceNotification({ recipientId: current.providerId, serviceId: id, actorId: user.id, type: "SERVICE_PUBLISHED", title: "Service publié", message: "Votre service est désormais publié." });
-  }
+  if (to === "PUBLISHED") await createServiceNotification({ recipientId: current.providerId, serviceId: id, actorId: user.id, type: "SERVICE_PUBLISHED", title: "Service publié", message: "Votre service est désormais publié." });
   auditService(context, user.id, auditAction, { resource: "services", resourceId: id, metadata: { organizationId: tenant.organizationId, from: current.status, to } });
   invalidateServicesCache();
   return { success: true };
@@ -66,6 +64,10 @@ export const listServiceRevisions = defineAction({ input: lifecycleInput, handle
 export const restoreServiceRevision = defineAction({ input: z.object({ revisionId: z.uuid(), serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema }), handler: async (input, context) => {
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["update"] }); const current = await assertServiceInTenant(input.serviceId, tenant); const db = getDrizzle(); const [revision] = await db.select().from(serviceRevisions).where(and(eq(serviceRevisions.id, input.revisionId), eq(serviceRevisions.serviceId, input.serviceId))).limit(1);
   if (!revision) throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." }); assertValidServiceTransition(current.status as ServiceStatus, revision.status as ServiceStatus);
-  await db.transaction(async (tx) => { await tx.update(services).set({ status: revision.status, slug: revision.slug, publishedAt: revision.status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(services.id, input.serviceId)); await tx.update(serviceTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(and(eq(serviceTranslations.serviceId, input.serviceId), eq(serviceTranslations.locale, revision.locale))); await tx.insert(serviceRevisions).values({ serviceId: input.serviceId, authorId: user.id, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, status: revision.status, revisionNote: `Restauration de ${revision.id}` }); });
+  await db.transaction(async (tx) => {
+    await tx.update(services).set({ status: revision.status, slug: revision.slug, publishedAt: revision.status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(services.id, input.serviceId));
+    await tx.insert(serviceTranslations).values({ serviceId: input.serviceId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, metaTitle: revision.title }).onConflictDoUpdate({ target: [serviceTranslations.serviceId, serviceTranslations.locale], set: { title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, metaTitle: revision.title, organizationId: tenant.organizationId } });
+    await tx.insert(serviceRevisions).values({ serviceId: input.serviceId, authorId: user.id, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, status: revision.status, revisionNote: `Restauration de ${revision.id}` });
+  });
   auditService(context, user.id, "SERVICE_UPDATE", { resource: "services", resourceId: input.serviceId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } }); invalidateServicesCache(); return { success: true };
 } });
