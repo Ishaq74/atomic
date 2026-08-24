@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import { boolean, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user, organization } from "./auth.schema";
 import { services } from "./services.schema";
@@ -12,10 +12,7 @@ export const serviceReactions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.serviceId, table.userId] }),
-    index("service_reactions_service_idx").on(table.serviceId),
-  ],
+  (table) => [primaryKey({ columns: [table.serviceId, table.userId] }), index("service_reactions_service_idx").on(table.serviceId)],
 );
 
 export const serviceNotifications = pgTable(
@@ -31,10 +28,7 @@ export const serviceNotifications = pgTable(
     readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => [
-    index("service_notifications_recipient_read_idx").on(table.recipientId, table.readAt),
-    index("service_notifications_service_idx").on(table.serviceId),
-  ],
+  (table) => [index("service_notifications_recipient_read_idx").on(table.recipientId, table.readAt), index("service_notifications_service_idx").on(table.serviceId)],
 );
 
 export const serviceAttributeDefinitions = pgTable(
@@ -51,10 +45,7 @@ export const serviceAttributeDefinitions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
-  (table) => [
-    uniqueIndex("service_attribute_definitions_org_key_uidx").on(table.organizationId, table.key),
-    index("service_attribute_definitions_org_idx").on(table.organizationId),
-  ],
+  (table) => [uniqueIndex("service_attribute_definitions_org_key_uidx").on(table.organizationId, table.key), index("service_attribute_definitions_org_idx").on(table.organizationId)],
 );
 
 export const serviceAttributeValues = pgTable(
@@ -68,11 +59,7 @@ export const serviceAttributeValues = pgTable(
     selectedValue: text("selected_value"),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.serviceId, table.definitionId] }),
-    index("service_attribute_values_definition_idx").on(table.definitionId),
-    sql``,
-  ],
+  (table) => [primaryKey({ columns: [table.serviceId, table.definitionId] }), index("service_attribute_values_definition_idx").on(table.definitionId)],
 );
 
 export const serviceReactionsRelations = relations(serviceReactions, ({ one }) => ({
