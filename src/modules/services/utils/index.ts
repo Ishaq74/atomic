@@ -1,6 +1,7 @@
 import { slugify } from "@/lib/blog/utils";
+import { buildServiceUrl, buildServiceCategoryUrl } from "./urls";
 
-export { slugify };
+export { slugify, buildServiceUrl, buildServiceCategoryUrl };
 
 export function formatServicePrice(priceMinor: number | null, currency: string | null, locale: string): string | null {
   if (priceMinor === null || !currency) return null;
