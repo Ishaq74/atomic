@@ -1,5 +1,6 @@
 import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
+import { isValidLocale } from "@i18n/utils";
 import { registerInternalLinkResolver } from "@/lib/content/internal-link-resolver";
 import { serviceInternalLinkResolver } from "@/lib/services/services-internal-link";
 
@@ -11,7 +12,7 @@ export const resolveServiceInternalLink = defineAction({
     mode: z.enum(["resolve", "search"]).default("resolve"),
     query: z.string().trim().max(120).optional(),
     organizationId: z.string().trim().min(1).optional().nullable(),
-    locale: z.string().trim().min(2).max(5),
+    locale: z.string().refine(isValidLocale, "Unsupported locale"),
   }),
   handler: async (input) => {
     const ctx = { locale: input.locale, organizationId: input.organizationId ?? null };
