@@ -9,3 +9,4 @@ export { createServiceAttributeDefinition, setServiceAttributeValue } from "@/ac
 export { createServiceCategory, updateServiceCategory, deleteServiceCategory, createServiceTag, updateServiceTag, deleteServiceTag } from "@/actions/services/taxonomy";
 export { moderateServiceComment, moderateServiceReview, resolveServiceReport } from "@/actions/services/moderation";
 export { addServiceMedia, updateServiceMedia, removeServiceMedia } from "@/actions/services/media";
+export { resolveServiceInternalLink } from "@/actions/services/internal-link";
