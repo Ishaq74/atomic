@@ -1,0 +1,23 @@
+---
+import BaseLayout from "@layouts/BaseLayout.astro";
+import { getDrizzle } from "@database/drizzle";
+import { organization } from "@database/schemas";
+import { eq } from "drizzle-orm";
+import { getServices, getServiceCategories } from "@/modules/services/loaders";
+import { ServiceGrid } from "@/modules/services/components/lists";
+import { getServiceTranslations } from "@/modules/services/i18n";
+import type { Locale } from "@i18n/config";
+export const prerender = false;
+const locale = (Astro.params.lang ?? "fr") as Locale;
+const orgSlug = Astro.params.slug!;
+const categorySlug = Astro.params.categorySlug!;
+const db = getDrizzle();
+const [org] = await db.select({ id: organization.id, name: organization.name, slug: organization.slug }).from(organization).where(eq(organization.slug, orgSlug)).limit(1);
+if (!org) return Astro.redirect(`/${locale}/services`);
+const t = getServiceTranslations(locale);
+const categories = await getServiceCategories(locale, org.id);
+const category = categories.find((row) => (row.translation?.slug ?? row.category.slug) === categorySlug);
+if (!category) return Astro.redirect(`/${locale}/organizations/${orgSlug}/services`);
+const data = await getServices({ organizationId: org.id, categoryId: category.category.id }, locale, true);
+---
+<BaseLayout title={`${category.translation?.name ?? category.category.slug} — ${org.name}`} description={category.translation?.description ?? t.meta.description}><main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><header class="mb-10 space-y-2"><p class="text-sm text-muted-foreground">{org.name}</p><h1 class="text-4xl font-bold">{category.translation?.name ?? category.category.slug}</h1>{category.translation?.description && <p class="max-w-3xl text-muted-foreground">{category.translation.description}</p>}</header>{data.items.length ? <ServiceGrid items={data.items} locale={locale} organizationSlug={org.slug} /> : <p class="rounded-xl border p-10 text-center text-muted-foreground">{t.labels.noResults}</p>}</main></BaseLayout>
