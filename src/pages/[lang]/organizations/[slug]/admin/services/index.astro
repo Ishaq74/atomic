@@ -2,7 +2,7 @@
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
-import { requireAuth } from "@/lib/auth-guards";
+import { requireAuth } from "@lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { hasServicePermission, resolveServiceTenant } from "@/modules/services/permissions";
 import { getServiceAdminData, getServiceAdminStats } from "@/modules/services/admin";
@@ -32,4 +32,4 @@ const filterInput = { page, limit: 20, search: p.get("search") || undefined, sta
 const [data, stats, categoryOptions, tagOptions, providerOptions] = await Promise.all([getServiceAdminData(org.id, locale, filterInput), getServiceAdminStats(org.id), getServiceCategories(locale, org.id), getServiceTags(locale, org.id), getServiceProviders(org.id)]);
 const [canCreate, canUpdate, canPublish, canDelete] = await Promise.all([hasServicePermission(Astro, tenant, { service: ["create"] }), hasServicePermission(Astro, tenant, { service: ["update"] }), hasServicePermission(Astro, tenant, { service: ["publish"] }), hasServicePermission(Astro, tenant, { service: ["delete"] })]);
 ---
-<BaseLayout title={`${t.admin.title} — ${org.name}`} description={t.meta.description}><AuthLayout title={org.name}><OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} /><main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceList locale={locale} items={data.items} total={stats.total} published={stats.published} featured={stats.featured} views={stats.views} page={data.page} totalPages={data.totalPages} baseUrl={`/${locale}/organizations/${org.slug}/admin/services`} organizationId={org.id} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} categoryOptions={categoryOptions} tagOptions={tagOptions} providerOptions={providerOptions} localeOptions={LOCALES} /></main></AuthLayout></BaseLayout>
+<BaseLayout title={`${t.admin.title} — ${org.name}`} description={t.meta.description}><AuthLayout title={org.name}><OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} /><main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceList locale={locale} items={data.items} total={stats.total} published={stats.published} draft={stats.draft} archived={stats.archived} deleted={stats.deleted} featured={stats.featured} views={stats.views} reviews={stats.reviews} comments={stats.comments} page={data.page} totalPages={data.totalPages} baseUrl={`/${locale}/organizations/${org.slug}/admin/services`} organizationId={org.id} canCreate={canCreate} canUpdate={canUpdate} canPublish={canPublish} canDelete={canDelete} categoryOptions={categoryOptions} tagOptions={tagOptions} providerOptions={providerOptions} localeOptions={LOCALES} /></main></AuthLayout></BaseLayout>
