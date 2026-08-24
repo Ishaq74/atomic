@@ -20,6 +20,12 @@ export interface ServiceTranslation {
   ogImageId: string | null;
 }
 
+export interface ServiceCoverMedia {
+  id: string;
+  url: string;
+  alt: string;
+}
+
 export interface ServiceListItem {
   service: {
     id: string;
@@ -44,6 +50,7 @@ export interface ServiceListItem {
   translation: ServiceTranslation | null;
   provider: { id: string; name: string | null; image: string | null } | null;
   categories: { id: string; slug: string; name: string | null }[];
+  coverMedia: ServiceCoverMedia | null;
 }
 
 export interface ServiceDetail {
