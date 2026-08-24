@@ -19,8 +19,9 @@ describe("Services module contract", () => {
   });
 
   it("exposes a real admin resource contract", () => {
-    expect(serviceAdminResource.id).toBe("services");
-    expect(serviceAdminResource.capabilities).toEqual(expect.arrayContaining(["list", "search", "filters", "sort", "pagination", "stats", "create", "update", "delete"]));
+    expect(serviceAdminResource.id).toBe("service");
+    expect(serviceAdminResource.management).toEqual(expect.objectContaining({ list: true, search: true, filters: true, sort: true, pagination: true, stats: true }));
+    expect(serviceAdminResource.actions).toEqual(expect.objectContaining({ create: true, read: true, update: true, duplicate: true, publish: true, unpublish: true, archive: true, restore: true, delete: true }));
   });
 });
 
