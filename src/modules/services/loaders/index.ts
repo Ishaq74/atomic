@@ -30,7 +30,8 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
 }
 
 export async function getServices(input: unknown = {}, locale: Locale = "fr", publicOnly = true): Promise<{ items: ServiceListItem[]; page: number; limit: number; total: number; totalPages: number }> {
-  const filters = serviceListFiltersSchema.parse({ ...(input as Record<string, unknown>), locale });
+  const rawInput = typeof input === "object" && input !== null ? input : {};
+  const filters = serviceListFiltersSchema.parse({ ...rawInput, locale });
   const db = getDrizzle();
   const conditions = [serviceTenantScope(filters.organizationId), eq(serviceTranslations.locale, filters.locale)];
   if (publicOnly) conditions.push(eq(services.status, "PUBLISHED")); else if (filters.status) conditions.push(eq(services.status, filters.status));
@@ -60,8 +61,7 @@ export async function getServices(input: unknown = {}, locale: Locale = "fr", pu
 
 export async function getServiceBySlug(slug: string, locale: Locale = "fr", organizationId: string | null = null): Promise<ServiceDetail | null> {
   const db = getDrizzle();
-  const rows = await db.select({ serviceId: services.id }).from(serviceTranslations).innerJoin(services, and(eq(services.id, serviceTranslations.serviceId), serviceTenantScope(organizationId), eq(services.status, "PUBLISHED"))).where(and(eq(serviceTranslations.slug, slug), eq(serviceTranslations.locale, locale))).limit(1);
-  const row = rows[0];
+  const [row] = await db.select({ serviceId: services.id }).from(serviceTranslations).innerJoin(services, and(eq(services.id, serviceTranslations.serviceId), serviceTenantScope(organizationId), eq(services.status, "PUBLISHED"))).where(and(eq(serviceTranslations.slug, slug), eq(serviceTranslations.locale, locale))).limit(1);
   if (!row) return null;
   return loadServiceDetailById(row.serviceId, locale, organizationId, true);
 }
@@ -76,4 +76,10 @@ export async function getServiceCategories(locale: Locale = "fr", organizationId
 
 export async function getServiceTags(locale: Locale = "fr", organizationId: string | null = null) {
   return getDrizzle().select({ tag: serviceTags, translation: serviceTagTranslations }).from(serviceTags).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale))).where(tagTenantScope(organizationId)).orderBy(asc(serviceTags.slug));
+}
+
+export async function getServiceProviders(organizationId: string | null = null) {
+  const db = getDrizzle();
+  const scope = serviceTenantScope(organizationId);
+  return db.selectDistinct({ id: user.id, name: user.name }).from(services).innerJoin(user, eq(user.id, services.providerId)).where(scope).orderBy(asc(user.name));
 }
