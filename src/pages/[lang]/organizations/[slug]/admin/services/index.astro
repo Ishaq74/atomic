@@ -27,10 +27,34 @@ const p = Astro.url.searchParams;
 const page = Math.max(1, Number(p.get("page") ?? "1") || 1);
 const data = await getServiceAdminData(org.id, locale as Locale, { page, limit: 20, search: p.get("search") || undefined, status: p.get("status") || undefined });
 const stats = await getServiceAdminStats(org.id);
-const canCreate = await hasServicePermission(Astro, tenant, { service: ["create"] });
+const [canCreate, canUpdate, canPublish, canDelete] = await Promise.all([
+  hasServicePermission(Astro, tenant, { service: ["create"] }),
+  hasServicePermission(Astro, tenant, { service: ["update"] }),
+  hasServicePermission(Astro, tenant, { service: ["publish"] }),
+  hasServicePermission(Astro, tenant, { service: ["delete"] }),
+]);
 ---
 <BaseLayout title={`${t.admin.title} — ${org.name}`} description={t.meta.description}>
-  <AuthLayout title={org.name}><OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} />
-    <main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceList locale={locale as Locale} items={data.items} total={stats.total} published={stats.published} draft={stats.draft} featured={stats.featured} views={stats.views} page={data.page} totalPages={data.totalPages} baseUrl={`/${locale}/organizations/${org.slug}/admin/services`} canCreate={canCreate} /></main>
+  <AuthLayout title={org.name}>
+    <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} />
+    <main class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <AdminServiceList
+        locale={locale as Locale}
+        items={data.items}
+        total={stats.total}
+        published={stats.published}
+        draft={stats.draft}
+        featured={stats.featured}
+        views={stats.views}
+        page={data.page}
+        totalPages={data.totalPages}
+        baseUrl={`/${locale}/organizations/${org.slug}/admin/services`}
+        organizationId={org.id}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canPublish={canPublish}
+        canDelete={canDelete}
+      />
+    </main>
   </AuthLayout>
 </BaseLayout>
