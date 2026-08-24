@@ -1,16 +1,14 @@
 import { defineAction } from "astro:actions";
 import { z } from "astro/zod";
 import { blogInternalLinkResolver } from "@/lib/blog/blog-internal-link";
-import { serviceInternalLinkResolver } from "@/lib/services/services-internal-link";
 import { getInternalLinkResolver, registerInternalLinkResolver } from "@/lib/content/internal-link-resolver";
 
 registerInternalLinkResolver(blogInternalLinkResolver);
-registerInternalLinkResolver(serviceInternalLinkResolver);
 
 function resolveResolver(resolverName: string | undefined, referer: string | null) {
   const explicit = resolverName?.trim();
   if (explicit) return getInternalLinkResolver(explicit) ?? null;
-  if (referer?.includes("/services")) return getInternalLinkResolver("services") ?? serviceInternalLinkResolver;
+  if (referer?.includes("/services")) return getInternalLinkResolver("services") ?? null;
   return getInternalLinkResolver("blog") ?? blogInternalLinkResolver;
 }
 
