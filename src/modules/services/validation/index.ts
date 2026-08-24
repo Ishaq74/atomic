@@ -6,13 +6,14 @@ export const serviceStatusSchema = z.enum(["DRAFT", "PUBLISHED", "ARCHIVED", "DE
 export const serviceOrganizationIdSchema = z.string().trim().min(1).optional().nullable();
 const localeSchema = z.string().refine((value): value is Locale => isValidLocale(value), "Unsupported locale");
 const slugSchema = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must contain only lowercase letters, numbers, and hyphens.");
+const nullableText = (max: number) => z.string().trim().max(max).optional().nullable();
 
 export const serviceFormSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
   locale: localeSchema,
   title: z.string().trim().min(1).max(180),
   slug: slugSchema,
-  excerpt: z.string().trim().max(500).optional().nullable(),
+  excerpt: nullableText(500),
   content: z.string().min(1),
   status: serviceStatusSchema.default("DRAFT"),
   publishedAt: z.coerce.date().optional().nullable(),
@@ -26,6 +27,15 @@ export const serviceFormSchema = z.object({
   isFeatured: z.boolean().default(false),
   categoryIds: z.array(z.string().uuid()).max(100).default([]),
   tagIds: z.array(z.string().uuid()).max(100).default([]),
+  metaTitle: nullableText(180),
+  metaDescription: nullableText(320),
+  metaKeywords: nullableText(500),
+  canonicalUrl: z.string().url().optional().nullable(),
+  ogTitle: nullableText(180),
+  ogDescription: nullableText(320),
+  locationLabel: nullableText(180),
+  locationAddress: nullableText(500),
+  focusKeyword: nullableText(120),
 });
 
 export const serviceUpdateSchema = serviceFormSchema.partial().extend({ id: z.string().uuid() });
