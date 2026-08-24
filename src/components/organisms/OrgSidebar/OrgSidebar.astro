@@ -1,7 +1,7 @@
 ---
 import type { AuthTranslations, Locale } from '@i18n/config';
 import { getAuthUrl, getOrgUrl } from '@i18n/utils';
-import { getServiceTranslations } from '@/modules/services/i18n';
+import { getModuleLabel } from '@/core/localization/module-labels';
 import type { FullOrganization } from '@/lib/auth-data';
 import type { OrgSubpage } from '@i18n/utils';
 import ArrowLeftIcon from '@tabler/icons/outline/arrow-left.svg';
@@ -18,13 +18,12 @@ import { safeUrl } from '@lib/sanitize';
 interface Props { t: AuthTranslations; locale: Locale; org: FullOrganization; activeItem?: OrgSubpage; orgRole?: string | null; }
 const { t, locale, org, activeItem, orgRole } = Astro.props;
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
-const serviceT = getServiceTranslations(locale);
 const canManage = orgRole === 'admin' || orgRole === 'owner';
 const navItems: { id: OrgSubpage; title: string; url: string; icon: typeof UsersIcon; show: boolean }[] = [
   { id: 'members', title: t.organizations.members.title, url: getOrgUrl(locale, org.slug, 'members'), icon: UsersIcon, show: true },
   { id: 'roles', title: t.organizations.roles.title, url: getOrgUrl(locale, org.slug, 'roles'), icon: ShieldIcon, show: canManage },
   { id: 'blog', title: t.organizations.blog.title, url: getOrgUrl(locale, org.slug, 'blog'), icon: FileTextIcon, show: canManage },
-  { id: 'services', title: serviceT.labels.services, url: getOrgUrl(locale, org.slug, 'services'), icon: BriefcaseIcon, show: canManage },
+  { id: 'services', title: getModuleLabel('services', locale), url: getOrgUrl(locale, org.slug, 'services'), icon: BriefcaseIcon, show: canManage },
   { id: 'media', title: t.organizations.media.title, url: getOrgUrl(locale, org.slug, 'media'), icon: PhotoIcon, show: canManage },
   { id: 'settings', title: t.organizations.settings.title, url: getOrgUrl(locale, org.slug, 'settings'), icon: SettingsIcon, show: canManage },
 ];
