@@ -4,6 +4,10 @@ import { services, serviceReviews, serviceComments } from "@database/schemas";
 import { getServices, getServiceByIdAdmin } from "@/modules/services/loaders";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail } from "@/modules/services/domain";
+import { serviceListFiltersSchema } from "@/modules/services/validation";
+import type { z } from "astro/zod";
+
+export type ServiceAdminFilters = Partial<z.infer<typeof serviceListFiltersSchema>>;
 
 function tenantScope(organizationId: string | null) {
   return organizationId === null ? isNull(services.organizationId) : eq(services.organizationId, organizationId);
@@ -12,7 +16,7 @@ function tenantScope(organizationId: string | null) {
 export async function getServiceAdminData(
   organizationId: string | null,
   locale: Locale,
-  filters: Record<string, unknown> = {},
+  filters: ServiceAdminFilters = {},
 ) {
   return getServices({ ...filters, organizationId }, locale, false);
 }
