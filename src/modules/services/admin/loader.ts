@@ -1,7 +1,7 @@
 import { and, count, eq, isNull, sum } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { serviceTranslations, services, serviceReviews, serviceComments } from "@database/schemas";
-import { getServices, getServiceBySlug } from "@/modules/services/loaders";
+import { getServices, getServiceByIdAdmin } from "@/modules/services/loaders";
 import type { Locale } from "@i18n/config";
 
 function tenantScope(organizationId: string | null) {
@@ -13,29 +13,7 @@ export async function getServiceAdminData(organizationId: string | null, locale:
 }
 
 export async function getServiceAdminById(id: string, locale: Locale, organizationId: string | null) {
-  const db = getDrizzle();
-  const [row] = await db
-    .select({ service: services, translation: serviceTranslations })
-    .from(services)
-    .leftJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, locale)))
-    .where(and(eq(services.id, id), tenantScope(organizationId)))
-    .limit(1);
-  if (!row) return null;
-  const publicDetail = row.service.status === "PUBLISHED"
-    ? await getServiceBySlug(row.translation?.slug ?? row.service.slug, locale, organizationId)
-    : null;
-  return publicDetail ?? {
-    service: row.service,
-    translation: row.translation
-      ? { locale: row.translation.locale, title: row.translation.title, slug: row.translation.slug, excerpt: row.translation.excerpt, content: row.translation.content }
-      : null,
-    provider: null,
-    categories: [],
-    tags: [],
-    media: [],
-    availability: [],
-    seo: null,
-  };
+  return getServiceByIdAdmin(id, locale, organizationId);
 }
 
 export async function getServiceAdminStats(organizationId: string | null) {
