@@ -129,7 +129,7 @@ test.describe.serial('Services surfaces', () => {
   });
 
   test('global public services list and detail are tenant isolated and canonical', async ({ page }) => {
-    const response = await page.goto(`/fr/services?q=${encodeURIComponent(seeded.globalServiceTitle)}`, { waitUntil: 'networkidle' });
+    const response = await page.goto(`/fr/services?search=${encodeURIComponent(seeded.globalServiceTitle)}`, { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
     await expect(page.getByRole('link', { name: seeded.globalServiceTitle }).first()).toBeVisible();
     await expect(page.getByRole('link', { name: seeded.orgServiceTitle })).toHaveCount(0);
