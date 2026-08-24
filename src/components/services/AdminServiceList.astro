@@ -4,10 +4,16 @@ import AdminResourceStats from "@molecules/AdminResourceStats.astro";
 import Button from "@atoms/button/Button.astro";
 import ServiceCard from "@/modules/services/components/cards/ServiceCard.astro";
 import { getServiceTranslations } from "@/modules/services/i18n";
+import { formatServicePrice } from "@/modules/services/utils";
 import type { Locale } from "@i18n/config";
 import type { ServiceListItem } from "@/modules/services/domain";
 const { locale, items, total, published, draft, featured, views, page, totalPages, baseUrl, canCreate } = Astro.props as { locale: Locale; items: ServiceListItem[]; total: number; published: number; draft: number; featured: number; views: number; page: number; totalPages: number; baseUrl: string; canCreate: boolean };
 const t = getServiceTranslations(locale);
+function pageHref(targetPage: number): string {
+  const params = new URLSearchParams(Astro.url.searchParams);
+  params.set("page", String(targetPage));
+  return `${baseUrl}?${params.toString()}`;
+}
 ---
 <AdminResourceList resourceId="service">
   <div slot="header" class="flex w-full flex-wrap items-center justify-between gap-3">
@@ -19,8 +25,8 @@ const t = getServiceTranslations(locale);
   </div>
   <div slot="content" class="space-y-6">
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><AdminResourceStats label={t.labels.services} value={total} /><AdminResourceStats label={t.admin.status.PUBLISHED} value={published} /><AdminResourceStats label={t.labels.featured} value={featured} /><AdminResourceStats label="Views" value={views} /></div>
-    <div class="hidden overflow-x-auto rounded-xl border lg:block"><table class="w-full min-w-[900px] text-sm"><thead class="bg-muted/40"><tr><th class="p-3 text-left">{t.admin.fields.title}</th><th class="p-3 text-left">{t.labels.provider}</th><th class="p-3 text-left">{t.admin.fields.price}</th><th class="p-3 text-left">{t.admin.fields.duration}</th><th class="p-3 text-left">{t.admin.fields.publication}</th><th class="p-3 text-right">{t.admin.fields.title}</th></tr></thead><tbody>{items.map((item) => <tr class="border-t"><td class="p-3 font-medium"><a class="hover:underline" href={`${baseUrl}/${item.service.id}/edit`}>{item.translation?.title}</a></td><td class="p-3">{item.provider?.name}</td><td class="p-3">{item.service.priceMinor ?? "—"} {item.service.currency ?? ""}</td><td class="p-3">{item.service.durationMinutes ?? "—"}</td><td class="p-3">{t.admin.status[item.service.status]}</td><td class="p-3 text-right"><a href={`${baseUrl}/${item.service.id}/edit`} class="underline">{t.admin.editService}</a></td></tr>)}</tbody></table></div>
+    <div class="hidden overflow-x-auto rounded-xl border lg:block"><table class="w-full min-w-[900px] text-sm"><thead class="bg-muted/40"><tr><th class="p-3 text-left">{t.admin.fields.title}</th><th class="p-3 text-left">{t.labels.provider}</th><th class="p-3 text-left">{t.admin.fields.price}</th><th class="p-3 text-left">{t.admin.fields.duration}</th><th class="p-3 text-left">{t.admin.fields.publication}</th><th class="p-3 text-right">{t.admin.fields.title}</th></tr></thead><tbody>{items.map((item) => <tr class="border-t"><td class="p-3 font-medium"><a class="hover:underline" href={`${baseUrl}/${item.service.id}/edit`}>{item.translation?.title}</a></td><td class="p-3">{item.provider?.name}</td><td class="p-3">{formatServicePrice(item.service.priceMinor, item.service.currency, locale) ?? "—"}</td><td class="p-3">{item.service.durationMinutes ?? "—"}</td><td class="p-3">{t.admin.status[item.service.status]}</td><td class="p-3 text-right"><a href={`${baseUrl}/${item.service.id}/edit`} class="underline">{t.admin.editService}</a></td></tr>)}</tbody></table></div>
     <div class="grid gap-4 lg:hidden">{items.map((item) => <ServiceCard item={item} locale={locale} variant="compact" />)}</div>
   </div>
-  <div slot="pagination" class="flex items-center justify-between"><span class="text-sm text-muted-foreground">Page {page} / {totalPages}</span><div class="flex gap-2">{page > 1 && <Button variant="outline" href={`${baseUrl}?page=${page - 1}`}>←</Button>}{page < totalPages && <Button variant="outline" href={`${baseUrl}?page=${page + 1}`}>→</Button>}</div></div>
+  <div slot="pagination" class="flex items-center justify-between"><span class="text-sm text-muted-foreground">Page {page} / {totalPages}</span><div class="flex gap-2">{page > 1 && <Button variant="outline" href={pageHref(page - 1)}>←</Button>}{page < totalPages && <Button variant="outline" href={pageHref(page + 1)}>→</Button>}</div></div>
 </AdminResourceList>
