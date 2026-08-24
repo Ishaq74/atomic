@@ -9,7 +9,7 @@ import type { Locale } from "@i18n/config";
 export const prerender = false;
 const result = await requirePermission(Astro, { service: ["create"] });
 if ("redirect" in result) return result.redirect;
-const { locale, authT } = result as { locale: Locale; authT: Awaited<ReturnType<typeof import('@/i18n/utils').getAuthTranslations>> };
+const { locale, authT } = result;
 const t = getServiceTranslations(locale);
 ---
 <BaseLayout title={t.admin.newService} description={t.meta.description}>
