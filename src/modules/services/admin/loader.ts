@@ -32,27 +32,23 @@ export async function getServiceAdminById(
 export async function getServiceAdminStats(organizationId: string | null) {
   const db = getDrizzle();
   const scope = tenantScope(organizationId);
-  const [total, published, draft, featured, views, reviews, comments] = await Promise.all([
+  const [total, published, draft, archived, deleted, featured, views, reviews, comments] = await Promise.all([
     db.select({ count: count() }).from(services).where(scope),
     db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "PUBLISHED"))),
     db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DRAFT"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "ARCHIVED"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DELETED"))),
     db.select({ count: count() }).from(services).where(and(scope, eq(services.isFeatured, true))),
     db.select({ total: sum(services.viewCount) }).from(services).where(scope),
-    db
-      .select({ count: count() })
-      .from(serviceReviews)
-      .innerJoin(services, eq(services.id, serviceReviews.serviceId))
-      .where(scope),
-    db
-      .select({ count: count() })
-      .from(serviceComments)
-      .innerJoin(services, eq(services.id, serviceComments.serviceId))
-      .where(scope),
+    db.select({ count: count() }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(scope),
+    db.select({ count: count() }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(scope),
   ]);
   return {
     total: Number(total[0]?.count ?? 0),
     published: Number(published[0]?.count ?? 0),
     draft: Number(draft[0]?.count ?? 0),
+    archived: Number(archived[0]?.count ?? 0),
+    deleted: Number(deleted[0]?.count ?? 0),
     featured: Number(featured[0]?.count ?? 0),
     views: Number(views[0]?.total ?? 0),
     reviews: Number(reviews[0]?.count ?? 0),
