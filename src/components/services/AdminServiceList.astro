@@ -13,7 +13,6 @@ const {
   items,
   total,
   published,
-  draft,
   featured,
   views,
   page,
@@ -29,7 +28,6 @@ const {
   items: ServiceListItem[];
   total: number;
   published: number;
-  draft: number;
   featured: number;
   views: number;
   page: number;
@@ -48,74 +46,76 @@ function pageHref(targetPage: number): string {
   return `${baseUrl}?${params.toString()}`;
 }
 ---
-<AdminResourceList resourceId="service">
-  <div slot="header" class="flex w-full flex-wrap items-center justify-between gap-3">
-    <div><h1 class="text-2xl font-semibold">{t.admin.title}</h1><p class="text-sm text-muted-foreground">{total} {t.labels.services.toLowerCase()}</p></div>
-    {canCreate && <Button href={`${baseUrl}/new`}>{t.admin.newService}</Button>}
-  </div>
-  <div slot="filters" class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
-    <form class="contents" method="get">
-      <input class="h-10 rounded-md border bg-background px-3 text-sm" name="search" placeholder={t.labels.search} value={Astro.url.searchParams.get("search") ?? ""} />
-      <select class="h-10 rounded-md border bg-background px-3 text-sm" name="status">
-        <option value="">{t.labels.allStatuses}</option>
-        <option value="PUBLISHED">{t.admin.status.PUBLISHED}</option>
-        <option value="DRAFT">{t.admin.status.DRAFT}</option>
-        <option value="ARCHIVED">{t.admin.status.ARCHIVED}</option>
-      </select>
-      <Button type="submit" variant="outline">{t.labels.search}</Button>
-    </form>
-  </div>
-  <div slot="content" class="space-y-6">
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <AdminResourceStats label={t.labels.services} value={total} />
-      <AdminResourceStats label={t.admin.status.PUBLISHED} value={published} />
-      <AdminResourceStats label={t.labels.featured} value={featured} />
-      <AdminResourceStats label={t.labels.views} value={views} />
+<div data-service-admin-root data-organization-id={organizationId ?? ""}>
+  <AdminResourceList resourceId="service">
+    <div slot="header" class="flex w-full flex-wrap items-center justify-between gap-3">
+      <div><h1 class="text-2xl font-semibold">{t.admin.title}</h1><p class="text-sm text-muted-foreground">{total} {t.labels.services.toLowerCase()}</p></div>
+      {canCreate && <Button href={`${baseUrl}/new`}>{t.admin.newService}</Button>}
     </div>
-    <div class="hidden overflow-x-auto rounded-xl border lg:block">
-      <table class="w-full min-w-[1180px] text-sm">
-        <thead class="bg-muted/40">
-          <tr>
-            <th class="p-3 text-left">{t.admin.fields.title}</th>
-            <th class="p-3 text-left">{t.labels.provider}</th>
-            <th class="p-3 text-left">{t.admin.fields.price}</th>
-            <th class="p-3 text-left">{t.admin.fields.duration}</th>
-            <th class="p-3 text-left">{t.admin.fields.publication}</th>
-            <th class="p-3 text-left">{t.labels.views}</th>
-            <th class="p-3 text-right">{t.labels.actions}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr class="border-t align-top">
-              <td class="p-3 font-medium"><a class="hover:underline" href={`${baseUrl}/${item.service.id}/edit`}>{item.translation?.title ?? item.service.slug}</a></td>
-              <td class="p-3">{item.provider?.name ?? "—"}</td>
-              <td class="p-3">{formatServicePrice(item.service.priceMinor, item.service.currency, locale) ?? "—"}</td>
-              <td class="p-3">{item.service.durationMinutes ?? "—"}</td>
-              <td class="p-3">{t.admin.status[item.service.status]}</td>
-              <td class="p-3">{item.service.viewCount}</td>
-              <td class="p-3">
-                <div class="flex flex-wrap justify-end gap-2">
-                  <a href={`${baseUrl}/${item.service.id}/edit`} class="rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted">{t.admin.editService}</a>
-                  {item.service.status === "DRAFT" && canPublish && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="publish" data-id={item.service.id}>{t.admin.publish}</button>}
-                  {item.service.status === "PUBLISHED" && canPublish && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="unpublish" data-id={item.service.id}>{t.admin.unpublish}</button>}
-                  {item.service.status !== "DELETED" && canUpdate && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="{item.service.status === 'ARCHIVED' ? 'restore' : 'archive'}" data-id={item.service.id}>{item.service.status === "ARCHIVED" ? t.admin.restore : t.admin.archive}</button>}
-                  {canCreate && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="duplicate" data-id={item.service.id}>{t.admin.duplicate}</button>}
-                  {canDelete && item.service.status !== "DELETED" && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs text-destructive hover:bg-muted" data-action="delete" data-id={item.service.id}>{t.admin.delete}</button>}
-                </div>
-              </td>
+    <div slot="filters" class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto]">
+      <form class="contents" method="get">
+        <input class="h-10 rounded-md border bg-background px-3 text-sm" name="search" placeholder={t.labels.search} value={Astro.url.searchParams.get("search") ?? ""} />
+        <select class="h-10 rounded-md border bg-background px-3 text-sm" name="status">
+          <option value="">{t.labels.allStatuses}</option>
+          <option value="PUBLISHED">{t.admin.status.PUBLISHED}</option>
+          <option value="DRAFT">{t.admin.status.DRAFT}</option>
+          <option value="ARCHIVED">{t.admin.status.ARCHIVED}</option>
+        </select>
+        <Button type="submit" variant="outline">{t.labels.search}</Button>
+      </form>
+    </div>
+    <div slot="content" class="space-y-6">
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <AdminResourceStats label={t.labels.services} value={total} />
+        <AdminResourceStats label={t.admin.status.PUBLISHED} value={published} />
+        <AdminResourceStats label={t.labels.featured} value={featured} />
+        <AdminResourceStats label={t.labels.views} value={views} />
+      </div>
+      <div class="hidden overflow-x-auto rounded-xl border lg:block">
+        <table class="w-full min-w-[1180px] text-sm">
+          <thead class="bg-muted/40">
+            <tr>
+              <th class="p-3 text-left">{t.admin.fields.title}</th>
+              <th class="p-3 text-left">{t.labels.provider}</th>
+              <th class="p-3 text-left">{t.admin.fields.price}</th>
+              <th class="p-3 text-left">{t.admin.fields.duration}</th>
+              <th class="p-3 text-left">{t.admin.fields.publication}</th>
+              <th class="p-3 text-left">{t.labels.views}</th>
+              <th class="p-3 text-right">{t.labels.actions}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr class="border-t align-top">
+                <td class="p-3 font-medium"><a class="hover:underline" href={`${baseUrl}/${item.service.id}/edit`}>{item.translation?.title ?? item.service.slug}</a></td>
+                <td class="p-3">{item.provider?.name ?? "—"}</td>
+                <td class="p-3">{formatServicePrice(item.service.priceMinor, item.service.currency, locale) ?? "—"}</td>
+                <td class="p-3">{item.service.durationMinutes ?? "—"}</td>
+                <td class="p-3">{t.admin.status[item.service.status]}</td>
+                <td class="p-3">{item.service.viewCount}</td>
+                <td class="p-3">
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <a href={`${baseUrl}/${item.service.id}/edit`} class="rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted">{t.admin.editService}</a>
+                    {item.service.status === "DRAFT" && canPublish && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="publish" data-id={item.service.id}>{t.admin.publish}</button>}
+                    {item.service.status === "PUBLISHED" && canPublish && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="unpublish" data-id={item.service.id}>{t.admin.unpublish}</button>}
+                    {item.service.status !== "DELETED" && canUpdate && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action={item.service.status === "ARCHIVED" ? "restore" : "archive"} data-id={item.service.id}>{item.service.status === "ARCHIVED" ? t.admin.restore : t.admin.archive}</button>}
+                    {canCreate && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs hover:bg-muted" data-action="duplicate" data-id={item.service.id}>{t.admin.duplicate}</button>}
+                    {canDelete && item.service.status !== "DELETED" && <button type="button" class="service-row-action rounded-md border px-2.5 py-1.5 text-xs text-destructive hover:bg-muted" data-action="delete" data-id={item.service.id}>{t.admin.delete}</button>}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div class="grid gap-4 lg:hidden">{items.map((item) => <ServiceCard item={item} locale={locale} variant="compact" />)}</div>
     </div>
-    <div class="grid gap-4 lg:hidden">{items.map((item) => <ServiceCard item={item} locale={locale} variant="compact" />)}</div>
-  </div>
-  <div slot="pagination" class="flex items-center justify-between">
-    <span class="text-sm text-muted-foreground">{t.labels.page} {page} / {totalPages}</span>
-    <div class="flex gap-2">{page > 1 && <Button variant="outline" href={pageHref(page - 1)} aria-label={t.labels.previous}>{t.labels.previous}</Button>}{page < totalPages && <Button variant="outline" href={pageHref(page + 1)} aria-label={t.labels.next}>{t.labels.next}</Button>}</div>
-  </div>
-</AdminResourceList>
+    <div slot="pagination" class="flex items-center justify-between">
+      <span class="text-sm text-muted-foreground">{t.labels.page} {page} / {totalPages}</span>
+      <div class="flex gap-2">{page > 1 && <Button variant="outline" href={pageHref(page - 1)} aria-label={t.labels.previous}>{t.labels.previous}</Button>}{page < totalPages && <Button variant="outline" href={pageHref(page + 1)} aria-label={t.labels.next}>{t.labels.next}</Button>}</div>
+    </div>
+  </AdminResourceList>
+</div>
 <script>
   import { actions } from "astro:actions";
 
@@ -131,22 +131,24 @@ function pageHref(targetPage: number): string {
     }
   }
 
-  for (const button of document.querySelectorAll<HTMLButtonElement>(".service-row-action")) {
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-service-admin-root] .service-row-action")) {
     button.addEventListener("click", async () => {
       const action = button.dataset.action ?? "";
       const id = button.dataset.id;
+      const root = button.closest<HTMLElement>("[data-service-admin-root]");
+      const organizationId = root?.dataset.organizationId || null;
       if (!id) return;
       const destructive = action === "delete" || action === "archive";
-      const confirmed = !destructive || window.confirm(action === "delete" ? "Supprimer ce service ?" : "Archiver ce service ?");
+      const confirmed = !destructive || window.confirm(action === "delete" ? t.admin.confirmDelete : t.admin.confirmArchive);
       if (!confirmed) return;
       button.disabled = true;
       try {
-        const result = await runServiceAction(id, action, document.documentElement.dataset.serviceOrganizationId ?? null);
+        const result = await runServiceAction(id, action, organizationId);
         if (result?.error) throw new Error(result.error.message);
         window.location.reload();
       } catch (error) {
         button.disabled = false;
-        window.alert(error instanceof Error ? error.message : "Action impossible.");
+        window.alert(error instanceof Error ? error.message : t.admin.actionError);
       }
     });
   }
