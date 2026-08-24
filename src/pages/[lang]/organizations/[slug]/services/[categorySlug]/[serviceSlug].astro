@@ -19,16 +19,10 @@ const [org] = await db.select({ id: organization.id, name: organization.name, sl
 if (!org) return Astro.redirect(`/${locale}/services`);
 const item = await getServiceBySlug(serviceSlug, locale, org.id);
 if (!item) return Astro.redirect(`/${locale}/organizations/${orgSlug}/services`);
-if (!item.categories.some((category) => category.slug === categorySlug)) {
-  const canonicalCategory = item.categories[0]?.slug ?? null;
-  return Astro.redirect(buildServiceUrl(locale, org.slug, item.translation?.slug ?? item.service.slug, canonicalCategory));
-}
+if (!item.categories.some((category) => category.slug === categorySlug)) { const canonicalCategory = item.categories[0]?.slug ?? null; return Astro.redirect(buildServiceUrl(locale, org.slug, item.translation?.slug ?? item.service.slug, canonicalCategory)); }
 const t = getServiceTranslations(locale);
 const title = item.translation?.title ?? t.labels.service;
 const description = item.translation?.excerpt ?? t.meta.description;
 const jsonLd = buildServiceJsonLd({ name: title, description, slug: Astro.url.href, priceMinor: item.service.priceMinor, currency: item.service.currency, ratingAverage100: item.service.ratingAverage100, ratingCount: item.service.ratingCount });
 ---
-<BaseLayout title={`${title} — ${org.name}`} description={description}>
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
-  <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><ServiceDetail item={item} locale={locale} /></main>
-</BaseLayout>
+<BaseLayout title={`${title} — ${org.name}`} description={description}><script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script><main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><ServiceDetail item={item} locale={locale} organizationSlug={org.slug} /></main></BaseLayout>
