@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
+import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
 import { requirePermission } from "@/lib/auth-guards";
 import { hasServicePermission, resolveServiceTenant } from "@/modules/services/permissions";
 import { getServiceAdminById } from "@/modules/services/admin";
@@ -10,7 +11,7 @@ import type { Locale } from "@i18n/config";
 export const prerender = false;
 const result = await requirePermission(Astro, { service: ["read"] });
 if ("redirect" in result) return result.redirect;
-const { locale } = result as { locale: Locale };
+const { locale, authT } = result;
 const id = Astro.params.id!;
 const item = await getServiceAdminById(id, locale, null);
 if (!item) return Astro.redirect(`/${locale}/admin/services`);
@@ -18,5 +19,8 @@ if (!(await hasServicePermission(Astro, resolveServiceTenant({}), { service: ["u
 const t = getServiceTranslations(locale);
 ---
 <BaseLayout title={t.admin.editService} description={t.meta.description}>
-  <AuthLayout title={t.admin.editService}><main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceForm locale={locale} service={item} organizationId={null} /></main></AuthLayout>
+  <AuthLayout title={t.admin.editService}>
+    <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="services" />
+    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceForm locale={locale} service={item} organizationId={null} /></main>
+  </AuthLayout>
 </BaseLayout>
