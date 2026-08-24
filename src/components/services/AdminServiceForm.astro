@@ -7,22 +7,61 @@ import { Checkbox } from "@atoms/checkbox";
 import Button from "@atoms/button/Button.astro";
 import ContentEditor from "@components/content/ContentEditor.astro";
 import { getServiceTranslations } from "@/modules/services/i18n";
+import { getServiceCategories, getServiceTags } from "@/modules/services/loaders";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail } from "@/modules/services/domain";
-const { locale, service = null, organizationId = null, baseAdminUrl = `/${locale}/admin/services` } = Astro.props as { locale: Locale; service?: ServiceDetail | null; organizationId?: string | null; baseAdminUrl?: string };
+
+const { locale, service = null, organizationId = null, baseAdminUrl = `/${locale}/admin/services` } = Astro.props as {
+  locale: Locale; service?: ServiceDetail | null; organizationId?: string | null; baseAdminUrl?: string;
+};
 const t = getServiceTranslations(locale);
 const translation = service?.translation;
+const [categoryRows, tagRows] = await Promise.all([getServiceCategories(locale, organizationId), getServiceTags(locale, organizationId)]);
+const selectedCategoryIds = new Set(service?.categories.map((item) => item.id) ?? []);
+const selectedTagIds = new Set(service?.tags.map((item) => item.id) ?? []);
+const focusKeyword = service?.seo?.focusKeyword ?? "";
 ---
 <AdminFormShell formSelector="form[data-service-form]" title={service ? t.admin.editService : t.admin.newService}>
   <form id="service-form" data-service-form data-mode={service ? "edit" : "create"} data-base-admin-url={baseAdminUrl} class="space-y-6">
     <input type="hidden" name="organizationId" value={organizationId ?? ""} />
     <input type="hidden" name="locale" value={locale} />
     {service && <input type="hidden" name="id" value={service.service.id} />}
-    <div class="grid gap-4 md:grid-cols-2"><div class="space-y-1.5"><Label for="service-title">{t.admin.fields.title}</Label><Input id="service-title" name="title" required value={translation?.title ?? ""} /></div><div class="space-y-1.5"><Label for="service-slug">{t.admin.fields.slug}</Label><Input id="service-slug" name="slug" required value={translation?.slug ?? ""} /></div></div>
-    <div class="space-y-1.5"><Label for="service-excerpt">{t.admin.fields.excerpt}</Label><Textarea id="service-excerpt" name="excerpt" rows={3} defaultValue={translation?.excerpt ?? ""} /></div>
-    <ContentEditor name="content" value={translation?.content ?? ""} locale={locale} organizationId={organizationId} resolverName="blog" label={t.admin.fields.content} required rows={16} />
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><div class="space-y-1.5"><Label for="service-price">{t.admin.fields.price}</Label><Input id="service-price" name="priceMinor" type="number" min="0" step="1" value={service?.service.priceMinor ?? ""} /></div><div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service?.service.currency ?? "EUR"} /></div><div class="space-y-1.5"><Label for="service-duration">{t.admin.fields.duration}</Label><Input id="service-duration" name="durationMinutes" type="number" min="1" value={service?.service.durationMinutes ?? ""} /></div><div class="space-y-1.5"><Label for="service-capacity">{t.admin.fields.maxParticipants}</Label><Input id="service-capacity" name="maxParticipants" type="number" min="1" value={service?.service.maxParticipants ?? ""} /></div></div>
-    <div class="flex flex-wrap gap-6"><Checkbox name="isMobile" label={t.admin.fields.mobile} checked={service?.service.isMobile ?? false} /><Checkbox name="isFeatured" label={t.admin.fields.featured} checked={service?.service.isFeatured ?? false} /></div>
+
+    <section class="space-y-4">
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="space-y-1.5"><Label for="service-title">{t.admin.fields.title}</Label><Input id="service-title" name="title" required value={translation?.title ?? ""} /></div>
+        <div class="space-y-1.5"><Label for="service-slug">{t.admin.fields.slug}</Label><Input id="service-slug" name="slug" required value={translation?.slug ?? ""} /></div>
+      </div>
+      <div class="space-y-1.5"><Label for="service-excerpt">{t.admin.fields.excerpt}</Label><Textarea id="service-excerpt" name="excerpt" rows={3} defaultValue={translation?.excerpt ?? ""} /></div>
+      <ContentEditor name="content" value={translation?.content ?? ""} locale={locale} organizationId={organizationId} resolverName="services" label={t.admin.fields.content} required rows={16} />
+    </section>
+
+    <section class="grid gap-4 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="space-y-1.5"><Label for="service-price">{t.admin.fields.price}</Label><Input id="service-price" name="priceMinor" type="number" min="0" step="1" value={service?.service.priceMinor ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-currency">{t.admin.fields.currency}</Label><Input id="service-currency" name="currency" maxlength="3" value={service?.service.currency ?? "EUR"} /></div>
+      <div class="space-y-1.5"><Label for="service-duration">{t.admin.fields.duration}</Label><Input id="service-duration" name="durationMinutes" type="number" min="1" value={service?.service.durationMinutes ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-capacity">{t.admin.fields.maxParticipants}</Label><Input id="service-capacity" name="maxParticipants" type="number" min="1" value={service?.service.maxParticipants ?? ""} /></div>
+    </section>
+
+    <section class="space-y-4 rounded-xl border p-4">
+      <div class="flex flex-wrap gap-6">
+        <Checkbox name="isMobile" label={t.admin.fields.mobile} checked={service?.service.isMobile ?? false} />
+        <Checkbox name="isFeatured" label={t.admin.fields.featured} checked={service?.service.isFeatured ?? false} />
+      </div>
+      <div class="space-y-2"><Label>{t.admin.fields.categories}</Label><div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{categoryRows.map(({ category, translation: categoryTranslation }) => <Checkbox name="categoryIds" value={category.id} label={categoryTranslation?.name ?? category.slug} checked={selectedCategoryIds.has(category.id)} />)}</div></div>
+      <div class="space-y-2"><Label>{t.admin.fields.tags}</Label><div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{tagRows.map(({ tag, translation: tagTranslation }) => <Checkbox name="tagIds" value={tag.id} label={tagTranslation?.name ?? tag.slug} checked={selectedTagIds.has(tag.id)} />)}</div></div>
+    </section>
+
+    <section class="grid gap-4 rounded-xl border p-4 md:grid-cols-2">
+      <div class="space-y-1.5"><Label for="service-cover">{t.admin.fields.coverImage}</Label><Input id="service-cover" name="coverImageId" value={service?.service.coverImageId ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-og-image">OG image ID</Label><Input id="service-og-image" name="ogImageId" value={translation?.ogImageId ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-meta-title">Meta title</Label><Input id="service-meta-title" name="metaTitle" value={translation?.metaTitle ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-meta-description">Meta description</Label><Textarea id="service-meta-description" name="metaDescription" rows={2} defaultValue={translation?.metaDescription ?? ""} /></div>
+      <div class="space-y-1.5"><Label for="service-focus-keyword">Focus keyword</Label><Input id="service-focus-keyword" name="focusKeyword" value={focusKeyword} /></div>
+      <div class="space-y-1.5"><Label for="service-location-label">Location</Label><Input id="service-location-label" name="locationLabel" value={translation?.locationLabel ?? ""} /></div>
+      <div class="space-y-1.5 md:col-span-2"><Label for="service-location-address">Address</Label><Input id="service-location-address" name="locationAddress" value={translation?.locationAddress ?? ""} /></div>
+    </section>
+
     <div class="flex flex-wrap justify-end gap-3 border-t pt-5"><Button type="button" variant="outline" href={baseAdminUrl}>Annuler</Button><Button type="submit">{t.admin.save}</Button></div>
     <p id="service-form-status" class="text-sm" aria-live="polite"></p>
   </form>
@@ -33,10 +72,34 @@ const translation = service?.translation;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const data = new FormData(form);
-      const checked = (name: string) => form.querySelector<HTMLInputElement>(`input[name="${name}"]`)?.checked ?? false;
-      const payload = { organizationId: String(data.get("organizationId") || "") || null, locale: String(data.get("locale")), title: String(data.get("title")), slug: String(data.get("slug")), excerpt: String(data.get("excerpt") || "") || null, content: String(data.get("content")), status: "DRAFT", publishedAt: null, coverImageId: null, ogImageId: null, priceMinor: data.get("priceMinor") ? Number(data.get("priceMinor")) : null, currency: String(data.get("currency") || "") || null, durationMinutes: data.get("durationMinutes") ? Number(data.get("durationMinutes")) : null, maxParticipants: data.get("maxParticipants") ? Number(data.get("maxParticipants")) : null, isMobile: checked("isMobile"), isFeatured: checked("isFeatured"), categoryIds: [], tagIds: [] };
+      const checkedValues = (name: string) => Array.from(form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]:checked`)).map((input) => input.value);
+      const payload = {
+        organizationId: String(data.get("organizationId") || "") || null,
+        locale: String(data.get("locale")),
+        title: String(data.get("title")),
+        slug: String(data.get("slug")),
+        excerpt: String(data.get("excerpt") || "") || null,
+        content: String(data.get("content")),
+        status: "DRAFT",
+        publishedAt: null,
+        coverImageId: String(data.get("coverImageId") || "") || null,
+        ogImageId: String(data.get("ogImageId") || "") || null,
+        priceMinor: data.get("priceMinor") ? Number(data.get("priceMinor")) : null,
+        currency: String(data.get("currency") || "") || null,
+        durationMinutes: data.get("durationMinutes") ? Number(data.get("durationMinutes")) : null,
+        maxParticipants: data.get("maxParticipants") ? Number(data.get("maxParticipants")) : null,
+        isMobile: form.querySelector<HTMLInputElement>('input[name="isMobile"]')?.checked ?? false,
+        isFeatured: form.querySelector<HTMLInputElement>('input[name="isFeatured"]')?.checked ?? false,
+        categoryIds: checkedValues("categoryIds"),
+        tagIds: checkedValues("tagIds"),
+        metaTitle: String(data.get("metaTitle") || "") || null,
+        metaDescription: String(data.get("metaDescription") || "") || null,
+        locationLabel: String(data.get("locationLabel") || "") || null,
+        locationAddress: String(data.get("locationAddress") || "") || null,
+      };
       const result = form.dataset.mode === "edit" ? await actions.updateService({ ...payload, id: String(data.get("id")) }) : await actions.createService(payload);
-      const status = form.querySelector<HTMLElement>("#service-form-status"); if (status) status.textContent = result.error ? result.error.message : "Enregistré.";
+      const status = form.querySelector<HTMLElement>("#service-form-status");
+      if (status) status.textContent = result.error ? result.error.message : "Enregistré.";
       if (!result.error && result.data?.id && form.dataset.mode !== "edit") window.location.href = `${form.dataset.baseAdminUrl}/${result.data.id}/edit`;
     });
   }
