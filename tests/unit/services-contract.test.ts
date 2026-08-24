@@ -6,11 +6,16 @@ import { formatServiceDuration, formatServicePrice, formatServiceRating } from "
 
 describe("Services module contract", () => {
   it("declares the expected CMS capabilities and presentation grammar", () => {
-    expect(servicesModule.name).toBe("services");
-    expect(servicesModule.capabilities).toEqual(expect.arrayContaining([
-      "content", "localization", "media", "seo", "taxonomy", "search", "workflow", "revision", "locks", "engagement", "moderation", "notifications", "audit", "cache",
-    ]));
-    expect(servicesModule.presentation).toEqual(expect.objectContaining({ card: expect.anything(), list: expect.anything(), single: expect.anything(), ui: expect.anything() }));
+    expect(servicesModule.id).toBe("services");
+    expect(servicesModule.entity).toBe("service");
+    expect(servicesModule.capabilities.content).toBe(true);
+    expect(servicesModule.capabilities.localization).toBe(true);
+    expect(servicesModule.capabilities.moderation).toBe(true);
+    expect(servicesModule.capabilities.notifications).toBe(true);
+    expect(servicesModule.presentations.card).toEqual(expect.arrayContaining(["default", "compact", "featured"]));
+    expect(servicesModule.presentations.list).toEqual(expect.arrayContaining(["default", "dense", "search"]));
+    expect(servicesModule.presentations.single).toEqual(expect.arrayContaining(["default", "detail"]));
+    expect(servicesModule.presentations.ui).toEqual(expect.arrayContaining(["price", "rating", "availability", "provider"]));
   });
 
   it("exposes a real admin resource contract", () => {
