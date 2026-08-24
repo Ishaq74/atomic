@@ -58,9 +58,10 @@ export const updateService = defineAction({
     const db = getDrizzle();
     const locale = input.locale;
     const existingTranslation = locale ? (await db.select().from(serviceTranslations).where(and(eq(serviceTranslations.serviceId, input.id), eq(serviceTranslations.locale, locale))).limit(1))[0] : null;
+    const existingSeo = locale ? (await db.select().from(serviceSeo).where(and(eq(serviceSeo.serviceId, input.id), eq(serviceSeo.locale, locale))).limit(1))[0] : null;
     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content;
     const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt;
-    const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword ?? existingTranslation?.focusKeyword });
+    const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : existingSeo?.focusKeyword ?? undefined });
     if (locale && !existingTranslation && (!input.title || !input.slug || !content)) throw new ActionError({ code: "BAD_REQUEST", message: "Le titre, le slug et le contenu sont requis pour une nouvelle traduction." });
     try {
       await db.transaction(async (tx) => {
@@ -71,8 +72,7 @@ export const updateService = defineAction({
           } else {
             await tx.insert(serviceTranslations).values({ serviceId: input.id, organizationId: tenant.organizationId, locale, title: input.title!, slug: input.slug!, content: content!, excerpt, locationLabel: input.locationLabel ?? null, locationAddress: input.locationAddress ?? null, metaTitle: input.metaTitle ?? input.title, metaDescription: input.metaDescription ?? null, metaKeywords: input.metaKeywords ?? null, canonicalUrl: input.canonicalUrl ?? null, ogTitle: input.ogTitle ?? null, ogDescription: input.ogDescription ?? null, ogImageId: input.ogImageId ?? null });
           }
-          const [seoRow] = await tx.select({ id: serviceSeo.id }).from(serviceSeo).where(and(eq(serviceSeo.serviceId, input.id), eq(serviceSeo.locale, locale))).limit(1);
-          if (seoRow) await tx.update(serviceSeo).set({ focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : undefined, focusKeywordScore: seoScore }).where(eq(serviceSeo.id, seoRow.id));
+          if (existingSeo) await tx.update(serviceSeo).set({ ...(input.focusKeyword !== undefined ? { focusKeyword: input.focusKeyword } : {}), focusKeywordScore: seoScore }).where(eq(serviceSeo.id, existingSeo.id));
           else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
