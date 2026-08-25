@@ -8,16 +8,13 @@ import { stripHtml } from "@/core/content/text";
 import type { Locale } from "@i18n/config";
 import { isValidLocale } from "@i18n/utils";
 import { getServiceEngagementTranslations } from "@/modules/services/i18n/engagement";
+import { getServiceNotificationTranslations } from "@/modules/services/i18n/notifications";
 import { assertServiceInTenant, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema, serviceRateLimit } from "./_helpers";
 import { auditService, invalidateServicesCache } from "./_helpers";
 import { createServiceNotification } from "./notification";
 
 const serviceIdInput = z.object({ serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema });
-
-function requestLocale(headers: Headers): Locale {
-  const candidate = headers.get("accept-language")?.split(",", 1)[0]?.split("-", 1)[0] ?? "fr";
-  return isValidLocale(candidate) ? candidate : "fr";
-}
+function requestLocale(headers: Headers): Locale { const candidate = headers.get("accept-language")?.split(",", 1)[0]?.split("-", 1)[0] ?? "fr"; return isValidLocale(candidate) ? candidate : "fr"; }
 
 export const toggleServiceFavorite = defineAction({ input: serviceIdInput, handler: async (input, context) => {
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "favorite");
@@ -32,13 +29,9 @@ export const createServiceReview = defineAction({
     const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); const service = await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "review");
     const db = getDrizzle(); const existing = (await db.select().from(serviceReviews).where(and(eq(serviceReviews.serviceId, input.serviceId), eq(serviceReviews.authorId, user.id))).limit(1))[0];
     if (existing) throw new ActionError({ code: "CONFLICT", message: "Review already exists for this service." });
-    const title = input.title ? stripHtml(input.title).trim() : null;
-    const content = sanitizeHtml(input.content);
+    const title = input.title ? stripHtml(input.title).trim() : null; const content = sanitizeHtml(input.content);
     const [review] = await db.insert(serviceReviews).values({ serviceId: input.serviceId, authorId: user.id, rating: input.rating, title, content, isRecommended: input.isRecommended, status: "PENDING" }).returning({ id: serviceReviews.id });
-    if (review?.id) {
-      const t = getServiceEngagementTranslations(requestLocale(context.request.headers));
-      await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: t.reviewTitle, message: t.pendingModeration });
-    }
+    if (review?.id) { const t = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: t.reviewTitle, message: t.contributionPending }); }
     auditService(context, user.id, "SERVICE_REVIEW_MODERATE", { resource: "serviceReviews", resourceId: review.id, metadata: { action: "CREATE" } }); invalidateServicesCache(); return review;
   },
 });
@@ -47,20 +40,10 @@ export const createServiceComment = defineAction({
   input: serviceIdInput.extend({ parentId: z.uuid().optional().nullable(), content: z.string().trim().min(1).max(5000) }),
   handler: async (input, context) => {
     const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); const service = await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "comment");
-    const db = getDrizzle();
-    let recipientId = service.providerId;
-    let type: "NEW_COMMENT" | "REPLY_TO_COMMENT" = "NEW_COMMENT";
-    if (input.parentId) {
-      const [parent] = await db.select({ id: serviceComments.id, authorId: serviceComments.authorId }).from(serviceComments).where(and(eq(serviceComments.id, input.parentId), eq(serviceComments.serviceId, input.serviceId))).limit(1);
-      if (!parent) throw new ActionError({ code: "NOT_FOUND", message: "Parent comment not found for this service." });
-      if (parent.authorId) { recipientId = parent.authorId; type = "REPLY_TO_COMMENT"; }
-    }
-    const content = sanitizeHtml(input.content);
-    const [comment] = await db.insert(serviceComments).values({ serviceId: input.serviceId, authorId: user.id, parentId: input.parentId ?? null, content, status: "PENDING" }).returning({ id: serviceComments.id });
-    if (comment?.id) {
-      const t = getServiceEngagementTranslations(requestLocale(context.request.headers));
-      await createServiceNotification({ recipientId, serviceId: input.serviceId, actorId: user.id, type, commentId: comment.id, title: t.commentTitle, message: t.pendingModeration });
-    }
+    const db = getDrizzle(); let recipientId = service.providerId; let type: "NEW_COMMENT" | "REPLY_TO_COMMENT" = "NEW_COMMENT";
+    if (input.parentId) { const [parent] = await db.select({ id: serviceComments.id, authorId: serviceComments.authorId }).from(serviceComments).where(and(eq(serviceComments.id, input.parentId), eq(serviceComments.serviceId, input.serviceId))).limit(1); if (!parent) throw new ActionError({ code: "NOT_FOUND", message: "Parent comment not found for this service." }); if (parent.authorId) { recipientId = parent.authorId; type = "REPLY_TO_COMMENT"; } }
+    const content = sanitizeHtml(input.content); const [comment] = await db.insert(serviceComments).values({ serviceId: input.serviceId, authorId: user.id, parentId: input.parentId ?? null, content, status: "PENDING" }).returning({ id: serviceComments.id });
+    if (comment?.id) { const t = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId, serviceId: input.serviceId, actorId: user.id, type, commentId: comment.id, title: type === "NEW_COMMENT" ? t.commentTitle : t.commentReplyTitle, message: t.contributionPending }); }
     auditService(context, user.id, "SERVICE_COMMENT_MODERATE", { resource: "serviceComments", resourceId: comment.id, metadata: { action: "CREATE" } }); invalidateServicesCache(); return comment;
   },
 });
@@ -70,30 +53,19 @@ export const createServiceReport = defineAction({
   handler: async (input, context) => {
     const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "report");
     const db = getDrizzle();
-    if (input.commentId) {
-      const [comment] = await db.select({ id: serviceComments.id }).from(serviceComments).where(and(eq(serviceComments.id, input.commentId), eq(serviceComments.serviceId, input.serviceId))).limit(1);
-      if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Comment not found for this service." });
-    }
-    if (input.reviewId) {
-      const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1);
-      if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Review not found for this service." });
-    }
-    const description = input.description ? stripHtml(input.description).trim() : null;
-    const [report] = await db.insert(serviceReports).values({ serviceId: input.commentId || input.reviewId ? null : input.serviceId, commentId: input.commentId ?? null, reviewId: input.reviewId ?? null, reporterId: user.id, reason: input.reason, description }).returning({ id: serviceReports.id });
+    if (input.commentId) { const [comment] = await db.select({ id: serviceComments.id }).from(serviceComments).where(and(eq(serviceComments.id, input.commentId), eq(serviceComments.serviceId, input.serviceId))).limit(1); if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Comment not found for this service." }); }
+    if (input.reviewId) { const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Review not found for this service." }); }
+    const description = input.description ? stripHtml(input.description).trim() : null; const [report] = await db.insert(serviceReports).values({ serviceId: input.commentId || input.reviewId ? null : input.serviceId, commentId: input.commentId ?? null, reviewId: input.reviewId ?? null, reporterId: user.id, reason: input.reason, description }).returning({ id: serviceReports.id });
     auditService(context, user.id, "SERVICE_REPORT_RESOLVE", { resource: "serviceReports", resourceId: report.id, metadata: { action: "CREATE" } }); return report;
   },
 });
 
 export const voteServiceReviewHelpful = defineAction({ input: serviceIdInput.extend({ reviewId: z.uuid(), isHelpful: z.boolean() }), handler: async (input, context) => {
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceReview: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "review-helpful");
-  const db = getDrizzle(); const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1);
-  if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Review not found for this service." });
+  const db = getDrizzle(); const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Review not found for this service." });
   await db.insert(serviceReviewHelpful).values({ reviewId: input.reviewId, userId: user.id, isHelpful: input.isHelpful }).onConflictDoUpdate({ target: [serviceReviewHelpful.reviewId, serviceReviewHelpful.userId], set: { isHelpful: input.isHelpful } });
-  const [aggregate] = await db.select({ count: count() }).from(serviceReviewHelpful).where(and(eq(serviceReviewHelpful.reviewId, input.reviewId), eq(serviceReviewHelpful.isHelpful, true)));
-  await db.update(serviceReviews).set({ helpfulCount: Number(aggregate?.count ?? 0) }).where(eq(serviceReviews.id, input.reviewId));
+  const [aggregate] = await db.select({ count: count() }).from(serviceReviewHelpful).where(and(eq(serviceReviewHelpful.reviewId, input.reviewId), eq(serviceReviewHelpful.isHelpful, true))); await db.update(serviceReviews).set({ helpfulCount: Number(aggregate?.count ?? 0) }).where(eq(serviceReviews.id, input.reviewId));
   return { success: true, helpfulCount: Number(aggregate?.count ?? 0) };
 } });
 
-export async function listApprovedServiceReviews(serviceId: string) {
-  return getDrizzle().select().from(serviceReviews).where(and(eq(serviceReviews.serviceId, serviceId), eq(serviceReviews.status, "APPROVED"))).orderBy(desc(serviceReviews.createdAt));
-}
+export async function listApprovedServiceReviews(serviceId: string) { return getDrizzle().select().from(serviceReviews).where(and(eq(serviceReviews.serviceId, serviceId), eq(serviceReviews.status, "APPROVED"))).orderBy(desc(serviceReviews.createdAt)); }
