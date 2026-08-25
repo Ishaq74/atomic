@@ -11,6 +11,7 @@ export const servicesModule: AtomicModuleDefinition = {
     media: true,
     seo: true,
     taxonomy: true,
+    attributes: true,
     search: true,
     publication: true,
     revisions: true,
