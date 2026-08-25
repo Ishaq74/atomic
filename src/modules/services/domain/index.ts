@@ -20,11 +20,7 @@ export interface ServiceTranslation {
   ogImageId: string | null;
 }
 
-export interface ServiceCoverMedia {
-  id: string;
-  url: string;
-  alt: string;
-}
+export interface ServiceCoverMedia { id: string; url: string; alt: string; }
 
 export interface ServiceListItem {
   service: {
@@ -63,6 +59,7 @@ export interface ServiceDetail {
   media: { id: string; mediaId: string; kind: "GALLERY" | "DOCUMENT"; altText: string; caption: string | null; sortOrder: number }[];
   availability: { id: string; dayOfWeek: number; startTime: string; endTime: string; timezone: string; maxParticipants: number | null }[];
   seo: { locale: string; focusKeyword: string | null; metaRobots: string | null; schemaMarkup: string | null } | null;
+  availableLocales: readonly string[];
 }
 
 export const SERVICE_REACTION_TYPES = ["LIKE", "LOVE", "FIRE", "CLAP"] as const;
