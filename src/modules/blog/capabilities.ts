@@ -7,6 +7,7 @@ const capabilityIds = [
   "media",
   "seo",
   "taxonomy",
+  "attributes",
   "search",
   "publication",
   "revisions",
