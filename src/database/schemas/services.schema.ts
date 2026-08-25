@@ -10,6 +10,7 @@ import {
   index,
   check,
   primaryKey,
+  customType,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { user, organization } from "./auth.schema";
@@ -17,6 +18,7 @@ import { mediaFiles } from "./media.schema";
 import { LOCALES } from "@i18n/config";
 
 const localeEnum = text("locale", { enum: LOCALES }).notNull();
+const tsvector = customType<{ data: string }>({ dataType: () => "tsvector" });
 
 export const services = pgTable(
   "services",
@@ -79,6 +81,7 @@ export const serviceTranslations = pgTable(
     ogTitle: text("og_title"),
     ogDescription: text("og_description"),
     ogImageId: text("og_image_id").references(() => mediaFiles.id, { onDelete: "set null" }),
+    searchVector: tsvector("search_vector"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
   },
