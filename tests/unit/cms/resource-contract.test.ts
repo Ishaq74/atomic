@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertResourceCompatibility, type AdminResourceDefinition } from "@/lib/cms/resource-contract";
+import { assertResourceCompatibility, type AdminResourceDefinition } from "@/core/admin/resource-contract";
 
 const moduleDefinition = {
   id: "blog",
@@ -36,52 +36,50 @@ const moduleDefinition = {
     audit: "audit",
     cache: "cache",
   },
-  presentations: {
-    card: ["default"],
-    list: ["default"],
-    single: ["default"],
-    ui: [],
-  },
+  presentations: { card: ["default"], list: ["default"], single: ["default"], ui: [] },
 } as const;
 
 describe("Atomic admin resource contract", () => {
   it("accepts matching entity and capability contracts", () => {
-    const resource: AdminResourceDefinition = {
-      id: "blog-post",
-      entity: "blog_post",
-      actions: { read: true, publish: true, archive: true },
-    };
+    const resource: AdminResourceDefinition = { id: "blog-post", entity: "blog_post", actions: { read: true, publish: true, archive: true } };
     expect(() => assertResourceCompatibility(moduleDefinition, resource)).not.toThrow();
   });
 
   it("rejects publication actions without publication capability", () => {
-    const resource: AdminResourceDefinition = {
-      id: "resource",
-      entity: "blog_post",
-      actions: { publish: true },
-    };
-    const withoutPublication = {
-      ...moduleDefinition,
-      capabilities: { ...moduleDefinition.capabilities, publication: false },
-    } as const;
+    const resource: AdminResourceDefinition = { id: "resource", entity: "blog_post", actions: { publish: true } };
+    const withoutPublication = { ...moduleDefinition, capabilities: { ...moduleDefinition.capabilities, publication: false } } as const;
     expect(() => assertResourceCompatibility(withoutPublication, resource)).toThrow("does not enable publication");
   });
 
   it("rejects a resource owned by another module", () => {
-    const resource: AdminResourceDefinition = {
-      id: "service",
-      entity: "service",
-      actions: { read: true },
-    };
+    const resource: AdminResourceDefinition = { id: "service", entity: "service", actions: { read: true } };
     expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("owns blog_post");
   });
 
   it("rejects list-dependent management without list support", () => {
+    const resource: AdminResourceDefinition = { id: "resource", entity: "blog_post", management: { search: true } };
+    expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("without list capability");
+  });
+
+  it("rejects bulk actions without selection", () => {
     const resource: AdminResourceDefinition = {
       id: "resource",
       entity: "blog_post",
-      management: { search: true },
+      management: { list: true },
+      actions: { bulk: true },
+      list: { bulkActions: [{ id: "publish" }] },
     };
-    expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("without list capability");
+    expect(() => assertResourceCompatibility(moduleDefinition, resource)).toThrow("without selection capability");
+  });
+
+  it("accepts selection, facets, saved views and bulk actions when explicitly enabled", () => {
+    const resource: AdminResourceDefinition = {
+      id: "resource",
+      entity: "blog_post",
+      management: { list: true, filters: true, selection: true, facets: true, savedViews: true },
+      actions: { bulk: true },
+      list: { filters: [{ id: "status", kind: "select", queryParam: "status" }], selection: true, facets: true, savedViews: true, bulkActions: [{ id: "publish", permission: "blog.publish" }] },
+    };
+    expect(() => assertResourceCompatibility(moduleDefinition, resource)).not.toThrow();
   });
 });
