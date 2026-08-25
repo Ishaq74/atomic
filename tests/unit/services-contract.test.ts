@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { servicesModule } from "@/modules/services/module";
+import { blogModule } from "@/modules/blog/module";
 import { serviceAdminResource } from "@/modules/services/admin";
 import { assertAcyclicParent } from "@/core/taxonomy";
 import { canTransitionService, assertValidServiceTransition } from "@/modules/services/workflow";
@@ -16,6 +17,7 @@ describe("Services module contract", () => {
     expect(servicesModule.capabilities.media).toBe(true);
     expect(servicesModule.capabilities.seo).toBe(true);
     expect(servicesModule.capabilities.taxonomy).toBe(true);
+    expect(servicesModule.capabilities.attributes).toBe(true);
     expect(servicesModule.capabilities.search).toBe(true);
     expect(servicesModule.capabilities.revisions).toBe(true);
     expect(servicesModule.capabilities.locks).toBe(true);
@@ -26,6 +28,11 @@ describe("Services module contract", () => {
     expect(servicesModule.presentations.list).toEqual(expect.arrayContaining(["default", "dense", "search"]));
     expect(servicesModule.presentations.single).toEqual(expect.arrayContaining(["default", "detail"]));
     expect(servicesModule.presentations.ui).toEqual(expect.arrayContaining(["price", "rating", "availability", "provider"]));
+  });
+
+  it("keeps attribute support explicit per module", () => {
+    expect(blogModule.capabilities.attributes).toBe(false);
+    expect(servicesModule.capabilities.attributes).toBe(true);
   });
 
   it("exposes a real admin resource contract", () => {
