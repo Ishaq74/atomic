@@ -5,6 +5,7 @@ export interface AtomicModuleCapabilities {
   media: boolean;
   seo: boolean;
   taxonomy: boolean;
+  attributes: boolean;
   search: boolean;
   publication: boolean;
   revisions: boolean;
@@ -23,6 +24,7 @@ export interface AtomicModuleCapabilityProviders {
   readonly media: string;
   readonly seo: string;
   readonly taxonomy: string;
+  readonly attributes: string;
   readonly search: string;
   readonly publication: string;
   readonly revisions: string;
