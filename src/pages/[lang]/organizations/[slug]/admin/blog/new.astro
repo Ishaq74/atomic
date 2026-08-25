@@ -5,7 +5,7 @@ import { getBlogTranslations } from "@i18n/utils";
 import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
 import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 import BaseLayout from "@layouts/BaseLayout.astro";
-import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
+import AuthLayout from "@organisms/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
 import AdminFormShell from "@organisms/AdminFormShell.astro";
 import AdminPostForm from "@/components/blog/AdminPostForm.astro";

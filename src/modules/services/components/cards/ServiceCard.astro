@@ -1,0 +1,30 @@
+---
+import type { ServiceListItem } from "@/modules/services/domain";
+import { formatServicePrice, formatServiceDuration, formatServiceRating } from "@/modules/services/utils";
+import { getServiceTranslations } from "@/modules/services/i18n";
+const { item, locale = "fr", variant = "default", organizationSlug = null } = Astro.props as { item: ServiceListItem; locale?: string; variant?: "default" | "compact" | "featured" | "horizontal"; organizationSlug?: string | null };
+const t = getServiceTranslations(locale);
+const title = item.translation?.title ?? item.service.slug;
+const category = item.categories[0];
+const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/services` : `/${locale}/services`;
+const href = category ? `${base}/${category.slug}/${item.translation?.slug ?? item.service.slug}` : `${base}/${item.translation?.slug ?? item.service.slug}`;
+const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
+const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
+---
+<article class:list={["group relative overflow-hidden rounded-2xl border bg-background transition-shadow hover:shadow-lg", { "md:flex": variant === "horizontal", "ring-2": variant === "featured" }]}>
+  <div class="aspect-[16/10] bg-muted md:w-full md:max-w-xs">
+    {item.coverMedia ? <img src={item.coverMedia.url} alt={item.coverMedia.alt || title} class="h-full w-full object-cover" loading="lazy" /> : <div class="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">{title}</div>}
+  </div>
+  <div class="flex flex-1 flex-col gap-3 p-5">
+    <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span>{category?.name ?? t.labels.category}</span>{item.service.isFeatured && <span aria-label={t.labels.featured}>★</span>}</div>
+    <h2 class="text-lg font-semibold"><a class="after:absolute after:inset-0" href={href}>{title}</a></h2>
+    {item.translation?.excerpt && <p class="line-clamp-3 text-sm text-muted-foreground">{item.translation.excerpt}</p>}
+    <div class="mt-auto flex flex-wrap items-center gap-3 text-sm">
+      {price && <span class="font-semibold">{price}</span>}
+      {formatServiceDuration(item.service.durationMinutes) && <span>{formatServiceDuration(item.service.durationMinutes)}</span>}
+      {item.service.maxParticipants && <span>{item.service.maxParticipants} {t.labels.participants}</span>}
+      {rating !== null && <span aria-label={`${rating} / 5`}>★ {rating}</span>}
+      {item.service.isMobile && <span>{t.labels.mobile}</span>}
+    </div>
+  </div>
+</article>
