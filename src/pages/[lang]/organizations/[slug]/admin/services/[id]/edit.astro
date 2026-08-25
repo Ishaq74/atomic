@@ -1,6 +1,6 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
+import AuthLayout from "@organisms/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
 import { requireAuth } from "@/lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
@@ -17,4 +17,9 @@ if (!(await hasServicePermission(Astro, tenant, { service: ["update"] }))) retur
 const item = await getServiceAdminById(Astro.params.id!, locale as Locale, org.id); if (!item) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
 const t = getServiceTranslations(locale as Locale); const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/services`;
 ---
-<BaseLayout title={`${t.admin.editService} — ${org.name}`} description={t.meta.description}><AuthLayout title={org.name}><OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} /><main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceForm locale={locale as Locale} service={item} organizationId={org.id} baseAdminUrl={baseAdminUrl} /></main></AuthLayout></BaseLayout>
+<BaseLayout title={`${t.admin.editService} — ${org.name}`} description={t.meta.description}>
+  <AuthLayout title={org.name}>
+    <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} orgRole={orgRole} activeItem="services" />
+    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8"><AdminServiceForm locale={locale as Locale} service={item} organizationId={org.id} baseAdminUrl={baseAdminUrl} /></main>
+  </AuthLayout>
+</BaseLayout>
