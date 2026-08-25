@@ -1,8 +1,8 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import AuthLayout from "@organisms/AuthLayout.astro";
+import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
-import { requireAuth } from "@/lib/auth-guards";
+import { requireAuth } from "@lib/auth-guards";
 import { fetchOrgData, getUserOrgRole } from "@/lib/auth-data";
 import { hasServicePermission, resolveServiceTenant } from "@/modules/services/permissions";
 import { getServiceAdminById } from "@/modules/services/admin";
@@ -10,12 +10,20 @@ import { getServiceTranslations } from "@/modules/services/i18n";
 import AdminServiceForm from "@/components/services/AdminServiceForm.astro";
 import type { Locale } from "@i18n/config";
 export const prerender = false;
-const result = await requireAuth(Astro); if ("redirect" in result) return result.redirect;
-const { user, locale, authT } = result; const orgSlug = Astro.params.slug!; const orgData = await fetchOrgData(Astro.request.headers, orgSlug); if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
-const { org, members } = orgData; const orgRole = getUserOrgRole(members, user.id); const tenant = resolveServiceTenant({ organizationId: org.id });
+const result = await requireAuth(Astro);
+if ("redirect" in result) return result.redirect;
+const { user, locale, authT } = result;
+const orgSlug = Astro.params.slug!;
+const orgData = await fetchOrgData(Astro.request.headers, orgSlug);
+if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`);
+const { org, members } = orgData;
+const orgRole = getUserOrgRole(members, user.id);
+const tenant = resolveServiceTenant({ organizationId: org.id });
 if (!(await hasServicePermission(Astro, tenant, { service: ["update"] }))) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
-const item = await getServiceAdminById(Astro.params.id!, locale as Locale, org.id); if (!item) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
-const t = getServiceTranslations(locale as Locale); const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/services`;
+const item = await getServiceAdminById(Astro.params.id!, locale as Locale, org.id);
+if (!item) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
+const t = getServiceTranslations(locale as Locale);
+const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/services`;
 ---
 <BaseLayout title={`${t.admin.editService} — ${org.name}`} description={t.meta.description}>
   <AuthLayout title={org.name}>
