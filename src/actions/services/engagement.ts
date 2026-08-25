@@ -3,7 +3,7 @@ import { and, count, desc, eq } from "drizzle-orm";
 import { z } from "astro/zod";
 import { getDrizzle } from "@database/drizzle";
 import { serviceComments, serviceFavorites, serviceReports, serviceReviews, serviceReviewHelpful } from "@database/schemas";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { sanitizeHtml } from "@lib/sanitize";
 import { stripHtml } from "@/core/content/text";
 import type { Locale } from "@i18n/config";
 import { isValidLocale } from "@i18n/utils";
@@ -51,12 +51,12 @@ export const createServiceComment = defineAction({
 });
 
 export const createServiceReport = defineAction({
-  input: serviceIdInput.extend({ commentId: z.uuid().optional(), reviewId: z.uuid().optional(), reason: z.enum(["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"]), description: z.string().trim().max(2000).optional() }).refine((v) => Number(Boolean(v.serviceId)) + Number(Boolean(v.commentId)) + Number(Boolean(v.reviewId)) === 1, { message: "Un signalement doit cibler exactement une ressource." }),
+  input: serviceIdInput.extend({ commentId: z.uuid().optional(), reviewId: z.uuid().optional(), reason: z.enum(["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"]), description: z.string().trim().max(2000).optional() }).refine((v) => Number(Boolean(v.commentId)) + Number(Boolean(v.reviewId)) <= 1, { message: "Un signalement peut cibler au plus un commentaire ou un avis." }),
   handler: async (input, context) => {
     const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["read"] }); await assertServiceInTenant(input.serviceId, tenant); serviceRateLimit(context, user.id, "report");
     const db = getDrizzle();
     if (input.commentId) { const [comment] = await db.select({ id: serviceComments.id }).from(serviceComments).where(and(eq(serviceComments.id, input.commentId), eq(serviceComments.serviceId, input.serviceId))).limit(1); if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Commentaire introuvable pour ce service." }); }
-    if (input.reviewId) { const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(review.serviceId, input.serviceId))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Avis introuvable pour ce service." }); }
+    if (input.reviewId) { const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Avis introuvable pour ce service." }); }
     const description = input.description ? stripHtml(input.description).trim() : null; const [report] = await db.insert(serviceReports).values({ serviceId: input.commentId || input.reviewId ? null : input.serviceId, commentId: input.commentId ?? null, reviewId: input.reviewId ?? null, reporterId: user.id, reason: input.reason, description }).returning({ id: serviceReports.id });
     auditService(context, user.id, "SERVICE_REPORT_CREATE", { resource: "serviceReports", resourceId: report.id }); return report;
   },
