@@ -7,16 +7,23 @@ import { assertValidServiceTransition } from "@/modules/services/workflow";
 import type { ServiceStatus } from "@/modules/services/domain";
 import { auditService, invalidateServicesCache } from "./_helpers";
 import { createServiceNotification } from "./notification";
+import { getServiceNotificationTranslations } from "@/modules/services/i18n/notifications";
+import { isValidLocale } from "@/i18n/utils";
 import { z } from "astro/zod";
 
 const lifecycleInput = z.object({ id: z.uuid(), organizationId: serviceOrganizationIdSchema });
 type LifecycleAuditAction = "SERVICE_PUBLISH" | "SERVICE_UNPUBLISH" | "SERVICE_ARCHIVE" | "SERVICE_RESTORE" | "SERVICE_DELETE";
 type LifecyclePermission = "publish" | "update" | "delete";
 
+function requestLocale(headers: Headers) {
+  const candidate = headers.get("accept-language")?.split(",", 1)[0]?.split("-", 1)[0] ?? "fr";
+  return isValidLocale(candidate) ? candidate : "fr";
+}
+
 async function transitionService(id: string, organizationId: string | null | undefined, to: ServiceStatus, context: Parameters<typeof assertServicePermission>[0], permission: LifecyclePermission, auditAction: LifecycleAuditAction) {
   const tenant = resolveServiceTenant({ organizationId }); const user = await assertServicePermission(context, tenant, { service: [permission] }); const current = await assertServiceInTenant(id, tenant); assertValidServiceTransition(current.status as ServiceStatus, to); const db = getDrizzle();
   await db.transaction(async (tx) => { await tx.update(services).set({ status: to, publishedAt: to === "PUBLISHED" ? new Date() : to === "DRAFT" ? null : undefined, updatedBy: user.id }).where(eq(services.id, id)); });
-  if (to === "PUBLISHED") await createServiceNotification({ recipientId: current.providerId, serviceId: id, actorId: user.id, type: "SERVICE_PUBLISHED", title: "Service publié", message: "Votre service est désormais publié." });
+  if (to === "PUBLISHED") { const t = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId: current.providerId, serviceId: id, actorId: user.id, type: "SERVICE_PUBLISHED", title: t.publishedTitle, message: t.publishedMessage }); }
   auditService(context, user.id, auditAction, { resource: "services", resourceId: id, metadata: { organizationId: tenant.organizationId, from: current.status, to } }); invalidateServicesCache(); return { success: true };
 }
 
