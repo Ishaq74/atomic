@@ -1,5 +1,5 @@
-import type { AtomicModuleDefinition } from "@/lib/cms/module-contract";
-import { assertModuleCapabilityProviders, defineModuleCapabilities, defineModuleCapabilityProviders, defineModulePresentations } from "@/lib/cms/module-contract";
+import type { AtomicModuleDefinition } from "@/core/modules";
+import { assertModuleCapabilityProviders, defineModuleCapabilities, defineModuleCapabilityProviders, defineModulePresentations } from "@/core/modules";
 import { servicesCapabilityProviders } from "./capabilities";
 
 export const servicesModule: AtomicModuleDefinition = {
