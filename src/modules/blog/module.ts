@@ -11,6 +11,7 @@ export const blogModule: AtomicModuleDefinition = {
     media: true,
     seo: true,
     taxonomy: true,
+    attributes: false,
     search: true,
     publication: true,
     revisions: true,
