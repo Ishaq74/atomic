@@ -10,6 +10,7 @@ import ContentEditor from "@components/content/ContentEditor.astro";
 import { getServiceTranslations, getServiceErrorMessage } from "@/modules/services/i18n";
 import { getServiceCategories, getServiceTags } from "@/modules/services/loaders";
 import type { Locale } from "@i18n/config";
+import { LOCALES } from "@i18n/config";
 import type { ServiceDetail } from "@/modules/services/domain";
 
 const { locale, service = null, organizationId = null, baseAdminUrl = `/${locale}/admin/services` } = Astro.props as {
@@ -24,6 +25,7 @@ const [categoryRows, tagRows] = await Promise.all([getServiceCategories(locale, 
 const selectedCategoryIds = new Set(service?.categories.map((item) => item.id) ?? []);
 const selectedTagIds = new Set(service?.tags.map((item) => item.id) ?? []);
 const focusKeyword = service?.seo?.focusKeyword ?? "";
+const localizedEditPaths = LOCALES.map((targetLocale) => ({ targetLocale, path: `/${targetLocale}${Astro.url.pathname.split("/").slice(2).map(encodeURIComponent).map((segment) => `/${segment}`).join("")}` }));
 const actionLabels = JSON.stringify({
   confirmDelete: t.admin.confirmDelete,
   confirmArchive: t.admin.confirmArchive,
@@ -36,6 +38,9 @@ const actionLabels = JSON.stringify({
 ---
 <AdminFormShell formSelector="form[data-service-form]" title={service ? t.admin.editService : t.admin.newService}>
   <div data-service-admin-root data-organization-id={organizationId ?? ""} data-service-id={service?.service.id ?? ""} data-base-admin-url={baseAdminUrl} data-action-labels={actionLabels}>
+    {service && <nav aria-label={t.admin.fields.locale} class="mb-6 flex flex-wrap gap-2 rounded-xl border p-3">
+      {localizedEditPaths.map(({ targetLocale, path }) => <a href={path} aria-current={targetLocale === locale ? "page" : undefined} aria-label={`${targetLocale.toUpperCase()} — ${t.admin.fields.locale}`} class:list={["rounded-md border px-3 py-1.5 text-sm", targetLocale === locale && "bg-primary text-primary-foreground"]}><span>{targetLocale.toUpperCase()}</span><span class="ml-1" aria-hidden="true">{service.availableLocales.includes(targetLocale) ? "●" : "○"}</span></a>)}
+    </nav>}
     {service && <section class="mb-6 rounded-xl border p-4"><div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-sm text-muted-foreground">{t.admin.fields.publication}</p><p class="font-medium">{t.admin.status[service.service.status]}</p></div><div class="flex flex-wrap gap-2">
       {service.service.status === "DRAFT" && <Button type="button" data-service-lifecycle="publish">{t.admin.publish}</Button>}
       {service.service.status === "PUBLISHED" && <Button type="button" variant="outline" data-service-lifecycle="unpublish">{t.admin.unpublish}</Button>}
@@ -111,30 +116,14 @@ const actionLabels = JSON.stringify({
       if (!serviceId) return;
       if (action === "delete" && !window.confirm(labels.confirmDelete)) return;
       if (action === "archive" && !window.confirm(labels.confirmArchive)) return;
-      const result = action === "publish"
-        ? await actions.publishService({ id: serviceId, organizationId })
-        : action === "unpublish"
-          ? await actions.unpublishService({ id: serviceId, organizationId })
-          : action === "archive"
-            ? await actions.archiveService({ id: serviceId, organizationId })
-            : action === "restore"
-              ? await actions.restoreService({ id: serviceId, organizationId })
-              : action === "duplicate"
-                ? await actions.duplicateService({ id: serviceId, organizationId })
-                : await actions.deleteService({ id: serviceId, organizationId });
+      const result = action === "publish" ? await actions.publishService({ id: serviceId, organizationId }) : action === "unpublish" ? await actions.unpublishService({ id: serviceId, organizationId }) : action === "archive" ? await actions.archiveService({ id: serviceId, organizationId }) : action === "restore" ? await actions.restoreService({ id: serviceId, organizationId }) : action === "duplicate" ? await actions.duplicateService({ id: serviceId, organizationId }) : await actions.deleteService({ id: serviceId, organizationId });
       if (result.error) { if (status) status.textContent = errorMessage(result); return; }
       if (status) status.textContent = labels.saved;
       if (action === "duplicate" && result.data?.id) window.location.href = `${baseAdminUrl}/${result.data.id}/edit`; else window.location.reload();
     }
 
     root.querySelectorAll<HTMLButtonElement>("[data-service-lifecycle]").forEach((button) => button.addEventListener("click", () => lifecycle(button.dataset.serviceLifecycle as "publish" | "unpublish" | "archive" | "restore" | "duplicate" | "delete")));
-
-    root.querySelectorAll<HTMLButtonElement>("[data-service-lock]").forEach((button) => button.addEventListener("click", async () => {
-      if (!serviceId) return;
-      const action = button.dataset.serviceLock;
-      const result = action === "lock" ? await actions.lockService({ id: serviceId, organizationId }) : await actions.unlockService({ id: serviceId, organizationId });
-      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved;
-    }));
+    root.querySelectorAll<HTMLButtonElement>("[data-service-lock]").forEach((button) => button.addEventListener("click", async () => { if (!serviceId) return; const action = button.dataset.serviceLock; const result = action === "lock" ? await actions.lockService({ id: serviceId, organizationId }) : await actions.unlockService({ id: serviceId, organizationId }); if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; }));
 
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -158,47 +147,11 @@ const actionLabels = JSON.stringify({
       if (!result.error && result.data?.id && form.dataset.mode !== "edit") window.location.href = `${baseAdminUrl}/${result.data.id}/edit`;
     });
 
-    root.querySelectorAll<HTMLElement>("[data-media-picker]").forEach((button) => {
-      const picker = document.getElementById(button.dataset.mediaPicker ?? "");
-      picker?.addEventListener("media-select", (event) => {
-        const detail = (event as CustomEvent).detail as { fileId: string };
-        if (button.dataset.mediaPicker === "service-cover-picker") { const input = form?.querySelector<HTMLInputElement>('input[name="coverImageId"]'); const preview = form?.querySelector<HTMLInputElement>("#service-cover-preview"); if (input) input.value = detail.fileId; if (preview) preview.value = detail.fileId; }
-        if (button.dataset.mediaPicker === "service-og-picker") { const input = form?.querySelector<HTMLInputElement>('input[name="ogImageId"]'); const preview = form?.querySelector<HTMLInputElement>("#service-og-preview"); if (input) input.value = detail.fileId; if (preview) preview.value = detail.fileId; }
-      });
-    });
-
-    root.querySelector<HTMLButtonElement>("[data-add-availability]")?.addEventListener("click", async () => {
-      if (!serviceId) return;
-      const result = await actions.createServiceAvailability({ serviceId, organizationId, dayOfWeek: Number(root.querySelector<HTMLInputElement>('[data-new-availability="day"]')?.value), startTime: root.querySelector<HTMLInputElement>('[data-new-availability="start"]')?.value ?? "", endTime: root.querySelector<HTMLInputElement>('[data-new-availability="end"]')?.value ?? "", timezone: root.querySelector<HTMLInputElement>('[data-new-availability="timezone"]')?.value ?? "UTC" });
-      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
-    });
-
-    root.querySelectorAll<HTMLButtonElement>("[data-delete-availability]").forEach((button) => button.addEventListener("click", async () => {
-      if (!serviceId || !window.confirm(labels.confirmDelete)) return;
-      const result = await actions.deleteServiceAvailability({ id: button.dataset.deleteAvailability ?? "", serviceId, organizationId });
-      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
-    }));
-
-    root.querySelector<HTMLButtonElement>("[data-add-media]")?.addEventListener("click", async () => {
-      if (!serviceId) return;
-      const result = await actions.addServiceMedia({ serviceId, organizationId, mediaId: root.querySelector<HTMLInputElement>('[data-new-media="id"]')?.value ?? "", altText: root.querySelector<HTMLInputElement>('[data-new-media="alt"]')?.value ?? "", kind: "GALLERY", sortOrder: 0 });
-      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
-    });
-
-    root.querySelectorAll<HTMLButtonElement>("[data-remove-media]").forEach((button) => button.addEventListener("click", async () => {
-      if (!serviceId || !window.confirm(labels.confirmDelete)) return;
-      const result = await actions.removeServiceMedia({ serviceId, organizationId, mediaId: button.dataset.removeMedia ?? "" });
-      if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload();
-    }));
-
-    root.querySelector<HTMLButtonElement>("[data-load-revisions]")?.addEventListener("click", async () => {
-      if (!serviceId) return;
-      const result = await actions.listServiceRevisions({ id: serviceId, organizationId });
-      const container = root.querySelector<HTMLElement>("[data-revisions-container]");
-      if (!container) return;
-      if (result.error) { container.textContent = errorMessage(result); return; }
-      container.innerHTML = (result.data ?? []).map((revision) => `<div class="flex items-center justify-between gap-2 rounded-lg border p-3"><div><p class="text-sm font-medium">${revision.title}</p><p class="text-xs text-muted-foreground">${revision.status} · ${new Date(revision.createdAt).toLocaleString()}</p></div><button type="button" class="restore-revision rounded-md border px-2 py-1 text-xs" data-revision-id="${revision.id}">${labels.restoreRevision}</button></div>`).join("");
-      container.querySelectorAll<HTMLButtonElement>(".restore-revision").forEach((button) => button.addEventListener("click", async () => { const restore = await actions.restoreServiceRevision({ revisionId: button.dataset.revisionId ?? "", serviceId, organizationId }); if (status) status.textContent = restore.error ? errorMessage(restore) : labels.saved; if (!restore.error) window.location.reload(); }));
-    });
+    root.querySelectorAll<HTMLElement>("[data-media-picker]").forEach((button) => { const picker = document.getElementById(button.dataset.mediaPicker ?? ""); picker?.addEventListener("media-select", (event) => { const detail = (event as CustomEvent).detail as { fileId: string }; if (button.dataset.mediaPicker === "service-cover-picker") { const input = form?.querySelector<HTMLInputElement>('input[name="coverImageId"]'); const preview = form?.querySelector<HTMLInputElement>("#service-cover-preview"); if (input) input.value = detail.fileId; if (preview) preview.value = detail.fileId; } if (button.dataset.mediaPicker === "service-og-picker") { const input = form?.querySelector<HTMLInputElement>('input[name="ogImageId"]'); const preview = form?.querySelector<HTMLInputElement>("#service-og-preview"); if (input) input.value = detail.fileId; if (preview) preview.value = detail.fileId; } }); });
+    root.querySelector<HTMLButtonElement>("[data-add-availability]")?.addEventListener("click", async () => { if (!serviceId) return; const result = await actions.createServiceAvailability({ serviceId, organizationId, dayOfWeek: Number(root.querySelector<HTMLInputElement>('[data-new-availability="day"]')?.value), startTime: root.querySelector<HTMLInputElement>('[data-new-availability="start"]')?.value ?? "", endTime: root.querySelector<HTMLInputElement>('[data-new-availability="end"]')?.value ?? "", timezone: root.querySelector<HTMLInputElement>('[data-new-availability="timezone"]')?.value ?? "UTC" }); if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload(); });
+    root.querySelectorAll<HTMLButtonElement>("[data-delete-availability]").forEach((button) => button.addEventListener("click", async () => { if (!serviceId || !window.confirm(labels.confirmDelete)) return; const result = await actions.deleteServiceAvailability({ id: button.dataset.deleteAvailability ?? "", serviceId, organizationId }); if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload(); }));
+    root.querySelector<HTMLButtonElement>("[data-add-media]")?.addEventListener("click", async () => { if (!serviceId) return; const result = await actions.addServiceMedia({ serviceId, organizationId, mediaId: root.querySelector<HTMLInputElement>('[data-new-media="id"]')?.value ?? "", altText: root.querySelector<HTMLInputElement>('[data-new-media="alt"]')?.value ?? "", kind: "GALLERY", sortOrder: 0 }); if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload(); });
+    root.querySelectorAll<HTMLButtonElement>("[data-remove-media]").forEach((button) => button.addEventListener("click", async () => { if (!serviceId || !window.confirm(labels.confirmDelete)) return; const result = await actions.removeServiceMedia({ serviceId, organizationId, mediaId: button.dataset.removeMedia ?? "" }); if (status) status.textContent = result.error ? errorMessage(result) : labels.saved; if (!result.error) window.location.reload(); }));
+    root.querySelector<HTMLButtonElement>("[data-load-revisions]")?.addEventListener("click", async () => { if (!serviceId) return; const result = await actions.listServiceRevisions({ id: serviceId, organizationId }); const container = root.querySelector<HTMLElement>("[data-revisions-container]"); if (!container) return; if (result.error) { container.textContent = errorMessage(result); return; } container.innerHTML = (result.data ?? []).map((revision) => `<div class="flex items-center justify-between gap-2 rounded-lg border p-3"><div><p class="text-sm font-medium">${revision.title}</p><p class="text-xs text-muted-foreground">${revision.status} · ${new Date(revision.createdAt).toLocaleString()}</p></div><button type="button" class="restore-revision rounded-md border px-2 py-1 text-xs" data-revision-id="${revision.id}">${labels.restoreRevision}</button></div>`).join(""); container.querySelectorAll<HTMLButtonElement>(".restore-revision").forEach((button) => button.addEventListener("click", async () => { const restore = await actions.restoreServiceRevision({ revisionId: button.dataset.revisionId ?? "", serviceId, organizationId }); if (status) status.textContent = restore.error ? errorMessage(restore) : labels.saved; if (!restore.error) window.location.reload(); })); });
   }
 </script>
