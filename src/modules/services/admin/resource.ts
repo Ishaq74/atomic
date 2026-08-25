@@ -1,5 +1,5 @@
 import { assertAdminResourceListDefinition } from "@/core/admin/filter-contract";
-import { assertResourceCompatibility, type AdminResourceDefinition } from "@/lib/cms/resource-contract";
+import { assertResourceCompatibility, type AdminResourceDefinition } from "@/core/admin/resource-contract";
 import { servicesModule } from "../module";
 
 const serviceListDefinition = {
