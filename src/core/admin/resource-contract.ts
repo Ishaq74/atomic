@@ -25,6 +25,9 @@ export interface ResourceManagementCapabilities {
   readonly sort?: boolean;
   readonly pagination?: boolean;
   readonly stats?: boolean;
+  readonly selection?: boolean;
+  readonly facets?: boolean;
+  readonly savedViews?: boolean;
 }
 
 export interface ResourceActionCapabilities {
@@ -72,6 +75,11 @@ export function assertResourceCompatibility(module: AtomicModuleDefinition, reso
   if (resource.management.search && !resource.management.list) throw new Error(`Resource ${resource.id} enables search without list capability.`);
   if (resource.management.sort && !resource.management.list) throw new Error(`Resource ${resource.id} enables sort without list capability.`);
   if (resource.management.pagination && !resource.management.list) throw new Error(`Resource ${resource.id} enables pagination without list capability.`);
+  if (resource.management.selection && !resource.management.list) throw new Error(`Resource ${resource.id} enables selection without list capability.`);
+  if (resource.management.facets && !resource.management.filters) throw new Error(`Resource ${resource.id} enables facets without filters capability.`);
+  if (resource.management.savedViews && !resource.management.list) throw new Error(`Resource ${resource.id} enables saved views without list capability.`);
+  if (resource.actions.bulk && !resource.management.selection) throw new Error(`Resource ${resource.id} enables bulk actions without selection capability.`);
   if (resource.list?.defaultSort && !resource.management.sort) throw new Error(`Resource ${resource.id} defines a default sort without sort capability.`);
   if (resource.list && !resource.management.list) throw new Error(`Resource ${resource.id} defines list configuration without list capability.`);
+  if ((resource.list?.bulkActions?.length ?? 0) > 0 && resource.actions.bulk !== true) throw new Error(`Resource ${resource.id} defines bulk actions without bulk capability.`);
 }
