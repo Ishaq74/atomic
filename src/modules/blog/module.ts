@@ -1,13 +1,5 @@
-import type {
-  AtomicModuleCapabilityProviders,
-  AtomicModuleDefinition,
-} from "@/lib/cms/module-contract";
-import {
-  assertModuleCapabilityProviders,
-  defineModuleCapabilities,
-  defineModuleCapabilityProviders,
-  defineModulePresentations,
-} from "@/lib/cms/module-contract";
+import type { AtomicModuleCapabilityProviders, AtomicModuleDefinition } from "@/core/modules";
+import { assertModuleCapabilityProviders, defineModuleCapabilities, defineModuleCapabilityProviders, defineModulePresentations } from "@/core/modules";
 import { blogCapabilityProviders } from "@/modules/blog/capabilities";
 
 export const blogModule: AtomicModuleDefinition = {
