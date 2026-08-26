@@ -21,7 +21,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 interface Props { t: AuthTranslations; locale: Locale; activeItem?: AdminSubpage; }
 const { t, locale, activeItem } = Astro.props;
 const dashboardUrl = getAuthUrl(locale, 'dashboard', t);
-const contentGroupLabel = t.admin.contentGroup ?? 'Content';
+const contentGroupLabel = t.admin.contentGroup;
 const navItems: { id: AdminSubpage; title: string; url: string; icon: typeof ChartBarIcon }[] = [
   { id: 'stats', title: t.admin.tabs.stats, url: getAdminUrl(locale, 'stats'), icon: ChartBarIcon },
   { id: 'users', title: t.admin.tabs.users, url: getAdminUrl(locale, 'users'), icon: UsersIcon },
