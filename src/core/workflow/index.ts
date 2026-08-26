@@ -1,1 +1,1 @@
-export * from "@/lib/cms/workflow";
+export * from "./contract";
