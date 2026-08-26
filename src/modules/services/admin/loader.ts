@@ -9,6 +9,7 @@ import type { z } from "astro/zod";
 
 export type ServiceAdminFilters = Partial<z.infer<typeof serviceListFiltersSchema>>;
 function tenantScope(organizationId: string | null) { return organizationId === null ? isNull(services.organizationId) : eq(services.organizationId, organizationId); }
+function taxonomyTranslationScope(organizationId: string | null, table: { organizationId: any }) { return organizationId === null ? isNull(table.organizationId) : eq(table.organizationId, organizationId); }
 export async function getServiceAdminData(organizationId: string | null, locale: Locale, filters: ServiceAdminFilters = {}) { return getServices({ ...filters, organizationId }, locale, false); }
 export async function getServiceAdminById(id: string, locale: Locale, organizationId: string | null): Promise<ServiceDetail | null> { return getServiceByIdAdmin(id, locale, organizationId); }
 export async function getServiceAdminStats(organizationId: string | null) {
@@ -29,9 +30,11 @@ export async function getServiceAdminStats(organizationId: string | null) {
 
 export async function getServiceAdminTaxonomy(organizationId: string | null, locale: Locale) {
   const db = getDrizzle();
+  const categoryTranslationScope = organizationId === null ? isNull(serviceCategoryTranslations.organizationId) : eq(serviceCategoryTranslations.organizationId, organizationId);
+  const tagTranslationScope = organizationId === null ? isNull(serviceTagTranslations.organizationId) : eq(serviceTagTranslations.organizationId, organizationId);
   const [categories, tags] = await Promise.all([
-    db.select({ category: serviceCategories, translation: serviceCategoryTranslations }).from(serviceCategories).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale))).where(organizationId === null ? isNull(serviceCategories.organizationId) : eq(serviceCategories.organizationId, organizationId)).orderBy(serviceCategories.sortOrder),
-    db.select({ tag: serviceTags, translation: serviceTagTranslations }).from(serviceTags).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale))).where(organizationId === null ? isNull(serviceTags.organizationId) : eq(serviceTags.organizationId, organizationId)).orderBy(serviceTags.slug),
+    db.select({ category: serviceCategories, translation: serviceCategoryTranslations }).from(serviceCategories).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), categoryTranslationScope)).where(organizationId === null ? isNull(serviceCategories.organizationId) : eq(serviceCategories.organizationId, organizationId)).orderBy(serviceCategories.sortOrder),
+    db.select({ tag: serviceTags, translation: serviceTagTranslations }).from(serviceTags).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale), tagTranslationScope)).where(organizationId === null ? isNull(serviceTags.organizationId) : eq(serviceTags.organizationId, organizationId)).orderBy(serviceTags.slug),
   ]);
   return { categories, tags };
 }
