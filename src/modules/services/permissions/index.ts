@@ -3,7 +3,7 @@ import type { ActionAPIContext } from "astro:actions";
 import { eq } from "drizzle-orm";
 import { z } from "astro/zod";
 import { getDrizzle } from "@database/drizzle";
-import { mediaFiles, serviceCategories, serviceTags, services } from "@database/schemas";
+import { mediaFiles, serviceCategories, serviceLocks, serviceTags, services } from "@database/schemas";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { statement } from "@/lib/permissions";
 import { isValidLocale } from "@/i18n/utils";
@@ -47,9 +47,7 @@ export async function assertServicePermission(context: ActionAPIContext, tenant:
   return user;
 }
 
-export function serviceTenantError(tenant: ServiceTenantContext, code: "NOT_FOUND" | "FORBIDDEN") {
-  return getServiceErrorMessage(tenant.locale, code);
-}
+export function serviceTenantError(tenant: ServiceTenantContext, code: "NOT_FOUND" | "FORBIDDEN") { return getServiceErrorMessage(tenant.locale, code); }
 
 export async function assertServiceInTenant(serviceId: string, tenant: ServiceTenantContext) {
   const db = getDrizzle();
@@ -57,6 +55,12 @@ export async function assertServiceInTenant(serviceId: string, tenant: ServiceTe
   if (!service) throw new ActionError({ code: "NOT_FOUND", message: serviceTenantError(tenant, "NOT_FOUND") });
   if ((service.organizationId ?? null) !== tenant.organizationId) throw new ActionError({ code: "FORBIDDEN", message: serviceTenantError(tenant, "FORBIDDEN") });
   return service;
+}
+
+export async function assertServiceEditable(serviceId: string, userId: string, locale: string) {
+  const db = getDrizzle();
+  const [lock] = await db.select({ userId: serviceLocks.userId, expiresAt: serviceLocks.expiresAt }).from(serviceLocks).where(eq(serviceLocks.serviceId, serviceId)).limit(1);
+  if (lock && lock.expiresAt > new Date() && lock.userId !== userId) throw new ActionError({ code: "CONFLICT", message: getServiceErrorMessage(locale, "CONFLICT") });
 }
 
 export async function assertServiceCategoryInTenant(categoryId: string, tenant: ServiceTenantContext) {
@@ -86,8 +90,5 @@ export async function assertServiceMediaInTenant(mediaId: string, tenant: Servic
 export function serviceRateLimit(context: Pick<ActionAPIContext, "request"> | null, userId: string, scope: string) {
   const key = `service-${scope.replace(/:/g, "_")}:${userId}`;
   const result = checkRateLimit(key, { window: 60, max: 30 });
-  if (!result.allowed) {
-    const locale = context ? requestLocale(context) : "fr";
-    throw new ActionError({ code: "TOO_MANY_REQUESTS", message: getServiceErrorMessage(locale, "TOO_MANY_REQUESTS") });
-  }
+  if (!result.allowed) { const locale = context ? requestLocale(context) : "fr"; throw new ActionError({ code: "TOO_MANY_REQUESTS", message: getServiceErrorMessage(locale, "TOO_MANY_REQUESTS") }); }
 }
