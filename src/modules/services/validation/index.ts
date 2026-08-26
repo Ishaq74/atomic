@@ -43,6 +43,24 @@ export const serviceFormSchema = z.object(serviceEditableFields).extend({
 
 export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
 
+/** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
+export const serviceAdminFiltersSchema = z.object({
+  organizationId: serviceOrganizationIdSchema,
+  page: z.coerce.number().int().positive().max(10_000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(120).optional(),
+  status: serviceStatusSchema.optional(),
+  categoryId: z.string().uuid().optional(),
+  tagId: z.string().uuid().optional(),
+  authorId: z.string().trim().min(1).max(200).optional(),
+  providerId: z.string().trim().min(1).max(200).optional(),
+  featured: z.coerce.boolean().optional(),
+  mobile: z.coerce.boolean().optional(),
+  locale: localeSchema.optional(),
+  sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
+
 export const serviceListFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
   page: z.coerce.number().int().positive().max(10_000).default(1),
