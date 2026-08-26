@@ -2,7 +2,7 @@ import { defineAction, ActionError } from "astro:actions";
 import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, serviceSeo, serviceRevisions } from "@database/schemas";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { sanitizeHtml } from "@lib/sanitize";
 import { generateExcerpt } from "@/core/content/text";
 import { serviceFormSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
 import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceLockOwner, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
@@ -78,7 +78,7 @@ export const updateService = defineAction({
           else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
-        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, categoryId: tagId }))); }
+        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, tagId }))); }
         if (locale && (content || input.title || input.slug)) await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "PUBLISHED" ? "PUBLISHED" : existing.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Mise à jour" });
       });
     } catch (error) {
