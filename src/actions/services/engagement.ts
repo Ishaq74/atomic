@@ -32,7 +32,7 @@ export const createServiceReview = defineAction({
     if (existing) throw new ActionError({ code: "CONFLICT", message: t.admin.errors.conflict });
     const title = input.title ? stripHtml(input.title).trim() : null; const content = sanitizeHtml(input.content);
     const [review] = await db.insert(serviceReviews).values({ serviceId: input.serviceId, authorId: user.id, rating: input.rating, title, content, isRecommended: input.isRecommended, status: "PENDING" }).returning({ id: serviceReviews.id });
-    if (review?.id) { const nt = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: nt.reviewTitle, message: nt.reviewMessage }); }
+    if (review?.id) { const nt = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: nt.reviewTitle, message: nt.reviewMessage, locale: requestLocale(context.request.headers) }); }
     auditService(context, user.id, "SERVICE_REVIEW_CREATE", { resource: "serviceReviews", resourceId: review.id }); invalidateServicesCache(); return review;
   },
 });
@@ -45,7 +45,7 @@ export const createServiceComment = defineAction({
     const t = getServiceTranslations(requestLocale(context.request.headers));
     if (input.parentId) { const [parent] = await db.select({ id: serviceComments.id, authorId: serviceComments.authorId }).from(serviceComments).where(and(eq(serviceComments.id, input.parentId), eq(serviceComments.serviceId, input.serviceId))).limit(1); if (!parent) throw new ActionError({ code: "NOT_FOUND", message: t.admin.errors.notFound }); if (parent.authorId) { recipientId = parent.authorId; type = "REPLY_TO_COMMENT"; } }
     const content = sanitizeHtml(input.content); const [comment] = await db.insert(serviceComments).values({ serviceId: input.serviceId, authorId: user.id, parentId: input.parentId ?? null, content, status: "PENDING" }).returning({ id: serviceComments.id });
-    if (comment?.id) { const nt = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId, serviceId: input.serviceId, actorId: user.id, type, commentId: comment.id, title: type === "NEW_COMMENT" ? nt.commentTitle : nt.commentReplyTitle, message: nt.contributionPending }); }
+    if (comment?.id) { const nt = getServiceNotificationTranslations(requestLocale(context.request.headers)); await createServiceNotification({ recipientId, serviceId: input.serviceId, actorId: user.id, type, commentId: comment.id, title: type === "NEW_COMMENT" ? nt.commentTitle : nt.commentReplyTitle, message: nt.contributionPending, locale: requestLocale(context.request.headers) }); }
     auditService(context, user.id, "SERVICE_COMMENT_CREATE", { resource: "serviceComments", resourceId: comment.id }); invalidateServicesCache(); return comment;
   },
 });
@@ -58,7 +58,7 @@ export const createServiceReport = defineAction({
     if (input.commentId) { const [comment] = await db.select({ id: serviceComments.id }).from(serviceComments).where(and(eq(serviceComments.id, input.commentId), eq(serviceComments.serviceId, input.serviceId))).limit(1); if (!comment) throw new ActionError({ code: "NOT_FOUND", message: "Commentaire introuvable pour ce service." }); }
     if (input.reviewId) { const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Avis introuvable pour ce service." }); }
     const description = input.description ? stripHtml(input.description).trim() : null; const [report] = await db.insert(serviceReports).values({ serviceId: input.commentId || input.reviewId ? null : input.serviceId, commentId: input.commentId ?? null, reviewId: input.reviewId ?? null, reporterId: user.id, reason: input.reason, description }).returning({ id: serviceReports.id });
-    auditService(context, user.id, "SERVICE_REPORT_CREATE", { resource: "serviceReports", resourceId: report.id }); return report;
+    auditService(context, user.id, "SERVICE_REPORT_CREATE", { resource: "serviceReports", resourceId: report.id }); invalidateServicesCache(); return report;
   },
 });
 
@@ -67,6 +67,7 @@ export const voteServiceReviewHelpful = defineAction({ input: serviceIdInput.ext
   const db = getDrizzle(); const [review] = await db.select({ id: serviceReviews.id }).from(serviceReviews).where(and(eq(serviceReviews.id, input.reviewId), eq(serviceReviews.serviceId, input.serviceId), eq(serviceReviews.status, "APPROVED"))).limit(1); if (!review) throw new ActionError({ code: "NOT_FOUND", message: "Avis introuvable pour ce service." });
   await db.insert(serviceReviewHelpful).values({ reviewId: input.reviewId, userId: user.id, isHelpful: input.isHelpful }).onConflictDoUpdate({ target: [serviceReviewHelpful.reviewId, serviceReviewHelpful.userId], set: { isHelpful: input.isHelpful } });
   const [aggregate] = await db.select({ count: count() }).from(serviceReviewHelpful).where(and(eq(serviceReviewHelpful.reviewId, input.reviewId), eq(serviceReviewHelpful.isHelpful, true))); const helpfulCount = Number(aggregate?.count ?? 0); await db.update(serviceReviews).set({ helpfulCount }).where(eq(serviceReviews.id, input.reviewId));
+  auditService(context, user.id, "SERVICE_REVIEW_HELPFUL", { resource: "serviceReviews", resourceId: input.reviewId, metadata: { isHelpful: input.isHelpful, helpfulCount } }); invalidateServicesCache();
   return { success: true, helpfulCount };
 } });
 
