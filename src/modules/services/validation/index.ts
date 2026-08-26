@@ -36,7 +36,6 @@ const serviceContentFields = {
   focusKeyword: nullableText(120),
 };
 
-/** Complete content contract used by tests and shared form tooling. Publication state is intentionally excluded from mutations. */
 export const serviceFormSchema = z.object(serviceContentFields);
 export const serviceCreateSchema = serviceFormSchema;
 export const serviceUpdateSchema = serviceFormSchema.partial().extend({ id: z.string().uuid() });
@@ -59,6 +58,8 @@ export const serviceListFiltersSchema = z.object({
 
 export const serviceAvailabilitySchema = z.object({
   serviceId: z.string().uuid(),
+  organizationId: serviceOrganizationIdSchema,
+  locale: localeSchema.default("fr"),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
