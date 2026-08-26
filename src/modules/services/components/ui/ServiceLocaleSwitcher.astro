@@ -1,0 +1,24 @@
+---
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { LOCALES, LOCALE_LABELS, type Locale } from "@i18n/config";
+import type { ServiceDetail } from "@/modules/services/domain";
+
+const { locale, service = null, availableLocales = LOCALES } = Astro.props as { locale: Locale; service?: ServiceDetail | null; availableLocales?: readonly string[] };
+const available = new Set(availableLocales);
+function buildLocaleHref(targetLocale: Locale): string {
+  const currentPath = Astro.url.pathname.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/";
+  return `${getRelativeLocaleUrl(targetLocale, currentPath)}${Astro.url.search}`;
+}
+---
+<nav class="flex flex-wrap items-center gap-2" aria-label={locale === "ar" ? "اللغة" : locale === "es" ? "Idioma" : locale === "en" ? "Language" : "Langue"}>
+  {LOCALES.map((targetLocale) => {
+    const active = targetLocale === locale;
+    const exists = !service || available.has(targetLocale);
+    return (
+      <a href={buildLocaleHref(targetLocale)} data-service-locale-link class:list={["rounded-full border px-3 py-1.5 text-xs font-medium", active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:border-primary/50"]} aria-current={active ? "page" : undefined} aria-disabled={!exists ? "true" : undefined}>
+        {LOCALE_LABELS[targetLocale]}
+        {service && <span class="ml-1 opacity-70">{exists ? "✓" : "·"}</span>}
+      </a>
+    );
+  })}
+</nav>

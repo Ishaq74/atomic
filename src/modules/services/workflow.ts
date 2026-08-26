@@ -17,8 +17,5 @@ export const SERVICE_WORKFLOW: WorkflowDefinition<ServiceStatus> = {
   ],
 };
 
-export const canTransitionService = (from: ServiceStatus, to: ServiceStatus) => from === to || canTransition(SERVICE_WORKFLOW, from, to);
-export const assertValidServiceTransition = (from: ServiceStatus, to: ServiceStatus) => {
-  if (from === to) return;
-  assertTransition(SERVICE_WORKFLOW, from, to);
-};
+export const canTransitionService = (from: ServiceStatus, to: ServiceStatus) => canTransition(SERVICE_WORKFLOW, from, to);
+export const assertValidServiceTransition = (from: ServiceStatus, to: ServiceStatus) => assertTransition(SERVICE_WORKFLOW, from, to);
