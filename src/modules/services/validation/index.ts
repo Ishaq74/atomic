@@ -36,11 +36,7 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
-export const serviceFormSchema = z.object(serviceEditableFields).extend({
-  status: z.literal("DRAFT").default("DRAFT"),
-  publishedAt: z.null().default(null),
-});
-
+export const serviceFormSchema = z.object(serviceEditableFields).extend({ status: z.literal("DRAFT").default("DRAFT"), publishedAt: z.null().default(null) });
 export const serviceCreateSchema = serviceFormSchema;
 export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
 
