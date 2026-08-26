@@ -22,6 +22,9 @@ export interface ServiceTranslation {
 
 export interface ServiceCoverMedia { id: string; url: string; alt: string; }
 
+export interface ServiceRevisionSummary { id: string; locale: string; title: string; slug: string; status: ServiceStatus; revisionNote: string | null; createdAt: Date; }
+export interface ServiceLockState { userId: string; sessionId: string; lockedAt: Date; expiresAt: Date; }
+
 export interface ServiceListItem {
   service: {
     id: string;
@@ -60,6 +63,8 @@ export interface ServiceDetail {
   availability: { id: string; dayOfWeek: number; startTime: string; endTime: string; timezone: string; maxParticipants: number | null }[];
   seo: { locale: string; focusKeyword: string | null; metaRobots: string | null; schemaMarkup: string | null } | null;
   availableLocales: readonly string[];
+  revisions: readonly ServiceRevisionSummary[];
+  lock: ServiceLockState | null;
 }
 
 export const SERVICE_REACTION_TYPES = ["LIKE", "LOVE", "FIRE", "CLAP"] as const;
