@@ -9,7 +9,6 @@ import type { z } from "astro/zod";
 
 export type ServiceAdminFilters = Partial<z.infer<typeof serviceListFiltersSchema>>;
 function tenantScope(organizationId: string | null) { return organizationId === null ? isNull(services.organizationId) : eq(services.organizationId, organizationId); }
-function taxonomyTranslationScope(organizationId: string | null, table: { organizationId: any }) { return organizationId === null ? isNull(table.organizationId) : eq(table.organizationId, organizationId); }
 export async function getServiceAdminData(organizationId: string | null, locale: Locale, filters: ServiceAdminFilters = {}) { return getServices({ ...filters, organizationId }, locale, false); }
 export async function getServiceAdminById(id: string, locale: Locale, organizationId: string | null): Promise<ServiceDetail | null> { return getServiceByIdAdmin(id, locale, organizationId); }
 export async function getServiceAdminStats(organizationId: string | null) {
