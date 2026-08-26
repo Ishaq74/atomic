@@ -8,15 +8,13 @@ const localeSchema = z.string().refine((value): value is Locale => isValidLocale
 const slugSchema = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must contain only lowercase letters, numbers, and hyphens.");
 const nullableText = (max: number) => z.string().trim().max(max).optional().nullable();
 
-export const serviceFormSchema = z.object({
+const serviceEditableFields = {
   organizationId: serviceOrganizationIdSchema,
   locale: localeSchema,
   title: z.string().trim().min(1).max(180),
   slug: slugSchema,
   excerpt: nullableText(500),
   content: z.string().min(1),
-  status: serviceStatusSchema.default("DRAFT"),
-  publishedAt: z.coerce.date().optional().nullable(),
   coverImageId: z.string().uuid().optional().nullable(),
   ogImageId: z.string().uuid().optional().nullable(),
   priceMinor: z.coerce.number().int().min(0).max(2_147_483_647).optional().nullable(),
@@ -36,9 +34,14 @@ export const serviceFormSchema = z.object({
   locationLabel: nullableText(180),
   locationAddress: nullableText(500),
   focusKeyword: nullableText(120),
+};
+
+export const serviceFormSchema = z.object(serviceEditableFields).extend({
+  status: z.literal("DRAFT").default("DRAFT"),
+  publishedAt: z.null().default(null),
 });
 
-export const serviceUpdateSchema = serviceFormSchema.partial().extend({ id: z.string().uuid() });
+export const serviceUpdateSchema = z.object(serviceEditableFields).extend({ id: z.string().uuid() }).partial().extend({ id: z.string().uuid() });
 
 export const serviceListFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
