@@ -2,19 +2,18 @@ import { defineAction, ActionError } from "astro:actions";
 import { and, eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, serviceSeo, serviceRevisions } from "@database/schemas";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { sanitizeHtml } from "@lib/sanitize";
 import { generateExcerpt } from "@/core/content/text";
-import { serviceFormSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
+import { serviceCreateSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
 import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
 import { auditService, invalidateServicesCache } from "./_helpers";
 
 export const createService = defineAction({
-  input: serviceFormSchema,
+  input: serviceCreateSchema,
   handler: async (input, context) => {
     const tenant = resolveServiceTenant(input);
     const user = await assertServicePermission(context, tenant, { service: ["create"] });
     serviceRateLimit(context, user.id, "create");
-    if (input.status !== "DRAFT" || input.publishedAt !== null) throw new ActionError({ code: "BAD_REQUEST", message: "Un service doit être créé en brouillon. Utilisez la publication explicite ensuite." });
     const content = sanitizeHtml(input.content);
     const excerpt = input.excerpt?.trim() || generateExcerpt(content);
     const seoScore = calculateServiceSeoScore({ title: input.title, metaTitle: input.metaTitle, metaDescription: input.metaDescription, focusKeyword: input.focusKeyword });
@@ -31,7 +30,7 @@ export const createService = defineAction({
         await tx.insert(serviceTranslations).values({ serviceId: created.id, organizationId: tenant.organizationId, locale: input.locale, title: input.title, slug: input.slug, excerpt, content, locationLabel: input.locationLabel ?? null, locationAddress: input.locationAddress ?? null, ogImageId: input.ogImageId ?? null, metaTitle: input.metaTitle ?? input.title, metaDescription: input.metaDescription ?? null, metaKeywords: input.metaKeywords ?? null, canonicalUrl: input.canonicalUrl ?? null, ogTitle: input.ogTitle ?? null, ogDescription: input.ogDescription ?? null });
         if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: created.id, categoryId })));
         if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: created.id, tagId })));
-        await tx.insert(serviceRevisions).values({ serviceId: created.id, authorId: user.id, locale: input.locale, title: input.title, slug: input.slug, content, excerpt, status: "DRAFT", revisionNote: "Création initiale" });
+        await tx.insert(serviceRevisions).values({ serviceId: created.id, authorId: user.id, locale: input.locale, title: input.title, slug: input.slug, content, excerpt, status: "DRAFT", revisionNote: "Creation" });
         await tx.insert(serviceSeo).values({ serviceId: created.id, locale: input.locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
       });
     } catch (error) {
@@ -51,7 +50,6 @@ export const updateService = defineAction({
     const user = await assertServicePermission(context, tenant, { service: ["update"] });
     serviceRateLimit(context, user.id, "update");
     const existing = await assertServiceInTenant(input.id, tenant);
-    if (input.status !== undefined || input.publishedAt !== undefined) throw new ActionError({ code: "BAD_REQUEST", message: "La publication se gère via les actions de lifecycle explicites." });
     if (input.categoryIds) await Promise.all(input.categoryIds.map((id) => assertServiceCategoryInTenant(id, tenant)));
     if (input.tagIds) await Promise.all(input.tagIds.map((id) => assertServiceTagInTenant(id, tenant)));
     if (input.coverImageId) await assertServiceMediaInTenant(input.coverImageId, tenant);
@@ -78,7 +76,7 @@ export const updateService = defineAction({
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
         if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, tagId }))); }
-        if (locale && (content || input.title || input.slug)) await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "PUBLISHED" ? "PUBLISHED" : existing.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Mise à jour" });
+        if (locale && (content || input.title || input.slug)) await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "PUBLISHED" ? "PUBLISHED" : existing.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Update" });
       });
     } catch (error) {
       if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: "Un service avec ce slug existe déjà pour ce tenant/locale." });
