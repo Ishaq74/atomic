@@ -16,23 +16,19 @@ export const moderateServiceComment = defineAction({ input: z.object({ id: z.uui
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceComment: ["moderate"] }); await assertServiceInTenant(input.serviceId, tenant); const t = getServiceTranslations(requestLocale(context.request.headers));
   const db = getDrizzle(); const updated = await db.update(serviceComments).set({ status: input.status }).where(and(eq(serviceComments.id, input.id), eq(serviceComments.serviceId, input.serviceId))).returning({ id: serviceComments.id, authorId: serviceComments.authorId });
   if (!updated[0]) throw new ActionError({ code: "NOT_FOUND", message: t.admin.errors.notFound });
-  if (updated[0].authorId && (input.status === "APPROVED" || input.status === "REJECTED")) {
-    const nt = getServiceNotificationTranslations(requestLocale(context.request.headers));
-    await createServiceNotification({ recipientId: updated[0].authorId, serviceId: input.serviceId, actorId: user.id, type: "REPLY_TO_COMMENT", commentId: input.id, title: input.status === "APPROVED" ? nt.commentTitle : nt.commentReplyTitle, message: nt.contributionPending, locale: requestLocale(context.request.headers) });
-  }
   auditService(context, user.id, "SERVICE_COMMENT_MODERATE", { resource: "serviceComments", resourceId: input.id, metadata: { status: input.status } }); invalidateServicesCache(); return { success: true };
 } });
 
 export const moderateServiceReview = defineAction({ input: z.object({ id: z.uuid(), serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema, status: z.enum(["APPROVED", "REJECTED", "SPAM"]) }), handler: async (input, context) => {
-  const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceReview: ["moderate"] }); const service = await assertServiceInTenant(input.serviceId, tenant); const t = getServiceTranslations(requestLocale(context.request.headers));
+  const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceReview: ["moderate"] }); const service = await assertServiceInTenant(input.serviceId, tenant); const locale = requestLocale(context.request.headers); const t = getServiceTranslations(locale);
   const db = getDrizzle(); const updated = await db.update(serviceReviews).set({ status: input.status }).where(and(eq(serviceReviews.id, input.id), eq(serviceReviews.serviceId, input.serviceId))).returning({ id: serviceReviews.id, authorId: serviceReviews.authorId });
   if (!updated[0]) throw new ActionError({ code: "NOT_FOUND", message: t.admin.errors.notFound });
   const [aggregate] = await db.select({ average: avg(serviceReviews.rating), count: count() }).from(serviceReviews).where(and(eq(serviceReviews.serviceId, input.serviceId), eq(serviceReviews.status, "APPROVED")));
   const ratingCount = Number(aggregate?.count ?? 0); const ratingAverage100 = ratingCount ? Math.round(Number(aggregate?.average ?? 0) * 100) : 0;
   await db.update(services).set({ ratingAverage100, ratingCount }).where(eq(services.id, input.serviceId));
   if (updated[0].authorId && (input.status === "APPROVED" || input.status === "REJECTED")) {
-    const nt = getServiceNotificationTranslations(requestLocale(context.request.headers));
-    await createServiceNotification({ recipientId: updated[0].authorId, serviceId: input.serviceId, actorId: user.id, type: input.status === "APPROVED" ? "REVIEW_APPROVED" : "REVIEW_REJECTED", reviewId: updated[0].id, title: input.status === "APPROVED" ? nt.reviewTitle : nt.contributionPending, message: nt.contributionPending, locale: requestLocale(context.request.headers) });
+    const nt = getServiceNotificationTranslations(locale);
+    await createServiceNotification({ recipientId: updated[0].authorId, serviceId: input.serviceId, actorId: user.id, type: input.status === "APPROVED" ? "REVIEW_APPROVED" : "REVIEW_REJECTED", reviewId: updated[0].id, title: input.status === "APPROVED" ? nt.reviewTitle : nt.contributionPending, message: nt.contributionPending, locale });
   }
   auditService(context, user.id, "SERVICE_REVIEW_MODERATE", { resource: "serviceReviews", resourceId: input.id, metadata: { status: input.status, ratingCount, ratingAverage100, organizationId: tenant.organizationId, serviceProviderId: service.providerId } }); invalidateServicesCache();
   return { success: true, ratingCount, ratingAverage100 };
