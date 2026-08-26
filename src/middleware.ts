@@ -1,8 +1,11 @@
 import { auth } from "@/lib/auth";
 import { LOCALES } from "@/i18n/config";
+import { bootstrapModules } from "@/lib/cms/bootstrap";
 import { defineMiddleware } from "astro:middleware";
 
 export const onRequest = defineMiddleware(async (context, next) => {
+  bootstrapModules();
+
   // ─── Locale guard — reject invalid [lang] segments with 404 ─────
   const pathSegments = new URL(context.request.url).pathname.split('/').filter(Boolean);
   const maybeLang = pathSegments[0];
@@ -12,7 +15,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   let timedOut = false;
   let isAuthed: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
-
   const sessionPromise = auth.api.getSession({ headers: context.request.headers });
 
   try {
@@ -50,8 +52,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
 
   const response = await next();
-
-  // Serve SVG/SVGZ uploads as attachments to prevent XSS
   const url = new URL(context.request.url);
   const lowerPath = url.pathname.toLowerCase();
   if (lowerPath.startsWith('/uploads/') && (lowerPath.endsWith('.svg') || lowerPath.endsWith('.svgz'))) {
@@ -68,14 +68,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
     'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Cross-Origin-Resource-Policy': 'same-origin',
-    // 'credentialless' allows loading cross-origin resources (iconify API, embeds)
-    // without sending credentials, while still enabling COEP protection.
     'Cross-Origin-Embedder-Policy': 'credentialless',
   };
 
-  for (const [key, value] of Object.entries(securityHeaders)) {
-    response.headers.set(key, value);
-  }
-
+  for (const [key, value] of Object.entries(securityHeaders)) response.headers.set(key, value);
   return response;
 });

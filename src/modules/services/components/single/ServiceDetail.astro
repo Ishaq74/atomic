@@ -1,0 +1,39 @@
+---
+import type { ServiceDetail } from "@/modules/services/domain";
+import { formatServicePrice, formatServiceDuration, formatServiceRating } from "@/modules/services/utils";
+import { getServiceTranslations } from "@/modules/services/i18n";
+import { Prose } from "@atoms/prose";
+import RichContent from "@components/content/RichContent.astro";
+import ServiceEngagement from "./ServiceEngagement.astro";
+const { item, locale = "fr", organizationSlug = null } = Astro.props as { item: ServiceDetail; locale?: string; organizationSlug?: string | null };
+const t = getServiceTranslations(locale);
+const title = item.translation?.title ?? item.service.slug;
+const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
+const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
+const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/services` : `/${locale}/services`;
+function weekday(dayOfWeek: number): string {
+  const anchor = new Date(Date.UTC(2024, 0, 7 + dayOfWeek));
+  return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(anchor);
+}
+---
+<article class="mx-auto max-w-5xl">
+  <header class="mb-8 space-y-4">
+    <div class="flex flex-wrap gap-2 text-sm text-muted-foreground">
+      {item.categories.map((category) => <a href={`${base}/${category.slug}`} class="rounded-full border px-3 py-1">{category.name ?? category.slug}</a>)}
+    </div>
+    <h1 class="text-4xl font-bold tracking-tight">{title}</h1>
+    {item.translation?.excerpt && <p class="max-w-3xl text-lg text-muted-foreground">{item.translation.excerpt}</p>}
+    <div class="flex flex-wrap gap-4 text-sm">
+      {item.provider?.name && <span>{item.provider.name}</span>}
+      {price && <span class="font-semibold">{price}</span>}
+      {formatServiceDuration(item.service.durationMinutes) && <span>{formatServiceDuration(item.service.durationMinutes)}</span>}
+      {item.service.maxParticipants && <span>{item.service.maxParticipants} {t.labels.participants}</span>}
+      {rating !== null && <span aria-label={`${rating} / 5`}>★ {rating} ({item.service.ratingCount})</span>}
+    </div>
+  </header>
+  {item.coverMedia && <div class="mb-10 overflow-hidden rounded-2xl border"><img src={item.coverMedia.url} alt={item.coverMedia.alt || title} class="aspect-video w-full object-cover" loading="eager" /></div>}
+  <Prose size="full" class="max-w-none"><RichContent html={item.translation?.content ?? ""} /></Prose>
+  {item.availability.length > 0 && <section class="mt-10"><h2 class="text-2xl font-semibold">{t.labels.availability}</h2><div class="mt-4 grid gap-3 sm:grid-cols-2">{item.availability.map((slot) => <div class="rounded-xl border p-4"><div class="font-medium">{weekday(slot.dayOfWeek)}</div><div>{slot.startTime} – {slot.endTime} ({slot.timezone})</div></div>)}</div></section>}
+  {item.tags.length > 0 && <footer class="mt-10 flex flex-wrap gap-2">{item.tags.map((tag) => <a href={`${base}/tags/${tag.slug}`} class="rounded-full bg-muted px-3 py-1 text-sm">#{tag.name ?? tag.slug}</a>)}</footer>}
+  <ServiceEngagement serviceId={item.service.id} organizationId={item.service.organizationId} locale={locale as import("@i18n/config").Locale} />
+</article>

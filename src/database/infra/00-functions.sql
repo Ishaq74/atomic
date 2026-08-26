@@ -1,9 +1,4 @@
--- Fonctions utilitaires pour l'infrastructure DB.
--- current_user_id() et is_admin() lisent le contexte applicatif
--- posé par withDbActorContext() (src/database/drizzle.ts).
--- LANGUAGE sql : inlinable par le query planner, pas de subtransaction.
--- PARALLEL SAFE : utilisable dans les workers parallèles (pas d'EXCEPTION).
-
+-- Triggers/functions shared by Atomic DB.
 CREATE OR REPLACE FUNCTION current_user_id()
 RETURNS text
 LANGUAGE sql STABLE PARALLEL SAFE
@@ -34,8 +29,6 @@ END;
 $$;
 --> statement-breakpoint
 
--- ─── Full-Text Search helpers ────────────────────────────────────────────────
--- Map CMS locale to PostgreSQL regconfig for FTS.
 CREATE OR REPLACE FUNCTION locale_to_regconfig(loc text) RETURNS regconfig AS $$
   SELECT CASE loc
     WHEN 'fr' THEN 'french'::regconfig
@@ -46,51 +39,28 @@ CREATE OR REPLACE FUNCTION locale_to_regconfig(loc text) RETURNS regconfig AS $$
 $$ LANGUAGE sql IMMUTABLE STRICT;
 --> statement-breakpoint
 
--- Recursively extract all string values from JSONB (page section content).
 CREATE OR REPLACE FUNCTION extract_jsonb_text(data jsonb) RETURNS text AS $$
-  SELECT coalesce(
-    string_agg(val #>> '{}', ' '),
-    ''
-  )
+  SELECT coalesce(string_agg(val #>> '{}', ' '), '')
   FROM jsonb_path_query(data, 'strict $.** ? (@.type() == "string")') AS val
 $$ LANGUAGE sql IMMUTABLE STRICT;
 --> statement-breakpoint
 
--- Rebuild search_vector for a given page.
--- Weights: A = title, B = meta_title + meta_description, C = slug, D = section text.
 CREATE OR REPLACE FUNCTION refresh_page_search_vector() RETURNS trigger AS $$
 DECLARE
   target_page_id text;
-  target_locale  text;
-  target_title   text;
-  target_meta_t  text;
-  target_meta_d  text;
-  target_slug    text;
-  section_text   text;
-  cfg            regconfig;
+  target_locale text;
+  target_title text;
+  target_meta_t text;
+  target_meta_d text;
+  target_slug text;
+  section_text text;
+  cfg regconfig;
 BEGIN
-  IF TG_TABLE_NAME = 'page_sections' THEN
-    target_page_id := coalesce(NEW.page_id, OLD.page_id);
-  ELSE
-    target_page_id := coalesce(NEW.id, OLD.id);
-  END IF;
-
-  SELECT locale, title, meta_title, meta_description, slug
-    INTO target_locale, target_title, target_meta_t, target_meta_d, target_slug
-    FROM pages WHERE id = target_page_id;
-
+  IF TG_TABLE_NAME = 'page_sections' THEN target_page_id := coalesce(NEW.page_id, OLD.page_id); ELSE target_page_id := coalesce(NEW.id, OLD.id); END IF;
+  SELECT locale, title, meta_title, meta_description, slug INTO target_locale, target_title, target_meta_t, target_meta_d, target_slug FROM pages WHERE id = target_page_id;
   IF target_locale IS NULL THEN RETURN NULL; END IF;
-
   cfg := locale_to_regconfig(target_locale);
-
-  SELECT regexp_replace(
-    coalesce(string_agg(extract_jsonb_text(ps.content), ' '), ''),
-    '<[^>]+>', ' ', 'g'
-  )
-  INTO section_text
-  FROM page_sections ps
-  WHERE ps.page_id = target_page_id AND ps.is_visible = true;
-
+  SELECT regexp_replace(coalesce(string_agg(extract_jsonb_text(ps.content), ' '), ''), '<[^>]+>', ' ', 'g') INTO section_text FROM page_sections ps WHERE ps.page_id = target_page_id AND ps.is_visible = true;
   UPDATE pages SET search_vector =
     setweight(to_tsvector(cfg, coalesce(target_title, '')), 'A') ||
     setweight(to_tsvector(cfg, coalesce(target_meta_t, '')), 'B') ||
@@ -98,28 +68,34 @@ BEGIN
     setweight(to_tsvector(cfg, regexp_replace(coalesce(target_slug, ''), '-', ' ', 'g')), 'C') ||
     setweight(to_tsvector(cfg, coalesce(section_text, '')), 'D')
   WHERE id = target_page_id;
-
   RETURN NULL;
 END
 $$ LANGUAGE plpgsql;
 --> statement-breakpoint
 
--- Rebuild search_vector for a blog post translation row (BEFORE trigger: all
--- searchable fields — title/slug/excerpt/meta/content — live on the same row,
--- unlike pages which need a cross-table page_sections lookup).
--- Weights: A = title, B = meta_title + meta_description + excerpt, C = slug, D = content.
 CREATE OR REPLACE FUNCTION refresh_blog_post_search_vector() RETURNS trigger AS $$
-DECLARE
-  cfg regconfig;
+DECLARE cfg regconfig;
 BEGIN
   cfg := locale_to_regconfig(NEW.locale);
-
   NEW.search_vector :=
     setweight(to_tsvector(cfg, coalesce(NEW.title, '')), 'A') ||
     setweight(to_tsvector(cfg, coalesce(NEW.meta_title, '') || ' ' || coalesce(NEW.meta_description, '') || ' ' || coalesce(NEW.excerpt, '')), 'B') ||
     setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.slug, ''), '-', ' ', 'g')), 'C') ||
     setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.content, ''), '<[^>]+>', ' ', 'g')), 'D');
+  RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+--> statement-breakpoint
 
+CREATE OR REPLACE FUNCTION refresh_service_search_vector() RETURNS trigger AS $$
+DECLARE cfg regconfig;
+BEGIN
+  cfg := locale_to_regconfig(NEW.locale);
+  NEW.search_vector :=
+    setweight(to_tsvector(cfg, coalesce(NEW.title, '')), 'A') ||
+    setweight(to_tsvector(cfg, coalesce(NEW.meta_title, '') || ' ' || coalesce(NEW.meta_description, '') || ' ' || coalesce(NEW.excerpt, '')), 'B') ||
+    setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.slug, ''), '-', ' ', 'g')), 'C') ||
+    setweight(to_tsvector(cfg, regexp_replace(coalesce(NEW.content, ''), '<[^>]+>', ' ', 'g')), 'D');
   RETURN NEW;
 END
 $$ LANGUAGE plpgsql;

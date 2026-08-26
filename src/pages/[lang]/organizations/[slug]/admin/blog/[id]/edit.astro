@@ -8,6 +8,7 @@ import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import OrgSidebar from "@organisms/OrgSidebar/OrgSidebar.astro";
+import AdminFormShell from "@organisms/AdminFormShell.astro";
 import AdminPostForm from "@/components/blog/AdminPostForm.astro";
 import type { BlogPostEditorData } from "@/lib/blog/editor-types";
 
@@ -52,6 +53,8 @@ const editorData: BlogPostEditorData = {
 <BaseLayout title={blogT.admin.editPost} description={authT.organizations.blog.description}>
   <AuthLayout title={org.name}>
     <OrgSidebar slot="sidebar" t={authT} locale={locale} org={org} activeItem="blog" orgRole={activeOrgRole} />
-    <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} />
+    <AdminFormShell>
+      <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} organizationId={org.id} />
+    </AdminFormShell>
   </AuthLayout>
 </BaseLayout>
