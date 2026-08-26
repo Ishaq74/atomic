@@ -5,7 +5,7 @@ import { services, serviceTranslations, serviceCategoryLinks, serviceTagLinks, s
 import { sanitizeHtml } from "@/lib/sanitize";
 import { generateExcerpt } from "@/core/content/text";
 import { serviceFormSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
-import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
+import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceLockOwner, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
 import { auditService, invalidateServicesCache } from "./_helpers";
 
 export const createService = defineAction({
@@ -51,6 +51,7 @@ export const updateService = defineAction({
     const user = await assertServicePermission(context, tenant, { service: ["update"] });
     serviceRateLimit(context, user.id, "update");
     const existing = await assertServiceInTenant(input.id, tenant);
+    await assertServiceLockOwner(input.id, user.id, context.locals.session?.id);
     if (input.status !== undefined || input.publishedAt !== undefined) throw new ActionError({ code: "BAD_REQUEST", message: "La publication se gère via les actions de lifecycle explicites." });
     if (input.categoryIds) await Promise.all(input.categoryIds.map((id) => assertServiceCategoryInTenant(id, tenant)));
     if (input.tagIds) await Promise.all(input.tagIds.map((id) => assertServiceTagInTenant(id, tenant)));
@@ -77,7 +78,7 @@ export const updateService = defineAction({
           else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
-        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, tagId }))); }
+        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, categoryId: tagId }))); }
         if (locale && (content || input.title || input.slug)) await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "PUBLISHED" ? "PUBLISHED" : existing.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Mise à jour" });
       });
     } catch (error) {
