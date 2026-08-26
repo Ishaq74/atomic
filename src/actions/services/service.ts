@@ -6,6 +6,7 @@ import { sanitizeHtml } from "@lib/sanitize";
 import { generateExcerpt } from "@/core/content/text";
 import { serviceCreateSchema, serviceUpdateSchema, calculateServiceSeoScore } from "@/modules/services/validation";
 import { serviceRateLimit, assertServicePermission, resolveServiceTenant, assertServiceInTenant, assertServiceCategoryInTenant, assertServiceTagInTenant, assertServiceMediaInTenant } from "@/modules/services/permissions";
+import { getServiceErrorMessage } from "@/modules/services/i18n";
 import { auditService, invalidateServicesCache } from "./_helpers";
 
 export const createService = defineAction({
@@ -34,7 +35,7 @@ export const createService = defineAction({
         await tx.insert(serviceSeo).values({ serviceId: created.id, locale: input.locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
       });
     } catch (error) {
-      if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: "Un service avec ce slug existe déjà pour ce tenant/locale." });
+      if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: getServiceErrorMessage(input.locale, "CONFLICT") });
       throw error;
     }
     auditService(context, user.id, "SERVICE_CREATE", { resource: "services", resourceId: createdId, metadata: { organizationId: tenant.organizationId } });
@@ -61,7 +62,7 @@ export const updateService = defineAction({
     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content;
     const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt;
     const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : existingSeo?.focusKeyword ?? undefined });
-    if (locale && !existingTranslation && (!input.title || !input.slug || !content)) throw new ActionError({ code: "BAD_REQUEST", message: "Le titre, le slug et le contenu sont requis pour une nouvelle traduction." });
+    if (locale && !existingTranslation && (!input.title || !input.slug || !content)) throw new ActionError({ code: "BAD_REQUEST", message: getServiceErrorMessage(locale, "BAD_REQUEST") });
     try {
       await db.transaction(async (tx) => {
         await tx.update(services).set({ ...(input.slug ? { slug: input.slug } : {}), ...(input.coverImageId !== undefined ? { coverImageId: input.coverImageId } : {}), ...(input.priceMinor !== undefined ? { priceMinor: input.priceMinor } : {}), ...(input.currency !== undefined ? { currency: input.currency } : {}), ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}), ...(input.maxParticipants !== undefined ? { maxParticipants: input.maxParticipants } : {}), ...(input.isMobile !== undefined ? { isMobile: input.isMobile } : {}), ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}), seoScore, updatedBy: user.id }).where(eq(services.id, input.id));
@@ -75,11 +76,11 @@ export const updateService = defineAction({
           else await tx.insert(serviceSeo).values({ serviceId: input.id, locale, focusKeyword: input.focusKeyword ?? null, focusKeywordScore: seoScore });
         }
         if (input.categoryIds) { await tx.delete(serviceCategoryLinks).where(eq(serviceCategoryLinks.serviceId, input.id)); if (input.categoryIds.length) await tx.insert(serviceCategoryLinks).values(input.categoryIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
-        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, tagId }))); }
+        if (input.tagIds) { await tx.delete(serviceTagLinks).where(eq(serviceTagLinks.serviceId, input.id)); if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((categoryId) => ({ serviceId: input.id, categoryId }))); }
         if (locale && (content || input.title || input.slug)) await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "PUBLISHED" ? "PUBLISHED" : existing.status === "ARCHIVED" ? "ARCHIVED" : "DRAFT", revisionNote: "Update" });
       });
     } catch (error) {
-      if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: "Un service avec ce slug existe déjà pour ce tenant/locale." });
+      if (error instanceof Error && /duplicate|unique/i.test(error.message)) throw new ActionError({ code: "CONFLICT", message: getServiceErrorMessage(input.locale ?? "fr", "CONFLICT") });
       throw error;
     }
     auditService(context, user.id, "SERVICE_UPDATE", { resource: "services", resourceId: input.id, metadata: { organizationId: tenant.organizationId } });
