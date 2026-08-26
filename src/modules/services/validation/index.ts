@@ -36,8 +36,11 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
-export const serviceFormSchema = z.object(serviceEditableFields).extend({ status: z.literal("DRAFT").default("DRAFT"), publishedAt: z.null().default(null) });
-export const serviceCreateSchema = serviceFormSchema;
+export const serviceFormSchema = z.object(serviceEditableFields).extend({
+  status: z.literal("DRAFT").default("DRAFT"),
+  publishedAt: z.null().default(null),
+});
+
 export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
 
 export const serviceListFiltersSchema = z.object({
@@ -58,8 +61,6 @@ export const serviceListFiltersSchema = z.object({
 
 export const serviceAvailabilitySchema = z.object({
   serviceId: z.string().uuid(),
-  organizationId: serviceOrganizationIdSchema,
-  locale: localeSchema.default("fr"),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),

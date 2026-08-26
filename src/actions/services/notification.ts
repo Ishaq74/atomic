@@ -21,19 +21,24 @@ export async function createServiceNotification(input: {
   locale?: Locale;
 }) {
   const db = getDrizzle();
-  const [service] = await db.select({ id: services.id }).from(services).where(eq(services.id, input.serviceId)).limit(1);
+  const [service] = await db.select({ id: services.id, providerId: services.providerId }).from(services).where(eq(services.id, input.serviceId)).limit(1);
   if (!service || (input.actorId && input.actorId === input.recipientId)) return null;
 
+  let expectedRecipientId: string | null = null;
   if (input.type === "NEW_COMMENT" || input.type === "REPLY_TO_COMMENT") {
     if (!input.commentId) return null;
-    const [comment] = await db.select({ id: serviceComments.id, serviceId: serviceComments.serviceId }).from(serviceComments).where(eq(serviceComments.id, input.commentId)).limit(1);
+    const [comment] = await db.select({ id: serviceComments.id, serviceId: serviceComments.serviceId, authorId: serviceComments.authorId }).from(serviceComments).where(eq(serviceComments.id, input.commentId)).limit(1);
     if (!comment || comment.serviceId !== input.serviceId) return null;
+    expectedRecipientId = comment.authorId ?? service.providerId;
   }
   if (input.type === "NEW_REVIEW" || input.type === "REVIEW_APPROVED" || input.type === "REVIEW_REJECTED") {
     if (!input.reviewId) return null;
     const [review] = await db.select({ id: serviceReviews.id, serviceId: serviceReviews.serviceId }).from(serviceReviews).where(eq(serviceReviews.id, input.reviewId)).limit(1);
     if (!review || review.serviceId !== input.serviceId) return null;
+    expectedRecipientId = service.providerId;
   }
+  if (input.type === "SERVICE_PUBLISHED" || input.type === "SERVICE_MENTION") expectedRecipientId = service.providerId;
+  if (!expectedRecipientId || expectedRecipientId !== input.recipientId) return null;
 
   const t = getServiceNotificationTranslations(input.locale ?? "fr");
   const defaults = input.type === "SERVICE_PUBLISHED"
