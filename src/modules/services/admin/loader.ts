@@ -1,18 +1,78 @@
-import { and, count, eq, isNull, sum } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike, inArray, isNull, sql, sum } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
-import { services, serviceReviews, serviceComments, serviceReports, serviceCategories, serviceCategoryTranslations, serviceTags, serviceTagTranslations } from "@database/schemas";
-import { getServices, getServiceByIdAdmin } from "@/modules/services/loaders";
+import { mediaFileAlts, mediaFiles, serviceCategories, serviceCategoryLinks, serviceCategoryTranslations, serviceComments, serviceReports, serviceReviews, serviceTags, serviceTagLinks, serviceTagTranslations, serviceTranslations, services, user } from "@database/schemas";
 import type { Locale } from "@i18n/config";
-import type { ServiceDetail } from "@/modules/services/domain";
-import { serviceListFiltersSchema } from "@/modules/services/validation";
-import type { z } from "astro/zod";
+import type { ServiceDetail, ServiceListItem } from "@/modules/services/domain";
+import { serviceAdminFiltersSchema } from "@/modules/services/validation";
 
-export type ServiceAdminFilters = Partial<z.infer<typeof serviceListFiltersSchema>>;
-function tenantScope(organizationId: string | null) { return organizationId === null ? isNull(services.organizationId) : eq(services.organizationId, organizationId); }
-export async function getServiceAdminData(organizationId: string | null, locale: Locale, filters: ServiceAdminFilters = {}) { return getServices({ ...filters, organizationId }, locale, false); }
-export async function getServiceAdminById(id: string, locale: Locale, organizationId: string | null): Promise<ServiceDetail | null> { return getServiceByIdAdmin(id, locale, organizationId); }
+function tenantScope(column: typeof services.organizationId, organizationId: string | null) {
+  return organizationId === null ? isNull(column) : eq(column, organizationId);
+}
+
+export type ServiceAdminFilters = Partial<ReturnType<typeof serviceAdminFiltersSchema.parse>>;
+
+export async function getServiceAdminData(organizationId: string | null, locale: Locale, input: ServiceAdminFilters = {}): Promise<{ items: ServiceListItem[]; page: number; limit: number; total: number; totalPages: number }> {
+  const filters = serviceAdminFiltersSchema.parse({ ...input, organizationId, locale });
+  const db = getDrizzle();
+  const conditions = [
+    tenantScope(services.organizationId, organizationId),
+    eq(serviceTranslations.locale, filters.locale),
+    tenantScope(serviceTranslations.organizationId, organizationId),
+  ];
+  if (filters.status) conditions.push(eq(services.status, filters.status));
+  if (filters.search) conditions.push(sql`${serviceTranslations.searchVector} @@ websearch_to_tsquery(locale_to_regconfig(${filters.locale}), ${filters.search})`);
+  if (filters.providerId || filters.authorId) conditions.push(eq(services.providerId, filters.providerId ?? filters.authorId!));
+  if (filters.categoryId) conditions.push(inArray(services.id, db.select({ serviceId: serviceCategoryLinks.serviceId }).from(serviceCategoryLinks).innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), tenantScope(serviceCategories.organizationId, organizationId))).where(eq(serviceCategoryLinks.categoryId, filters.categoryId))));
+  if (filters.tagId) conditions.push(inArray(services.id, db.select({ serviceId: serviceTagLinks.serviceId }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tenantScope(serviceTags.organizationId, organizationId))).where(eq(serviceTagLinks.tagId, filters.tagId))));
+  if (filters.featured !== undefined) conditions.push(eq(services.isFeatured, filters.featured));
+  if (filters.mobile !== undefined) conditions.push(eq(services.isMobile, filters.mobile));
+
+  const orderColumn = filters.sortBy === "title" ? serviceTranslations.title : filters.sortBy === "priceMinor" ? services.priceMinor : filters.sortBy === "ratingAverage100" ? services.ratingAverage100 : filters.sortBy === "viewCount" ? services.viewCount : filters.sortBy === "publishedAt" ? services.publishedAt : filters.sortBy === "createdAt" ? services.createdAt : services.updatedAt;
+  const orderBy = filters.sortOrder === "asc" ? asc(orderColumn) : desc(orderColumn);
+  const [{ totalRow }] = await db.select({ totalRow: count() }).from(services).innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, filters.locale), tenantScope(serviceTranslations.organizationId, organizationId))).where(and(...conditions));
+  const total = Number(totalRow ?? 0);
+
+  const rows = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } })
+    .from(services)
+    .innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, filters.locale), tenantScope(serviceTranslations.organizationId, organizationId)))
+    .leftJoin(user, eq(user.id, services.providerId))
+    .where(and(...conditions))
+    .orderBy(orderBy, asc(services.id))
+    .limit(filters.limit)
+    .offset((filters.page - 1) * filters.limit);
+
+  const ids = rows.map(({ service }) => service.id);
+  const [categoryRows, tagRows, mediaRows] = await Promise.all([
+    ids.length ? db.select({ serviceId: serviceCategoryLinks.serviceId, id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), tenantScope(serviceCategories.organizationId, organizationId))).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, filters.locale), tenantScope(serviceCategoryTranslations.organizationId, organizationId))).where(inArray(serviceCategoryLinks.serviceId, ids)) : [],
+    ids.length ? db.select({ serviceId: serviceTagLinks.serviceId, id: serviceTags.id, slug: serviceTags.slug, name: serviceTagTranslations.name }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tenantScope(serviceTags.organizationId, organizationId))).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, filters.locale), tenantScope(serviceTagTranslations.organizationId, organizationId))).where(inArray(serviceTagLinks.serviceId, ids)) : [],
+    ids.length ? db.select({ serviceId: services.id, mediaId: services.coverImageId, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(services).leftJoin(mediaFiles, and(eq(mediaFiles.id, services.coverImageId), tenantScope(mediaFiles.organizationId, organizationId))).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, filters.locale))).where(inArray(services.id, ids)) : [],
+  ]);
+
+  const categoriesByService = new Map<string, ServiceListItem["categories"]>();
+  for (const row of categoryRows) categoriesByService.set(row.serviceId, [...(categoriesByService.get(row.serviceId) ?? []), { id: row.id, slug: row.slug, name: row.name ?? null }]);
+  const tagsByService = new Map<string, ServiceDetail["tags"]>();
+  for (const row of tagRows) tagsByService.set(row.serviceId, [...(tagsByService.get(row.serviceId) ?? []), { id: row.id, slug: row.slug, name: row.name ?? null }]);
+  const coverByService = new Map<string, ServiceListItem["coverMedia"]>();
+  for (const row of mediaRows) if (row.mediaId && row.url) coverByService.set(row.serviceId, { id: row.mediaId, url: row.url, alt: row.alt ?? "" });
+
+  const items = rows.map(({ service, translation, provider }): ServiceListItem => ({
+    service,
+    translation: translation ? { locale: translation.locale, title: translation.title, slug: translation.slug, excerpt: translation.excerpt, content: translation.content, locationLabel: translation.locationLabel, locationAddress: translation.locationAddress, metaTitle: translation.metaTitle, metaDescription: translation.metaDescription, metaKeywords: translation.metaKeywords, canonicalUrl: translation.canonicalUrl, ogTitle: translation.ogTitle, ogDescription: translation.ogDescription, ogImageId: translation.ogImageId } : null,
+    provider,
+    categories: categoriesByService.get(service.id) ?? [],
+    coverMedia: coverByService.get(service.id) ?? null,
+  }));
+
+  return { items, page: filters.page, limit: filters.limit, total, totalPages: Math.max(1, Math.ceil(total / filters.limit)) };
+}
+
+export async function getServiceAdminById(id: string, locale: Locale, organizationId: string | null): Promise<ServiceDetail | null> {
+  const { getServiceByIdAdmin } = await import("@/modules/services/loaders");
+  return getServiceByIdAdmin(id, locale, organizationId);
+}
+
 export async function getServiceAdminStats(organizationId: string | null) {
-  const db = getDrizzle(); const scope = tenantScope(organizationId);
+  const db = getDrizzle(); const scope = tenantScope(services.organizationId, organizationId);
   const [total, published, draft, archived, deleted, featured, views, reviews, comments] = await Promise.all([
     db.select({ count: count() }).from(services).where(scope),
     db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "PUBLISHED"))),
@@ -29,23 +89,23 @@ export async function getServiceAdminStats(organizationId: string | null) {
 
 export async function getServiceAdminTaxonomy(organizationId: string | null, locale: Locale) {
   const db = getDrizzle();
-  const categoryTranslationScope = organizationId === null ? isNull(serviceCategoryTranslations.organizationId) : eq(serviceCategoryTranslations.organizationId, organizationId);
-  const tagTranslationScope = organizationId === null ? isNull(serviceTagTranslations.organizationId) : eq(serviceTagTranslations.organizationId, organizationId);
+  const categoryTranslationScope = tenantScope(serviceCategoryTranslations.organizationId, organizationId);
+  const tagTranslationScope = tenantScope(serviceTagTranslations.organizationId, organizationId);
   const [categories, tags] = await Promise.all([
-    db.select({ category: serviceCategories, translation: serviceCategoryTranslations }).from(serviceCategories).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), categoryTranslationScope)).where(organizationId === null ? isNull(serviceCategories.organizationId) : eq(serviceCategories.organizationId, organizationId)).orderBy(serviceCategories.sortOrder),
-    db.select({ tag: serviceTags, translation: serviceTagTranslations }).from(serviceTags).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale), tagTranslationScope)).where(organizationId === null ? isNull(serviceTags.organizationId) : eq(serviceTags.organizationId, organizationId)).orderBy(serviceTags.slug),
+    db.select({ category: serviceCategories, translation: serviceCategoryTranslations }).from(serviceCategories).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), categoryTranslationScope)).where(tenantScope(serviceCategories.organizationId, organizationId)).orderBy(asc(serviceCategories.sortOrder)),
+    db.select({ tag: serviceTags, translation: serviceTagTranslations }).from(serviceTags).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale), tagTranslationScope)).where(tenantScope(serviceTags.organizationId, organizationId)).orderBy(asc(serviceTags.slug)),
   ]);
   return { categories, tags };
 }
 
 export async function getServiceModerationQueue(organizationId: string | null) {
-  const db = getDrizzle();
+  const db = getDrizzle(); const scope = tenantScope(services.organizationId, organizationId);
   const [reviews, comments, directReports, commentReports, reviewReports] = await Promise.all([
-    db.select({ review: serviceReviews }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(tenantScope(organizationId), eq(serviceReviews.status, "PENDING"))).orderBy(serviceReviews.createdAt).limit(100),
-    db.select({ comment: serviceComments }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(tenantScope(organizationId), eq(serviceComments.status, "PENDING"))).orderBy(serviceComments.createdAt).limit(100),
-    db.select({ report: serviceReports, serviceId: services.id }).from(serviceReports).innerJoin(services, eq(services.id, serviceReports.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
-    db.select({ report: serviceReports, serviceId: serviceComments.serviceId }).from(serviceReports).innerJoin(serviceComments, eq(serviceComments.id, serviceReports.commentId)).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
-    db.select({ report: serviceReports, serviceId: serviceReviews.serviceId }).from(serviceReports).innerJoin(serviceReviews, eq(serviceReviews.id, serviceReports.reviewId)).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(tenantScope(organizationId), eq(serviceReports.status, "PENDING"))).orderBy(serviceReports.createdAt).limit(100),
+    db.select({ review: serviceReviews }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(scope, eq(serviceReviews.status, "PENDING"))).orderBy(asc(serviceReviews.createdAt)).limit(100),
+    db.select({ comment: serviceComments }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(scope, eq(serviceComments.status, "PENDING"))).orderBy(asc(serviceComments.createdAt)).limit(100),
+    db.select({ report: serviceReports, serviceId: services.id }).from(serviceReports).innerJoin(services, eq(services.id, serviceReports.serviceId)).where(and(scope, eq(serviceReports.status, "PENDING"))).orderBy(asc(serviceReports.createdAt)).limit(100),
+    db.select({ report: serviceReports, serviceId: serviceComments.serviceId }).from(serviceReports).innerJoin(serviceComments, eq(serviceComments.id, serviceReports.commentId)).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(scope, eq(serviceReports.status, "PENDING"))).orderBy(asc(serviceReports.createdAt)).limit(100),
+    db.select({ report: serviceReports, serviceId: serviceReviews.serviceId }).from(serviceReports).innerJoin(serviceReviews, eq(serviceReviews.id, serviceReports.reviewId)).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(scope, eq(serviceReports.status, "PENDING"))).orderBy(asc(serviceReports.createdAt)).limit(100),
   ]);
   const reports = [...directReports, ...commentReports, ...reviewReports].sort((a, b) => a.report.createdAt.getTime() - b.report.createdAt.getTime()).slice(0, 100);
   return { reviews, comments, reports };
