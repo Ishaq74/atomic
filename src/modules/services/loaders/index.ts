@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Locale } from "@i18n/config";
 import { getDrizzle } from "@database/drizzle";
-import { serviceCategories, serviceCategoryTranslations, serviceTags, serviceTagTranslations, serviceTranslations, services, serviceCategoryLinks, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo, mediaFiles, mediaFileAlts, user } from "@database/schemas";
+import { serviceCategories, serviceCategoryTranslations, serviceTags, serviceTagTranslations, serviceTranslations, services, serviceCategoryLinks, serviceTagLinks, serviceMedia, serviceAvailability, serviceSeo, serviceRevisions, serviceLocks, mediaFiles, mediaFileAlts, user } from "@database/schemas";
 import { serviceListFiltersSchema } from "@/modules/services/validation";
 import type { ServiceDetail, ServiceListItem } from "@/modules/services/domain";
 
@@ -13,51 +13,23 @@ const translationTenantScope = (organizationId: string | null) => organizationId
 
 async function loadServiceDetailById(serviceId: string, locale: Locale, organizationId: string | null, publicOnly: boolean): Promise<ServiceDetail | null> {
   const db = getDrizzle();
-  const conditions = [
-    eq(services.id, serviceId),
-    serviceTenantScope(organizationId),
-    eq(serviceTranslations.locale, locale),
-    translationTenantScope(organizationId),
-  ];
+  const conditions = [eq(services.id, serviceId), serviceTenantScope(organizationId), eq(serviceTranslations.locale, locale), translationTenantScope(organizationId)];
   if (publicOnly) conditions.push(eq(services.status, "PUBLISHED"));
-  const [row] = await db
-    .select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } })
-    .from(services)
-    .innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, locale), translationTenantScope(organizationId)))
-    .leftJoin(user, eq(user.id, services.providerId))
-    .where(and(...conditions))
-    .limit(1);
+  const [row] = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } }).from(services).innerJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), eq(serviceTranslations.locale, locale), translationTenantScope(organizationId))).leftJoin(user, eq(user.id, services.providerId)).where(and(...conditions)).limit(1);
   if (!row) return null;
 
-  const [categories, tags, media, availability, seo, translationLocales] = await Promise.all([
-    db.select({ id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name })
-      .from(serviceCategoryLinks)
-      .innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), categoryTenantScope(organizationId)))
-      .leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), organizationId === null ? isNull(serviceCategoryTranslations.organizationId) : eq(serviceCategoryTranslations.organizationId, organizationId)))
-      .where(eq(serviceCategoryLinks.serviceId, serviceId)),
-    db.select({ id: serviceTags.id, slug: serviceTags.slug, name: serviceTagTranslations.name })
-      .from(serviceTagLinks)
-      .innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tagTenantScope(organizationId)))
-      .leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale), organizationId === null ? isNull(serviceTagTranslations.organizationId) : eq(serviceTagTranslations.organizationId, organizationId)))
-      .where(eq(serviceTagLinks.serviceId, serviceId)),
-    db.select({ id: mediaFiles.id, mediaId: serviceMedia.mediaId, kind: serviceMedia.kind, altText: serviceMedia.altText, caption: serviceMedia.caption, sortOrder: serviceMedia.sortOrder })
-      .from(serviceMedia)
-      .innerJoin(mediaFiles, and(eq(mediaFiles.id, serviceMedia.mediaId), mediaTenantScope(organizationId)))
-      .where(eq(serviceMedia.serviceId, serviceId))
-      .orderBy(asc(serviceMedia.sortOrder)),
-    db.select({ id: serviceAvailability.id, dayOfWeek: serviceAvailability.dayOfWeek, startTime: serviceAvailability.startTime, endTime: serviceAvailability.endTime, timezone: serviceAvailability.timezone, maxParticipants: serviceAvailability.maxParticipants })
-      .from(serviceAvailability)
-      .where(eq(serviceAvailability.serviceId, serviceId))
-      .orderBy(asc(serviceAvailability.dayOfWeek), asc(serviceAvailability.startTime)),
-    db.select({ locale: serviceSeo.locale, focusKeyword: serviceSeo.focusKeyword, metaRobots: serviceSeo.metaRobots, schemaMarkup: serviceSeo.schemaMarkup })
-      .from(serviceSeo)
-      .where(and(eq(serviceSeo.serviceId, serviceId), eq(serviceSeo.locale, locale)))
-      .limit(1),
-    db.select({ locale: serviceTranslations.locale })
-      .from(serviceTranslations)
-      .where(and(eq(serviceTranslations.serviceId, serviceId), translationTenantScope(organizationId))),
+  const [categories, tags, media, availability, seo, translationLocales, revisions, lockRows] = await Promise.all([
+    db.select({ id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), categoryTenantScope(organizationId))).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), organizationId === null ? isNull(serviceCategoryTranslations.organizationId) : eq(serviceCategoryTranslations.organizationId, organizationId))).where(eq(serviceCategoryLinks.serviceId, serviceId)),
+    db.select({ id: serviceTags.id, slug: serviceTags.slug, name: serviceTagTranslations.name }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tagTenantScope(organizationId))).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, locale), organizationId === null ? isNull(serviceTagTranslations.organizationId) : eq(serviceTagTranslations.organizationId, organizationId))).where(eq(serviceTagLinks.serviceId, serviceId)),
+    db.select({ id: mediaFiles.id, mediaId: serviceMedia.mediaId, kind: serviceMedia.kind, altText: serviceMedia.altText, caption: serviceMedia.caption, sortOrder: serviceMedia.sortOrder }).from(serviceMedia).innerJoin(mediaFiles, and(eq(mediaFiles.id, serviceMedia.mediaId), mediaTenantScope(organizationId))).where(eq(serviceMedia.serviceId, serviceId)).orderBy(asc(serviceMedia.sortOrder)),
+    db.select({ id: serviceAvailability.id, dayOfWeek: serviceAvailability.dayOfWeek, startTime: serviceAvailability.startTime, endTime: serviceAvailability.endTime, timezone: serviceAvailability.timezone, maxParticipants: serviceAvailability.maxParticipants }).from(serviceAvailability).where(eq(serviceAvailability.serviceId, serviceId)).orderBy(asc(serviceAvailability.dayOfWeek), asc(serviceAvailability.startTime)),
+    db.select({ locale: serviceSeo.locale, focusKeyword: serviceSeo.focusKeyword, metaRobots: serviceSeo.metaRobots, schemaMarkup: serviceSeo.schemaMarkup }).from(serviceSeo).where(and(eq(serviceSeo.serviceId, serviceId), eq(serviceSeo.locale, locale))).limit(1),
+    db.select({ locale: serviceTranslations.locale }).from(serviceTranslations).where(and(eq(serviceTranslations.serviceId, serviceId), translationTenantScope(organizationId))),
+    db.select({ id: serviceRevisions.id, locale: serviceRevisions.locale, title: serviceRevisions.title, slug: serviceRevisions.slug, status: serviceRevisions.status, revisionNote: serviceRevisions.revisionNote, createdAt: serviceRevisions.createdAt }).from(serviceRevisions).where(eq(serviceRevisions.serviceId, serviceId)).orderBy(desc(serviceRevisions.createdAt)).limit(50),
+    db.select({ userId: serviceLocks.userId, sessionId: serviceLocks.sessionId, lockedAt: serviceLocks.lockedAt, expiresAt: serviceLocks.expiresAt }).from(serviceLocks).where(eq(serviceLocks.serviceId, serviceId)).limit(1),
   ]);
 
+  const activeLock = lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null;
   return {
     service: row.service,
     translation: row.translation ? { locale: row.translation.locale, title: row.translation.title, slug: row.translation.slug, excerpt: row.translation.excerpt, content: row.translation.content, locationLabel: row.translation.locationLabel, locationAddress: row.translation.locationAddress, metaTitle: row.translation.metaTitle, metaDescription: row.translation.metaDescription, metaKeywords: row.translation.metaKeywords, canonicalUrl: row.translation.canonicalUrl, ogTitle: row.translation.ogTitle, ogDescription: row.translation.ogDescription, ogImageId: row.translation.ogImageId } : null,
@@ -68,6 +40,8 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
     availability,
     seo: seo[0] ?? null,
     availableLocales: translationLocales.map((item) => item.locale),
+    revisions,
+    lock: activeLock,
   };
 }
 
@@ -109,9 +83,7 @@ export async function getServiceBySlug(slug: string, locale: Locale = "fr", orga
   return loadServiceDetailById(row.serviceId, locale, organizationId, true);
 }
 
-export async function getServiceByIdAdmin(id: string, locale: Locale, organizationId: string | null = null): Promise<ServiceDetail | null> {
-  return loadServiceDetailById(id, locale, organizationId, false);
-}
+export async function getServiceByIdAdmin(id: string, locale: Locale, organizationId: string | null = null): Promise<ServiceDetail | null> { return loadServiceDetailById(id, locale, organizationId, false); }
 
 export async function getServiceCategories(locale: Locale = "fr", organizationId: string | null = null) {
   return getDrizzle().select({ category: serviceCategories, translation: serviceCategoryTranslations }).from(serviceCategories).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, locale), organizationId === null ? isNull(serviceCategoryTranslations.organizationId) : eq(serviceCategoryTranslations.organizationId, organizationId))).where(categoryTenantScope(organizationId)).orderBy(asc(serviceCategories.sortOrder));
