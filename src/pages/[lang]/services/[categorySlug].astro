@@ -1,8 +1,9 @@
 ---
 import BaseLayout from "@layouts/BaseLayout.astro";
-import { getServices, getServiceCategories } from "@/modules/services/loaders";
+import { getServices, getServiceCategories, getServiceBySlug } from "@/modules/services/loaders";
 import { ServiceGrid } from "@/modules/services/components/lists";
 import { getServiceTranslations } from "@/modules/services/i18n";
+import { buildServiceUrl } from "@/modules/services/utils";
 import type { Locale } from "@i18n/config";
 export const prerender = false;
 const locale = (Astro.params.lang ?? "fr") as Locale;
@@ -11,7 +12,14 @@ const t = getServiceTranslations(locale);
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
 const categories = await getServiceCategories(locale, null);
 const category = categories.find((row) => (row.translation?.slug ?? row.category.slug) === categorySlug);
-if (!category) return Astro.redirect(`/${locale}/services`);
+if (!category) {
+  const service = await getServiceBySlug(categorySlug, locale, null);
+  if (service?.translation) {
+    const canonical = buildServiceUrl(locale, null, service.translation.slug, service.categories[0]?.slug ?? null);
+    return Astro.redirect(canonical, 301);
+  }
+  return Astro.redirect(`/${locale}/services`);
+}
 const data = await getServices({ categoryId: category.category.id, page }, locale, true);
 function href(targetPage: number) { return `?page=${targetPage}`; }
 ---
