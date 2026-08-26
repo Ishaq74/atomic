@@ -8,7 +8,7 @@ const localeSchema = z.string().refine((value): value is Locale => isValidLocale
 const slugSchema = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must contain only lowercase letters, numbers, and hyphens.");
 const nullableText = (max: number) => z.string().trim().max(max).optional().nullable();
 
-const serviceContentFields = {
+const serviceEditableFields = {
   organizationId: serviceOrganizationIdSchema,
   locale: localeSchema,
   title: z.string().trim().min(1).max(180),
@@ -36,9 +36,13 @@ const serviceContentFields = {
   focusKeyword: nullableText(120),
 };
 
-export const serviceFormSchema = z.object(serviceContentFields);
+export const serviceFormSchema = z.object(serviceEditableFields).extend({
+  status: z.literal("DRAFT").default("DRAFT"),
+  publishedAt: z.null().default(null),
+});
+
 export const serviceCreateSchema = serviceFormSchema;
-export const serviceUpdateSchema = serviceFormSchema.partial().extend({ id: z.string().uuid() });
+export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
 
 export const serviceListFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
