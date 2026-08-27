@@ -30,10 +30,10 @@ const serviceEditableFields = {
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional().nullable(),
   durationMinutes: z.coerce.number().int().positive().max(100_000).optional().nullable(),
   maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
-  isMobile: z.boolean().default(false),
-  isFeatured: z.boolean().default(false),
-  categoryIds: z.array(z.string().uuid()).max(100).default([]),
-  tagIds: z.array(z.string().uuid()).max(100).default([]),
+  isMobile: z.boolean(),
+  isFeatured: z.boolean(),
+  categoryIds: z.array(z.string().uuid()).max(100),
+  tagIds: z.array(z.string().uuid()).max(100),
   metaTitle: nullableText(180),
   metaDescription: nullableText(320),
   metaKeywords: nullableText(500),
@@ -45,12 +45,44 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
-export const serviceFormSchema = z.object(serviceEditableFields).extend({
+export const serviceFormSchema = z.object({
+  ...serviceEditableFields,
+  isMobile: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
+  categoryIds: z.array(z.string().uuid()).max(100).default([]),
+  tagIds: z.array(z.string().uuid()).max(100).default([]),
   status: z.literal("DRAFT").default("DRAFT"),
   publishedAt: z.null().default(null),
 });
 
-export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
+export const serviceUpdateSchema = z.object({
+  organizationId: serviceOrganizationIdSchema,
+  locale: localeSchema,
+  title: z.string().trim().min(1).max(180).optional(),
+  slug: slugSchema.optional(),
+  excerpt: nullableText(500),
+  content: z.string().min(1).optional(),
+  coverImageId: z.string().uuid().optional().nullable(),
+  ogImageId: z.string().uuid().optional().nullable(),
+  priceMinor: z.coerce.number().int().min(0).max(2_147_483_647).optional().nullable(),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(100_000).optional().nullable(),
+  maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
+  isMobile: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  categoryIds: z.array(z.string().uuid()).max(100).optional(),
+  tagIds: z.array(z.string().uuid()).max(100).optional(),
+  metaTitle: nullableText(180),
+  metaDescription: nullableText(320),
+  metaKeywords: nullableText(500),
+  canonicalUrl: z.string().url().optional().nullable(),
+  ogTitle: nullableText(180),
+  ogDescription: nullableText(320),
+  locationLabel: nullableText(180),
+  locationAddress: nullableText(500),
+  focusKeyword: nullableText(120),
+  id: z.string().uuid(),
+});
 
 export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
 
