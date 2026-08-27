@@ -16,7 +16,7 @@ export const moderateServiceComment = defineAction({ input: z.object({ id: z.uui
   const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { serviceComment: ["moderate"] }); await assertServiceInTenant(input.serviceId, tenant); const t = getServiceTranslations(requestLocale(context.request.headers));
   const db = getDrizzle(); const updated = await db.update(serviceComments).set({ status: input.status }).where(and(eq(serviceComments.id, input.id), eq(serviceComments.serviceId, input.serviceId))).returning({ id: serviceComments.id, authorId: serviceComments.authorId });
   if (!updated[0]) throw new ActionError({ code: "NOT_FOUND", message: t.admin.errors.notFound });
-  auditService(context, user.id, "SERVICE_COMMENT_MODERATE", { resource: "serviceComments", resourceId: input.id, metadata: { status: input.status } }); invalidateServicesCache(); return { success: true };
+  auditService(context, user.id, "SERVICE_COMMENT_MODERATE", { resource: "serviceComments", resourceId: input.id, metadata: { status: input.status, organizationId: tenant.organizationId } }); invalidateServicesCache(); return { success: true };
 } });
 
 export const moderateServiceReview = defineAction({ input: z.object({ id: z.uuid(), serviceId: z.uuid(), organizationId: serviceOrganizationIdSchema, status: z.enum(["APPROVED", "REJECTED", "SPAM"]) }), handler: async (input, context) => {
@@ -28,7 +28,7 @@ export const moderateServiceReview = defineAction({ input: z.object({ id: z.uuid
   await db.update(services).set({ ratingAverage100, ratingCount }).where(eq(services.id, input.serviceId));
   if (updated[0].authorId && (input.status === "APPROVED" || input.status === "REJECTED")) {
     const nt = getServiceNotificationTranslations(locale);
-    await createServiceNotification({ recipientId: updated[0].authorId, serviceId: input.serviceId, actorId: user.id, type: input.status === "APPROVED" ? "REVIEW_APPROVED" : "REVIEW_REJECTED", reviewId: updated[0].id, title: input.status === "APPROVED" ? nt.reviewTitle : nt.contributionPending, message: nt.contributionPending, locale });
+    await createServiceNotification({ recipientId: updated[0].authorId, serviceId: input.serviceId, actorId: user.id, type: input.status === "APPROVED" ? "REVIEW_APPROVED" : "REVIEW_REJECTED", reviewId: updated[0].id, title: input.status === "APPROVED" ? nt.reviewApprovedTitle : nt.reviewRejectedTitle, message: input.status === "APPROVED" ? nt.reviewApprovedMessage : nt.reviewRejectedMessage, locale });
   }
   auditService(context, user.id, "SERVICE_REVIEW_MODERATE", { resource: "serviceReviews", resourceId: input.id, metadata: { status: input.status, ratingCount, ratingAverage100, organizationId: tenant.organizationId, serviceProviderId: service.providerId } }); invalidateServicesCache();
   return { success: true, ratingCount, ratingAverage100 };
@@ -42,5 +42,5 @@ export const resolveServiceReport = defineAction({ input: z.object({ id: z.uuid(
   if (report.commentId) { const [comment] = await db.select({ serviceId: serviceComments.serviceId }).from(serviceComments).where(eq(serviceComments.id, report.commentId)).limit(1); if (!comment || comment.serviceId !== input.serviceId) throw new ActionError({ code: "FORBIDDEN", message: t.admin.errors.forbidden }); }
   if (report.reviewId) { const [review] = await db.select({ serviceId: serviceReviews.serviceId }).from(serviceReviews).where(eq(serviceReviews.id, report.reviewId)).limit(1); if (!review || review.serviceId !== input.serviceId) throw new ActionError({ code: "FORBIDDEN", message: t.admin.errors.forbidden }); }
   await db.update(serviceReports).set({ status: input.status, resolvedBy: user.id, resolvedAt: new Date() }).where(eq(serviceReports.id, input.id));
-  auditService(context, user.id, "SERVICE_REPORT_RESOLVE", { resource: "serviceReports", resourceId: input.id, metadata: { status: input.status } }); return { success: true };
+  auditService(context, user.id, "SERVICE_REPORT_RESOLVE", { resource: "serviceReports", resourceId: input.id, metadata: { status: input.status, organizationId: tenant.organizationId } }); return { success: true };
 } });

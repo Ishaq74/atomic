@@ -7,6 +7,15 @@ export const serviceOrganizationIdSchema = z.string().trim().min(1).optional().n
 const localeSchema = z.string().refine((value): value is Locale => isValidLocale(value), "Unsupported locale");
 const slugSchema = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must contain only lowercase letters, numbers, and hyphens.");
 const nullableText = (max: number) => z.string().trim().max(max).optional().nullable();
+const queryBooleanSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    if (value === "true") return true;
+    if (value === "false") return false;
+  }
+  return value;
+}, z.boolean().optional());
 
 const serviceEditableFields = {
   organizationId: serviceOrganizationIdSchema,
@@ -21,10 +30,10 @@ const serviceEditableFields = {
   currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional().nullable(),
   durationMinutes: z.coerce.number().int().positive().max(100_000).optional().nullable(),
   maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
-  isMobile: z.boolean().default(false),
-  isFeatured: z.boolean().default(false),
-  categoryIds: z.array(z.string().uuid()).max(100).default([]),
-  tagIds: z.array(z.string().uuid()).max(100).default([]),
+  isMobile: z.boolean(),
+  isFeatured: z.boolean(),
+  categoryIds: z.array(z.string().uuid()).max(100),
+  tagIds: z.array(z.string().uuid()).max(100),
   metaTitle: nullableText(180),
   metaDescription: nullableText(320),
   metaKeywords: nullableText(500),
@@ -36,9 +45,64 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
-export const serviceFormSchema = z.object(serviceEditableFields).extend({ status: z.literal("DRAFT").default("DRAFT"), publishedAt: z.null().default(null) });
-export const serviceCreateSchema = serviceFormSchema;
-export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
+export const serviceFormSchema = z.object({
+  ...serviceEditableFields,
+  isMobile: z.boolean().default(false),
+  isFeatured: z.boolean().default(false),
+  categoryIds: z.array(z.string().uuid()).max(100).default([]),
+  tagIds: z.array(z.string().uuid()).max(100).default([]),
+  status: z.literal("DRAFT").default("DRAFT"),
+  publishedAt: z.null().default(null),
+});
+
+export const serviceUpdateSchema = z.object({
+  organizationId: serviceOrganizationIdSchema,
+  locale: localeSchema,
+  title: z.string().trim().min(1).max(180).optional(),
+  slug: slugSchema.optional(),
+  excerpt: nullableText(500),
+  content: z.string().min(1).optional(),
+  coverImageId: z.string().uuid().optional().nullable(),
+  ogImageId: z.string().uuid().optional().nullable(),
+  priceMinor: z.coerce.number().int().min(0).max(2_147_483_647).optional().nullable(),
+  currency: z.string().trim().toUpperCase().regex(/^[A-Z]{3}$/).optional().nullable(),
+  durationMinutes: z.coerce.number().int().positive().max(100_000).optional().nullable(),
+  maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
+  isMobile: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  categoryIds: z.array(z.string().uuid()).max(100).optional(),
+  tagIds: z.array(z.string().uuid()).max(100).optional(),
+  metaTitle: nullableText(180),
+  metaDescription: nullableText(320),
+  metaKeywords: nullableText(500),
+  canonicalUrl: z.string().url().optional().nullable(),
+  ogTitle: nullableText(180),
+  ogDescription: nullableText(320),
+  locationLabel: nullableText(180),
+  locationAddress: nullableText(500),
+  focusKeyword: nullableText(120),
+  id: z.string().uuid(),
+});
+
+export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
+
+/** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
+export const serviceAdminFiltersSchema = z.object({
+  organizationId: serviceOrganizationIdSchema,
+  page: z.coerce.number().int().positive().max(10_000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  search: z.string().trim().max(120).optional(),
+  status: serviceStatusSchema.optional(),
+  categoryId: z.string().uuid().optional(),
+  tagId: z.string().uuid().optional(),
+  authorId: z.string().trim().min(1).max(200).optional(),
+  providerId: z.string().trim().min(1).max(200).optional(),
+  featured: queryBooleanSchema,
+  mobile: queryBooleanSchema,
+  locale: localeSchema.optional(),
+  sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
 
 export const serviceListFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
@@ -49,8 +113,8 @@ export const serviceListFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   tagId: z.string().uuid().optional(),
   providerId: z.string().trim().min(1).max(200).optional(),
-  featured: z.coerce.boolean().optional(),
-  mobile: z.coerce.boolean().optional(),
+  featured: queryBooleanSchema,
+  mobile: queryBooleanSchema,
   locale: localeSchema.optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
@@ -58,8 +122,6 @@ export const serviceListFiltersSchema = z.object({
 
 export const serviceAvailabilitySchema = z.object({
   serviceId: z.string().uuid(),
-  organizationId: serviceOrganizationIdSchema,
-  locale: localeSchema.default("fr"),
   dayOfWeek: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
