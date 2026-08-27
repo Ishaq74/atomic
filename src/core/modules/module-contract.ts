@@ -1,4 +1,6 @@
 /** Capabilities that a first-class Atomic module may opt into. */
+import type { SearchResourceDefinition } from "@/core/search";
+
 export interface AtomicModuleCapabilities {
   content: boolean;
   localization: boolean;
@@ -17,7 +19,6 @@ export interface AtomicModuleCapabilities {
   cache: boolean;
 }
 
-/** Concrete platform implementation references used by an opted-in module. */
 export interface AtomicModuleCapabilityProviders {
   readonly content: string;
   readonly localization: string;
@@ -36,7 +37,6 @@ export interface AtomicModuleCapabilityProviders {
   readonly cache: string;
 }
 
-/** Standard presentation grammar for first-class modules. */
 export interface AtomicModulePresentations {
   readonly card: readonly string[];
   readonly list: readonly string[];
@@ -50,26 +50,20 @@ export interface AtomicModuleDefinition {
   readonly capabilities: Readonly<AtomicModuleCapabilities>;
   readonly capabilityProviders: Readonly<AtomicModuleCapabilityProviders>;
   readonly presentations: Readonly<AtomicModulePresentations>;
+  readonly searchDefinition?: Readonly<SearchResourceDefinition>;
 }
 
 export type ModuleCapability = keyof AtomicModuleCapabilities;
 
-export function defineModuleCapabilities<const T extends AtomicModuleCapabilities>(capabilities: T): Readonly<T> {
-  return capabilities;
-}
-
-export function defineModuleCapabilityProviders<const T extends AtomicModuleCapabilityProviders>(providers: T): Readonly<T> {
-  return providers;
-}
-
-export function defineModulePresentations<const T extends AtomicModulePresentations>(presentations: T): Readonly<T> {
-  return presentations;
-}
+export function defineModuleCapabilities<const T extends AtomicModuleCapabilities>(capabilities: T): Readonly<T> { return capabilities; }
+export function defineModuleCapabilityProviders<const T extends AtomicModuleCapabilityProviders>(providers: T): Readonly<T> { return providers; }
+export function defineModulePresentations<const T extends AtomicModulePresentations>(presentations: T): Readonly<T> { return presentations; }
 
 export function assertModuleCapabilityProviders(module: AtomicModuleDefinition): void {
   for (const capability of Object.keys(module.capabilities) as ModuleCapability[]) {
-    if (module.capabilities[capability] && !module.capabilityProviders[capability]) {
-      throw new Error(`Module ${module.id} enables ${capability} without a concrete provider.`);
-    }
+    if (module.capabilities[capability] && !module.capabilityProviders[capability]) throw new Error(`Module ${module.id} enables ${capability} without a concrete provider.`);
   }
+  if (module.capabilities.search && !module.searchDefinition) throw new Error(`Module ${module.id} enables search without a search definition.`);
+  if (!module.capabilities.search && module.searchDefinition) throw new Error(`Module ${module.id} declares a search definition without enabling search.`);
+  if (module.searchDefinition && module.searchDefinition.resourceId !== module.entity) throw new Error(`Module ${module.id} search definition must target ${module.entity}.`);
 }
