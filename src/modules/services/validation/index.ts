@@ -7,6 +7,15 @@ export const serviceOrganizationIdSchema = z.string().trim().min(1).optional().n
 const localeSchema = z.string().refine((value): value is Locale => isValidLocale(value), "Unsupported locale");
 const slugSchema = z.string().trim().min(1).max(160).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must contain only lowercase letters, numbers, and hyphens.");
 const nullableText = (max: number) => z.string().trim().max(max).optional().nullable();
+const queryBooleanSchema = z.preprocess((value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (value === true || value === false) return value;
+  if (typeof value === "string") {
+    if (value === "true") return true;
+    if (value === "false") return false;
+  }
+  return value;
+}, z.boolean().optional());
 
 const serviceEditableFields = {
   organizationId: serviceOrganizationIdSchema,
@@ -43,6 +52,8 @@ export const serviceFormSchema = z.object(serviceEditableFields).extend({
 
 export const serviceUpdateSchema = z.object(serviceEditableFields).partial().extend({ id: z.string().uuid() });
 
+export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
+
 /** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
 export const serviceAdminFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
@@ -54,8 +65,8 @@ export const serviceAdminFiltersSchema = z.object({
   tagId: z.string().uuid().optional(),
   authorId: z.string().trim().min(1).max(200).optional(),
   providerId: z.string().trim().min(1).max(200).optional(),
-  featured: z.coerce.boolean().optional(),
-  mobile: z.coerce.boolean().optional(),
+  featured: queryBooleanSchema,
+  mobile: queryBooleanSchema,
   locale: localeSchema.optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
@@ -70,8 +81,8 @@ export const serviceListFiltersSchema = z.object({
   categoryId: z.string().uuid().optional(),
   tagId: z.string().uuid().optional(),
   providerId: z.string().trim().min(1).max(200).optional(),
-  featured: z.coerce.boolean().optional(),
-  mobile: z.coerce.boolean().optional(),
+  featured: queryBooleanSchema,
+  mobile: queryBooleanSchema,
   locale: localeSchema.optional(),
   sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
