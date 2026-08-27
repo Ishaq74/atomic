@@ -1,5 +1,4 @@
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { z } from "astro/zod";
 import { defineAction } from "astro:actions";
 import { getDrizzle } from "@database/drizzle";
 import { serviceComments, serviceNotifications, serviceReviews, services } from "@database/schemas";
@@ -21,27 +20,45 @@ export async function createServiceNotification(input: {
   locale?: Locale;
 }) {
   const db = getDrizzle();
-  const [service] = await db.select({ id: services.id, providerId: services.providerId }).from(services).where(eq(services.id, input.serviceId)).limit(1);
+  const [service] = await db.select({ id: services.id, organizationId: services.organizationId, providerId: services.providerId }).from(services).where(eq(services.id, input.serviceId)).limit(1);
   if (!service || (input.actorId && input.actorId === input.recipientId)) return null;
 
   let expectedRecipientId: string | null = null;
-  if (input.type === "NEW_COMMENT" || input.type === "REPLY_TO_COMMENT") {
-    if (!input.commentId) return null;
-    const [comment] = await db.select({ serviceId: serviceComments.serviceId, authorId: serviceComments.authorId }).from(serviceComments).where(eq(serviceComments.id, input.commentId)).limit(1);
-    if (!comment || comment.serviceId !== input.serviceId) return null;
-    expectedRecipientId = input.type === "REPLY_TO_COMMENT" ? comment.authorId : service.providerId;
-  } else if (input.type === "NEW_REVIEW") {
-    if (!input.reviewId) return null;
-    const [review] = await db.select({ serviceId: serviceReviews.serviceId }).from(serviceReviews).where(eq(serviceReviews.id, input.reviewId)).limit(1);
-    if (!review || review.serviceId !== input.serviceId) return null;
-    expectedRecipientId = service.providerId;
-  } else if (input.type === "REVIEW_APPROVED" || input.type === "REVIEW_REJECTED") {
-    if (!input.reviewId) return null;
-    const [review] = await db.select({ serviceId: serviceReviews.serviceId, authorId: serviceReviews.authorId }).from(serviceReviews).where(eq(serviceReviews.id, input.reviewId)).limit(1);
-    if (!review || review.serviceId !== input.serviceId) return null;
-    expectedRecipientId = review.authorId;
-  } else {
-    expectedRecipientId = service.providerId;
+  switch (input.type) {
+    case "NEW_COMMENT": {
+      if (!input.commentId || input.reviewId) return null;
+      const [comment] = await db.select({ serviceId: serviceComments.serviceId, authorId: serviceComments.authorId }).from(serviceComments).where(eq(serviceComments.id, input.commentId)).limit(1);
+      if (!comment || comment.serviceId !== input.serviceId) return null;
+      expectedRecipientId = service.providerId;
+      break;
+    }
+    case "REPLY_TO_COMMENT": {
+      if (!input.commentId || input.reviewId) return null;
+      const [comment] = await db.select({ serviceId: serviceComments.serviceId, authorId: serviceComments.authorId }).from(serviceComments).where(eq(serviceComments.id, input.commentId)).limit(1);
+      if (!comment || comment.serviceId !== input.serviceId || !comment.authorId) return null;
+      expectedRecipientId = comment.authorId;
+      break;
+    }
+    case "NEW_REVIEW": {
+      if (!input.reviewId || input.commentId) return null;
+      const [review] = await db.select({ serviceId: serviceReviews.serviceId }).from(serviceReviews).where(eq(serviceReviews.id, input.reviewId)).limit(1);
+      if (!review || review.serviceId !== input.serviceId) return null;
+      expectedRecipientId = service.providerId;
+      break;
+    }
+    case "REVIEW_APPROVED":
+    case "REVIEW_REJECTED": {
+      if (!input.reviewId || input.commentId) return null;
+      const [review] = await db.select({ serviceId: serviceReviews.serviceId, authorId: serviceReviews.authorId }).from(serviceReviews).where(eq(serviceReviews.id, input.reviewId)).limit(1);
+      if (!review || review.serviceId !== input.serviceId || !review.authorId) return null;
+      expectedRecipientId = review.authorId;
+      break;
+    }
+    case "SERVICE_PUBLISHED":
+    case "SERVICE_MENTION":
+      if (input.commentId || input.reviewId) return null;
+      expectedRecipientId = service.providerId;
+      break;
   }
 
   if (!expectedRecipientId || expectedRecipientId !== input.recipientId) return null;
