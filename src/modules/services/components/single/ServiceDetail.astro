@@ -12,7 +12,7 @@ const price = formatServicePrice(item.service.priceMinor, item.service.currency,
 const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
 const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/services` : `/${locale}/services`;
 function weekday(dayOfWeek: number): string {
-  const anchor = new Date(Date.UTC(2024, 0, 7 + dayOfWeek));
+  const anchor = new Date(Date.UTC(2024, 0, 1 + dayOfWeek));
   return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(anchor);
 }
 ---
