@@ -30,6 +30,19 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
   ]);
 
   const activeLock = lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null;
+  const coverMedia = row.service.coverImageId
+    ? (() => {
+        const mediaRow = media.find((entry) => entry.mediaId === row.service.coverImageId);
+        return mediaRow ? { id: mediaRow.mediaId, url: undefined as never, alt: mediaRow.altText } : null;
+      })()
+    : null;
+
+  let cover: { id: string; url: string; alt: string } | null = null;
+  if (row.service.coverImageId) {
+    const [coverRow] = await db.select({ id: mediaFiles.id, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(mediaFiles).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, locale))).where(and(eq(mediaFiles.id, row.service.coverImageId), mediaTenantScope(organizationId))).limit(1);
+    if (coverRow?.url) cover = { id: coverRow.id, url: coverRow.url, alt: coverRow.alt ?? "" };
+  }
+
   return {
     service: row.service,
     translation: row.translation ? { locale: row.translation.locale, title: row.translation.title, slug: row.translation.slug, excerpt: row.translation.excerpt, content: row.translation.content, locationLabel: row.translation.locationLabel, locationAddress: row.translation.locationAddress, metaTitle: row.translation.metaTitle, metaDescription: row.translation.metaDescription, metaKeywords: row.translation.metaKeywords, canonicalUrl: row.translation.canonicalUrl, ogTitle: row.translation.ogTitle, ogDescription: row.translation.ogDescription, ogImageId: row.translation.ogImageId } : null,
@@ -37,6 +50,7 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
     categories: categories.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })),
     tags: tags.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })),
     media,
+    coverMedia: cover,
     availability,
     seo: seo[0] ?? null,
     availableLocales: translationLocales.map((item) => item.locale),
