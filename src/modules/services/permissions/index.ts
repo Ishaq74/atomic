@@ -1,15 +1,14 @@
 import { ActionError } from "astro:actions";
 import type { ActionAPIContext } from "astro:actions";
-import { and, eq } from "drizzle-orm";
-import { z } from "astro/zod";
+import { eq } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { mediaFiles, serviceCategories, serviceLocks, serviceTags, services } from "@database/schemas";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { statement } from "@/lib/permissions";
+import { serviceOrganizationIdSchema } from "@/modules/services/validation";
 
 export type ServicePermissions = { [K in keyof typeof statement]?: (typeof statement)[K][number][] };
 export interface ServiceTenantContext { organizationId: string | null; isOrgContext: boolean; }
-export const serviceOrganizationIdSchema = z.string().trim().min(1).optional().nullable();
 
 export function resolveServiceTenant(input: { organizationId?: string | null }): ServiceTenantContext {
   return { organizationId: input.organizationId ?? null, isOrgContext: Boolean(input.organizationId) };
@@ -77,3 +76,5 @@ export function serviceRateLimit(_context: ActionAPIContext, userId: string, sco
   const result = checkRateLimit(`service-${scope.replace(/:/g, "_")}:${userId}`, { window: 60, max: 30 });
   if (!result.allowed) throw new ActionError({ code: "TOO_MANY_REQUESTS", message: "Trop de requêtes. Veuillez réessayer dans quelques instants." });
 }
+
+export { serviceOrganizationIdSchema } from "@/modules/services/validation";
