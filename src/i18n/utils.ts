@@ -14,9 +14,9 @@ import {
 } from './config';
 
 const commonModules: Record<Locale, () => Promise<{ default: CommonTranslations }>> = { fr: () => import('./fr/common'), en: () => import('./en/common'), es: () => import('./es/common'), ar: () => import('./ar/common') };
-export async function getCommonTranslations(locale: Locale): Promise<CommonTranslations> { try { const mod = await commonModules[locale](); return mod.default; } catch (err) { if (locale !== DEFAULT_LOCALE) { console.error(`[i18n] Failed to load common translations for "${locale}":`, err); return (await commonModules[DEFAULT_LOCALE]()).default; } throw err; } }
+export async function getCommonTranslations(locale: Locale): Promise<CommonTranslations> { try { return (await commonModules[locale]()).default; } catch (err) { if (locale !== DEFAULT_LOCALE) return (await commonModules[DEFAULT_LOCALE]()).default; throw err; } }
 const homeModules: Record<Locale, () => Promise<{ default: HomeTranslations }>> = { fr: () => import('./fr/home'), en: () => import('./en/home'), es: () => import('./es/home'), ar: () => import('./ar/home') };
-export async function getHomeTranslations(locale: Locale): Promise<HomeTranslations> { try { return (await homeModules[locale]()).default; } catch (err) { if (locale !== DEFAULT_LOCALE) { return (await homeModules[DEFAULT_LOCALE]()).default; } throw err; } }
+export async function getHomeTranslations(locale: Locale): Promise<HomeTranslations> { try { return (await homeModules[locale]()).default; } catch (err) { if (locale !== DEFAULT_LOCALE) return (await homeModules[DEFAULT_LOCALE]()).default; throw err; } }
 const aboutModules: Record<Locale, () => Promise<{ default: AboutTranslations }>> = { fr: () => import('./fr/about'), en: () => import('./en/about'), es: () => import('./es/about'), ar: () => import('./ar/about') };
 export async function getAboutTranslations(locale: Locale): Promise<AboutTranslations> { try { return (await aboutModules[locale]()).default; } catch (err) { if (locale !== DEFAULT_LOCALE) return (await aboutModules[DEFAULT_LOCALE]()).default; throw err; } }
 const contactModules: Record<Locale, () => Promise<{ default: ContactTranslations }>> = { fr: () => import('./fr/contact'), en: () => import('./en/contact'), es: () => import('./es/contact'), ar: () => import('./ar/contact') };
