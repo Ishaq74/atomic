@@ -1,79 +1,184 @@
 # Atomic CMS Platform Architecture
 
-Atomic modules are first-class domain modules built on shared platform capabilities.
+Atomic is a multi-tenant SSR application whose CMS is a platform for explicit domain modules. Blog and Services are the first two complete modules. Future Formations, Courses, Shop and Events must consume the same platform rather than create parallel mini-CMS implementations.
 
 ## Module contract
 
-Every future module such as Blog, Services, Formations, Courses or Shop owns its domain model, routes, actions, loaders and module-specific UI. Shared capabilities are implemented once in the platform layer.
+Every module owns its domain schema, actions, loaders, validation, permissions, routes, i18n and domain presentation. Shared capabilities are provided by Atomic Core.
 
-Each module declares:
+The contract exposes:
 
-- a stable `id` and canonical `entity`;
-- explicit platform capabilities: content, localization, media, SEO, taxonomy, search, publication, revisions, locks, engagement, moderation, notifications, audit and cache;
-- a presentation grammar shared across public, search and admin contexts: `card`, `list`, `single`, `ui`.
+- stable module identity and canonical entity;
+- explicit platform capabilities;
+- `card / list / single / ui` presentation grammar;
+- a deterministic registration entry point.
 
-The module registry is explicit and deterministic. Registration happens once during application bootstrap; module discovery is not dynamic or filesystem-driven.
+The registry is explicit and bootstrap-driven. Modules are not discovered dynamically from the filesystem.
 
-## Module presentation grammar
+## Concrete module boundaries
 
-A module's domain-specific components may use the following roles:
+```text
+src/modules/blog/
+├── admin
+├── actions
+├── components/{cards,lists,single,ui}
+├── domain
+├── i18n
+├── loaders
+├── permissions
+├── schema
+├── search
+├── seo
+├── utils
+└── validation
 
-- `cards`: compact/high-density representations;
-- `lists`: collection and search representations;
-- `single`: canonical detail representation;
-- `ui`: module-specific presentation primitives.
+src/modules/services/
+├── admin
+├── actions
+├── components/{cards,lists,single,ui}
+├── domain
+├── i18n
+├── loaders
+├── permissions
+├── schema
+├── search
+├── seo
+├── utils
+└── validation
+```
 
-These are contracts, not mandatory directory names. Existing Atomic components remain authoritative until an extraction is proven useful.
+These boundaries are architectural conventions, not permission to duplicate infrastructure. Existing implementation files remain canonical where extraction would only create wrappers.
 
-## Administrative resource contract
+## Core platform boundaries
 
-Every admin resource declares two distinct surfaces:
+The shared capability surface is exposed through `src/core/` and the capability catalog. Current concerns are:
 
-1. **Management capabilities**: list, search, filters, sort, pagination and stats.
-2. **Editorial actions**: create, read, update, duplicate, publish, unpublish, archive, restore, delete and optional bulk operations.
+```text
+admin
+attributes
+audit
+cache
+capabilities
+content
+engagement
+localization
+locks
+media
+moderation
+modules
+notifications
+presentation
+revision
+search
+seo
+taxonomy
+workflow
+```
 
-The resource also declares its presentation variants and permission namespace. Compatibility is validated at module registration time, including publication actions requiring the module's publication capability and list-dependent features requiring list support.
+The Core layer provides contracts and invariants while established Atomic implementations remain the implementation authority when they already exist. This avoids “folder theater”: moving code merely to make directory names symmetrical is not a goal.
 
-Resource administration follows the same mental model for every module:
+## Presentation grammar
 
-`search → filters → sort → pagination → list/card presentation → row actions → create/edit/detail → audit`
+Domain components use four semantic roles:
 
-Bulk operations are opt-in. A resource must not advertise bulk functionality until its domain actions provide safe batch semantics.
+- `cards`: compact/high-density projections;
+- `lists`: collections and search results;
+- `single`: canonical detail pages;
+- `ui`: domain-specific metadata and interaction primitives.
 
-Shared UI primitives must remain domain-neutral. A Blog table and a Product table may look coherent without becoming the same semantic component.
+Shared design-system primitives remain domain-neutral. A ServiceCard and BlogPostCard may use the same Card, Badge, Media, Rating, Price, Date or CTA primitives without becoming one generic `UniversalCard<T>`.
 
-## Shared platform capabilities
+Presentation variants are semantic, token-driven and independent of domain behavior. Examples include `default`, `compact`, `featured`, `horizontal` or equivalent module-specific projections.
 
-The platform owns cross-module behavior for:
+## Admin Resource contract
 
-- content editing/rendering/sanitization/internal-link resolution;
-- authentication, RBAC and tenant isolation;
-- audit;
-- media storage, validation and lifecycle;
-- localization and localized routing;
-- SEO metadata and structured data;
-- taxonomy primitives and hierarchy invariants;
-- search/indexing;
-- publication workflows;
-- revisions and editing locks;
-- engagement capabilities such as comments, reviews, reactions and favorites;
-- moderation;
-- notifications;
-- caching and invalidation;
-- administrative resource UX, responsive data views and dirty-form protection.
+Admin resources expose typed capabilities for:
 
-The current implementations remain authoritative in their established Atomic locations. The CMS capability catalog binds modules to those implementations without duplicating services merely to make the filesystem look uniform.
+```text
+list
+search
+filters
+sort
+pagination
+stats
+create
+read
+update
+duplicate
+publish
+unpublish
+archive
+restore
+delete
+bulk (opt-in)
+```
 
-## Workflow rule
+A resource declares its permission namespace, presentation variants and typed filter/sort definitions. Compatibility with the owning module is validated during registration.
 
-The workflow core validates transitions. Each module defines its own states and legal transitions. Workflow execution remains in the domain action because authorization, revisions, audit and cache invalidation are domain-specific.
+Shared Admin Core provides resource shells, responsive data views, statistics, forms, tabs/dialog primitives, dirty-form protection and feedback patterns. Domain modules supply semantic actions and data.
 
-The Blog consumes the shared workflow definition; its legacy standalone workflow module was removed to avoid competing sources of truth.
+## Search contract
 
-## Transaction boundary
+Modules declare searchable, filterable and sortable fields through Search Core adapters. Public and admin URL state is deterministic and SSR-compatible. Search engines are not duplicated per module.
 
-CMS infrastructure must not absorb transactional domains such as payments, carts, inventory or enrollment. Shop, Courses and Formations may consume CMS capabilities for editorial content while retaining independent transactional cores.
+## Content / media / localization / SEO
 
-## Design principle
+The generic ContentEditor, sanitization pipeline, internal-link resolver, MediaPicker and Media lifecycle remain shared. Modules register their own resolvers and domain projections.
 
-Do not introduce a universal polymorphic content table merely to share infrastructure. Share capabilities and contracts; keep domain entities explicit.
+Localization remains relational (`resource × locale`). Localized slugs and SEO fields are domain data, not arbitrary JSONB maps. RTL is a shared UI property.
+
+## Workflow, revisions and locks
+
+The shared workflow contract validates state transitions; each module defines its own state machine. Domain Actions perform authorization, transactions, revision creation, audit and cache invalidation.
+
+Revision and lock capabilities are reusable but do not force a polymorphic revision table. Historical revisions are append-only; restoration creates a new revision. Locks are explicit, expiring and conflict-aware.
+
+## Taxonomy, engagement and moderation
+
+Taxonomy uses explicit domain relations plus shared acyclicity invariants. No polymorphic `entityType/entityId` relationship table is introduced merely for genericity.
+
+Engagement, moderation, reporting and notifications are cross-module capabilities. Domain modules opt into the parts they need and keep domain-specific semantics in their own Actions.
+
+## Tenancy and security
+
+Every mutation follows the same broad sequence:
+
+```text
+validate
+→ resolve tenant
+→ authorize
+→ validate ownership
+→ validate domain invariant
+→ transaction
+→ revision / event / audit
+→ targeted cache invalidation
+```
+
+Cross-tenant references are rejected. Public loaders are narrower than admin loaders and never become admin loaders by adding a status parameter.
+
+## CMS versus transactional cores
+
+CMS Core owns content, localization, media, taxonomy, SEO, publication, workflow, revisions, locks, search, admin, audit and moderation hooks.
+
+Transactional domains such as booking, enrollment, payments, inventory and orders remain separate cores consumed by modules such as Services, Courses or Shop.
+
+## Future-module rule
+
+Before adding another module, the module must demonstrate that it can reuse:
+
+```text
+CMS capabilities
++ Admin Resource
++ Card/List/Single/UI grammar
++ tenant/RBAC rules
++ localization
++ media
++ SEO
++ search
++ workflow
++ revision/locks
++ engagement/moderation hooks
++ audit/cache
+```
+
+A module that needs to invent `ModuleXMedia`, `ModuleXSearchEngine`, `ModuleXRevisionSystem` or `ModuleXAdminFramework` is evidence of a missing shared capability, not permission to duplicate the stack.
