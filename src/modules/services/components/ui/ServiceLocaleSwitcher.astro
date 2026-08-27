@@ -10,7 +10,7 @@ function buildLocaleHref(targetLocale: Locale): string {
   return `${getRelativeLocaleUrl(targetLocale, currentPath)}${Astro.url.search}`;
 }
 ---
-<nav class="flex flex-wrap items-center gap-2" aria-label={locale === "ar" ? "اللغة" : locale === "es" ? "Idioma" : locale === "en" ? "Language" : "Langue"}>
+<nav class="flex flex-wrap items-center gap-2" aria-label="{locale === 'ar' ? 'اللغة' : locale === 'es' ? 'Idioma' : locale === 'en' ? 'Language' : 'Langue'}">
   {LOCALES.map((targetLocale) => {
     const active = targetLocale === locale;
     const exists = !service || available.has(targetLocale);
