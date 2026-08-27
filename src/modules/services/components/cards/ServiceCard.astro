@@ -10,16 +10,18 @@ const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/se
 const href = category ? `${base}/${category.slug}/${item.translation?.slug ?? item.service.slug}` : `${base}/${item.translation?.slug ?? item.service.slug}`;
 const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
 const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
+const compact = variant === "compact";
+const horizontal = variant === "horizontal";
 ---
-<article class:list={["group relative overflow-hidden rounded-2xl border bg-background transition-shadow hover:shadow-lg", { "md:flex": variant === "horizontal", "ring-2": variant === "featured" }]}>
-  <div class="aspect-[16/10] bg-muted md:w-full md:max-w-xs">
+<article class:list={["group relative overflow-hidden rounded-2xl border bg-background transition-shadow hover:shadow-lg", compact ? "rounded-xl" : "", horizontal ? "md:flex" : "", variant === "featured" ? "ring-2" : ""]}>
+  <div class:list={["bg-muted", compact ? "aspect-[16/9]" : "aspect-[16/10]", horizontal ? "md:w-full md:max-w-xs md:shrink-0" : ""]}>
     {item.coverMedia ? <img src={item.coverMedia.url} alt={item.coverMedia.alt || title} class="h-full w-full object-cover" loading="lazy" /> : <div class="flex h-full w-full items-center justify-center p-4 text-sm text-muted-foreground">{title}</div>}
   </div>
-  <div class="flex flex-1 flex-col gap-3 p-5">
+  <div class:list={["flex flex-1 flex-col", compact ? "gap-2 p-3" : "gap-3 p-5"]}>
     <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span>{category?.name ?? t.labels.category}</span>{item.service.isFeatured && <span aria-label={t.labels.featured}>★</span>}</div>
-    <h2 class="text-lg font-semibold"><a class="after:absolute after:inset-0" href={href}>{title}</a></h2>
-    {item.translation?.excerpt && <p class="line-clamp-3 text-sm text-muted-foreground">{item.translation.excerpt}</p>}
-    <div class="mt-auto flex flex-wrap items-center gap-3 text-sm">
+    <h2 class:list={["font-semibold", compact ? "text-base" : "text-lg"]}><a class="after:absolute after:inset-0" href={href}>{title}</a></h2>
+    {item.translation?.excerpt && <p class:list={["text-muted-foreground", compact ? "line-clamp-2 text-xs" : "line-clamp-3 text-sm"]}>{item.translation.excerpt}</p>}
+    <div class:list={["mt-auto flex flex-wrap items-center text-sm", compact ? "gap-2 text-xs" : "gap-3"]}>
       {price && <span class="font-semibold">{price}</span>}
       {formatServiceDuration(item.service.durationMinutes) && <span>{formatServiceDuration(item.service.durationMinutes)}</span>}
       {item.service.maxParticipants && <span>{item.service.maxParticipants} {t.labels.participants}</span>}

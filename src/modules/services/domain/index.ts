@@ -22,8 +22,22 @@ export interface ServiceTranslation {
 
 export interface ServiceCoverMedia { id: string; url: string; alt: string; }
 
-export interface ServiceRevisionSummary { id: string; locale: string; title: string; slug: string; status: ServiceStatus; revisionNote: string | null; createdAt: Date; }
-export interface ServiceLockState { userId: string; sessionId: string; lockedAt: Date; expiresAt: Date; }
+export interface ServiceRevisionSummary {
+  id: string;
+  locale: string;
+  title: string;
+  slug: string;
+  status: ServiceStatus;
+  revisionNote: string | null;
+  createdAt: Date;
+}
+
+export interface ServiceLockState {
+  userId: string;
+  sessionId: string;
+  lockedAt: Date;
+  expiresAt: Date;
+}
 
 export interface ServiceListItem {
   service: {

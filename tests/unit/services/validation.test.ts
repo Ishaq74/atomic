@@ -3,7 +3,19 @@ import { serviceFormSchema, serviceUpdateSchema, serviceAvailabilitySchema, calc
 
 describe("Services validation", () => {
   it("accepts a draft form with supported locale and canonical slug", () => {
-    const result = serviceFormSchema.safeParse({ locale: "fr", title: "Plomberie", slug: "plomberie", content: "<p>Intervention</p>", status: "DRAFT", priceMinor: 10000, currency: "eur", durationMinutes: 60, maxParticipants: 2, categoryIds: [], tagIds: [] });
+    const result = serviceFormSchema.safeParse({
+      locale: "fr",
+      title: "Plomberie",
+      slug: "plomberie",
+      content: "<p>Intervention</p>",
+      status: "DRAFT",
+      priceMinor: 10000,
+      currency: "eur",
+      durationMinutes: 60,
+      maxParticipants: 2,
+      categoryIds: [],
+      tagIds: [],
+    });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.status).toBe("DRAFT");
   });

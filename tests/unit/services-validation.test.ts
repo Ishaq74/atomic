@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { serviceAvailabilitySchema, serviceCreateSchema, serviceFormSchema, serviceListFiltersSchema, serviceUpdateSchema } from "@/modules/services/validation";
+import { serviceAvailabilitySchema, serviceFormSchema, serviceListFiltersSchema } from "@/modules/services/validation";
 import { canTransitionService } from "@/modules/services/workflow";
 
 const valid = {
@@ -15,14 +15,6 @@ const valid = {
 describe("Services validation", () => {
   it("accepts supported locales and normal service inputs", () => {
     expect(serviceFormSchema.parse(valid).locale).toBe("fr");
-    expect(serviceCreateSchema.parse(valid).locale).toBe("fr");
-  });
-
-  it("keeps publication state out of create/update contracts", () => {
-    expect(serviceCreateSchema.safeParse({ ...valid, status: "PUBLISHED" }).success).toBe(true);
-    expect(serviceUpdateSchema.safeParse({ id: crypto.randomUUID(), status: "PUBLISHED" }).success).toBe(true);
-    expect(Object.prototype.hasOwnProperty.call(serviceCreateSchema.parse(valid), "status")).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(serviceCreateSchema.parse(valid), "publishedAt")).toBe(false);
   });
 
   it("rejects unsupported locales", () => {

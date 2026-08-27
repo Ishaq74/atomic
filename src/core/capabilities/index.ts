@@ -1,1 +1,1 @@
-export * from "./catalog";
+export * from "@/lib/cms/capabilities";
