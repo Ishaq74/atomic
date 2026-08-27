@@ -3,14 +3,14 @@ import { getDrizzle } from "@database/drizzle";
 import { mediaFileAlts, mediaFiles, serviceAvailability, serviceCategories, serviceCategoryLinks, serviceCategoryTranslations, serviceComments, serviceMedia, serviceReports, serviceRevisions, serviceReviews, serviceSeo, serviceTagLinks, serviceTagTranslations, serviceTags, serviceTranslations, services, serviceLocks, user } from "@database/schemas";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail, ServiceListItem } from "@/modules/services/domain";
-import { serviceAdminFiltersSchema } from "@/modules/services/validation";
+import { serviceAdminFiltersSchema, type ServiceAdminFilters } from "@/modules/services/validation";
 
 function tenantScope(column: typeof services.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
 function tenantJoinScope(column: typeof serviceTranslations.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
-export type ServiceAdminFilters = Partial<ReturnType<typeof serviceAdminFiltersSchema.parse>>;
 
-export async function getServiceAdminData(organizationId: string | null, locale: Locale, input: ServiceAdminFilters = {}): Promise<{ items: ServiceListItem[]; page: number; limit: number; total: number; totalPages: number }> {
-  const filters = serviceAdminFiltersSchema.parse({ ...input, organizationId, locale });
+export async function getServiceAdminData(organizationId: string | null, locale: Locale, input: Partial<ServiceAdminFilters> = {}): Promise<{ items: ServiceListItem[]; page: number; limit: number; total: number; totalPages: number }> {
+  const filters = serviceAdminFiltersSchema.parse({ ...input, organizationId, locale: input.locale ?? locale });
+  const queryLocale = filters.locale ?? locale;
   const db = getDrizzle();
   const conditions = [tenantScope(services.organizationId, organizationId)];
   if (filters.status) conditions.push(eq(services.status, filters.status));
@@ -19,8 +19,8 @@ export async function getServiceAdminData(organizationId: string | null, locale:
   if (filters.tagId) conditions.push(inArray(services.id, db.select({ serviceId: serviceTagLinks.serviceId }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tenantScope(serviceTags.organizationId, organizationId))).where(eq(serviceTagLinks.tagId, filters.tagId))));
   if (filters.featured !== undefined) conditions.push(eq(services.isFeatured, filters.featured));
   if (filters.mobile !== undefined) conditions.push(eq(services.isMobile, filters.mobile));
-  const translatedConditions = [eq(serviceTranslations.locale, filters.locale), tenantJoinScope(serviceTranslations.organizationId, organizationId)];
-  const searchCondition = filters.search ? sql`(${serviceTranslations.searchVector} @@ websearch_to_tsquery(locale_to_regconfig(${filters.locale}), ${filters.search}) OR services.slug ILIKE ${`%${filters.search}%`} OR serviceTranslations.slug ILIKE ${`%${filters.search}%`})` : null;
+  const translatedConditions = [eq(serviceTranslations.locale, queryLocale), tenantJoinScope(serviceTranslations.organizationId, organizationId)];
+  const searchCondition = filters.search ? sql`(${serviceTranslations.searchVector} @@ websearch_to_tsquery(locale_to_regconfig(${queryLocale}), ${filters.search}) OR services.slug ILIKE ${`%${filters.search}%`} OR serviceTranslations.slug ILIKE ${`%${filters.search}%`})` : null;
   if (searchCondition) conditions.push(searchCondition);
   const orderColumn = filters.sortBy === "title" ? serviceTranslations.title : filters.sortBy === "priceMinor" ? services.priceMinor : filters.sortBy === "ratingAverage100" ? services.ratingAverage100 : filters.sortBy === "viewCount" ? services.viewCount : filters.sortBy === "publishedAt" ? services.publishedAt : filters.sortBy === "createdAt" ? services.createdAt : services.updatedAt;
   const orderBy = filters.sortOrder === "asc" ? asc(orderColumn) : desc(orderColumn);
@@ -29,9 +29,9 @@ export async function getServiceAdminData(organizationId: string | null, locale:
   const rows = await db.select({ service: services, translation: serviceTranslations, provider: { id: user.id, name: user.name, image: user.image } }).from(services).leftJoin(serviceTranslations, and(eq(serviceTranslations.serviceId, services.id), ...translatedConditions)).leftJoin(user, eq(user.id, services.providerId)).where(and(...conditions)).orderBy(orderBy, asc(services.id)).limit(filters.limit).offset((filters.page - 1) * filters.limit);
   const ids = rows.map(({ service }) => service.id);
   const [categoryRows, tagRows, mediaRows] = await Promise.all([
-    ids.length ? db.select({ serviceId: serviceCategoryLinks.serviceId, id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), tenantScope(serviceCategories.organizationId, organizationId))).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, filters.locale), tenantJoinScope(serviceCategoryTranslations.organizationId, organizationId))).where(inArray(serviceCategoryLinks.serviceId, ids)) : [],
-    ids.length ? db.select({ serviceId: serviceTagLinks.serviceId, id: serviceTags.id, slug: serviceTags.slug, name: serviceTagTranslations.name }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tenantScope(serviceTags.organizationId, organizationId))).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, filters.locale), tenantJoinScope(serviceTagTranslations.organizationId, organizationId))).where(inArray(serviceTagLinks.serviceId, ids)) : [],
-    ids.length ? db.select({ serviceId: services.id, mediaId: services.coverImageId, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(services).leftJoin(mediaFiles, and(eq(mediaFiles.id, services.coverImageId), tenantScope(mediaFiles.organizationId, organizationId))).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, filters.locale))).where(inArray(services.id, ids)) : [],
+    ids.length ? db.select({ serviceId: serviceCategoryLinks.serviceId, id: serviceCategories.id, slug: serviceCategories.slug, name: serviceCategoryTranslations.name }).from(serviceCategoryLinks).innerJoin(serviceCategories, and(eq(serviceCategories.id, serviceCategoryLinks.categoryId), tenantScope(serviceCategories.organizationId, organizationId))).leftJoin(serviceCategoryTranslations, and(eq(serviceCategoryTranslations.categoryId, serviceCategories.id), eq(serviceCategoryTranslations.locale, queryLocale), tenantJoinScope(serviceCategoryTranslations.organizationId, organizationId))).where(inArray(serviceCategoryLinks.serviceId, ids)) : [],
+    ids.length ? db.select({ serviceId: serviceTagLinks.serviceId, id: serviceTags.id, slug: serviceTags.slug, name: serviceTagTranslations.name }).from(serviceTagLinks).innerJoin(serviceTags, and(eq(serviceTags.id, serviceTagLinks.tagId), tenantScope(serviceTags.organizationId, organizationId))).leftJoin(serviceTagTranslations, and(eq(serviceTagTranslations.tagId, serviceTags.id), eq(serviceTagTranslations.locale, queryLocale), tenantJoinScope(serviceTagTranslations.organizationId, organizationId))).where(inArray(serviceTagLinks.serviceId, ids)) : [],
+    ids.length ? db.select({ serviceId: services.id, mediaId: services.coverImageId, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(services).leftJoin(mediaFiles, and(eq(mediaFiles.id, services.coverImageId), tenantScope(mediaFiles.organizationId, organizationId))).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, queryLocale))).where(inArray(services.id, ids)) : [],
   ]);
   const categoriesByService = new Map<string, ServiceListItem["categories"]>(); for (const row of categoryRows) categoriesByService.set(row.serviceId, [...(categoriesByService.get(row.serviceId) ?? []), { id: row.id, slug: row.slug, name: row.name ?? null }]);
   const coverByService = new Map<string, ServiceListItem["coverMedia"]>(); for (const row of mediaRows) if (row.mediaId && row.url) coverByService.set(row.serviceId, { id: row.mediaId, url: row.url, alt: row.alt ?? "" });
