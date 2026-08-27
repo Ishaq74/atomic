@@ -6,9 +6,15 @@ export interface AdminConfirmationOptions {
 }
 
 let activeDialog: HTMLDialogElement | null = null;
+let settleActiveDialog: ((value: boolean) => void) | null = null;
 
 export function confirmAdminAction(options: AdminConfirmationOptions): Promise<boolean> {
-  activeDialog?.remove();
+  if (activeDialog) {
+    settleActiveDialog?.(false);
+    activeDialog.remove();
+    activeDialog = null;
+    settleActiveDialog = null;
+  }
 
   const dialog = document.createElement("dialog");
   dialog.className = "fixed inset-0 m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/50";
@@ -31,11 +37,11 @@ export function confirmAdminAction(options: AdminConfirmationOptions): Promise<b
   const cancel = dialog.querySelector<HTMLButtonElement>("[data-admin-confirm-cancel]");
   const submit = dialog.querySelector<HTMLButtonElement>("[data-admin-confirm-submit]");
   if (!title || !message || !cancel || !submit) return Promise.resolve(false);
+
   title.textContent = options.title;
   message.textContent = options.message;
   cancel.textContent = options.cancelLabel;
   submit.textContent = options.confirmLabel;
-
   document.body.append(dialog);
   activeDialog = dialog;
 
@@ -44,18 +50,17 @@ export function confirmAdminAction(options: AdminConfirmationOptions): Promise<b
     const finish = (value: boolean) => {
       if (settled) return;
       settled = true;
+      if (activeDialog === dialog) activeDialog = null;
+      if (settleActiveDialog === resolve) settleActiveDialog = null;
       dialog.close();
       dialog.remove();
-      if (activeDialog === dialog) activeDialog = null;
       resolve(value);
     };
+    settleActiveDialog = resolve;
     cancel.addEventListener("click", () => finish(false));
     submit.addEventListener("click", () => finish(true));
-    dialog.addEventListener("cancel", () => finish(false), { once: true });
+    dialog.addEventListener("cancel", (event) => { event.preventDefault(); finish(false); }, { once: true });
     dialog.addEventListener("close", () => finish(false), { once: true });
-    dialog.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") finish(false);
-    });
     dialog.showModal();
     submit.focus();
   });
