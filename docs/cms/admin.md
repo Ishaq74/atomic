@@ -1,193 +1,221 @@
 # CMS Admin — Architecture & Référence
 
-> Voir aussi : [database/create-schemas](../database/create-schemas.md) · [design/theming](../design/theming.md) · [testing/e2e](../testing/e2e.md)
+Atomic's CMS administration is a resource-management system built on shared Admin Resource contracts. It serves both the global platform admin and organization-scoped administration.
 
----
+See also:
 
-## Vue d'ensemble
+- [CMS Foundation](../architecture/cms-foundation.md)
+- [Module System](../architecture/module-system.md)
+- [Admin Resource Foundation](./admin-resources.md)
+- [Services CMS](./services.md)
+- [Blog convergence](../blog-convergence.md)
 
-Le CMS admin permet la gestion du contenu du site (identité, navigation, pages, thèmes) via une interface d'administration protégée par rôle `admin`.
+## Administration model
 
-| Composant | Fichiers | Rôle |
-| :-- | :-- | :-- |
-| Routes | 9 pages dans `src/pages/[lang]/admin/` | Routage i18n avec garde admin |
-| Composants | 9 dans `src/components/pages/admin/` | UI des pages admin |
-| Actions | 25 dans `src/actions/admin/` (9 fichiers) | CRUD server-side via Astro Actions |
-| Loaders | 3 dans `src/database/loaders/` | Lecture DB pour SSR |
-| Schémas | 3 dans `src/database/schemas/` (9 tables) | Modèle de données |
-| Seeds | 7 fichiers dans `src/database/data/` | Données initiales CMS |
-| i18n | Clés `admin.*` dans `src/i18n/{locale}/auth.ts` | Traductions 4 locales |
+The admin distinguishes platform administration from tenant-aware module administration:
 
----
+```text
+GLOBAL ADMIN
+  platform settings / users / organizations / audit
+  CMS resources such as Blog and Services
 
-## Routes admin
-
-Toutes les routes admin sont sous `src/pages/[lang]/admin/` et protégées par `assertAdmin()`.
-
-| Route | Composant | Description |
-| :-- | :-- | :-- |
-| `/admin/` | — | Index admin (redirection) |
-| `/admin/stats` | `AdminStatsPage` | Tableau de bord statistiques |
-| `/admin/users` | `AdminUsersPage` | Gestion des utilisateurs |
-| `/admin/organizations` | `AdminOrgsPage` | Gestion des organisations |
-| `/admin/audit` | `AdminAuditPage` | Journal d'audit |
-| `/admin/site` | `AdminSitePage` | Paramètres du site (identité, contact, horaires, réseaux sociaux) |
-| `/admin/navigation` | `AdminNavigationPage` | Menus de navigation (header, footer) |
-| `/admin/pages` | `AdminPagesPage` | Pages CMS (création, édition, publication) |
-| `/admin/theme` | `AdminThemePage` | Thèmes design (couleurs, fonts, CSS custom) |
-
-### Garde d'accès
-
-```typescript
-// src/lib/auth-guards.ts
-requireAdmin()  // → vérifie role === 'admin', sinon redirect vers dashboard
+ORGANIZATION ADMIN
+  organization members / roles / CMS resources
+  same resource contracts, different tenant context
 ```
 
-Chaque route admin appelle `requireAdmin()` dans le frontmatter Astro. Les utilisateurs non connectés sont redirigés vers `/auth/sign-in`, les non-admin vers `/auth/dashboard`.
+A URL or organization slug never grants permission by itself. Every protected route and every mutation re-checks authorization and tenant ownership server-side.
 
-> Note : dans les **Actions** (server-side), le helper est `assertAdmin()` (`src/actions/admin/_helpers.ts`), qui throw au lieu de redirect.
+## Shared Admin Resource contract
 
----
+The canonical resource contract is implemented under `src/core/admin/` and currently supports:
 
-## Modèle de données
+```text
+Management
+  list
+  search
+  filters
+  sort
+  pagination
+  stats
 
-### Schéma `site.schema.ts` (5 tables)
+Actions
+  create
+  read
+  update
+  duplicate
+  publish
+  unpublish
+  archive
+  restore
+  delete
+  optional bulk
+```
 
-| Table | Clé | Description |
-| :-- | :-- | :-- |
-| `siteSettings` | `locale` (PK) | Identité du site par locale — nom, description, logo, favicon, OG image, SEO |
-| `socialLinks` | `id` (UUID) | Liens réseaux sociaux — plateforme, URL, icône, ordre |
-| `contactInfo` | `id` (singleton) | Coordonnées — email, téléphone, adresse, maps URL |
-| `openingHours` | `dayOfWeek` (PK) | Horaires d'ouverture — matin/après-midi, pause déjeuner, jour fermé |
-| `themeSettings` | `id` (UUID) | Thèmes design — 7 tokens couleur, fonts, border-radius, CSS custom |
+Resource definitions also describe typed filter/sort state, presentation variants and the domain permission namespace.
 
-### Schéma `navigation.schema.ts` (2 tables)
+Compatibility checks reject impossible resource definitions before registration/use.
 
-| Table | Clé | Description |
-| :-- | :-- | :-- |
-| `navigationMenus` | `id` (UUID) | Conteneurs de menu — `header`, `footer_primary`, `footer_secondary`, `footer_legal` |
-| `navigationItems` | `id` (UUID) | Items hiérarchiques — locale, label, URL, icône, parent, ordre |
+## Shared admin UI
 
-### Schéma `page.schema.ts` (2 tables)
+Atomic reuses the existing design-system primitives and exposes a common interaction vocabulary:
 
-| Table | Clé | Description |
-| :-- | :-- | :-- |
-| `pages` | `id` (UUID) | Pages CMS — locale, slug, titre, SEO, statut publication |
-| `pageSections` | `id` (UUID) | Blocs de contenu typés (hero, text, image, gallery, cta, features, testimonials, faq, contact, map, video, custom) |
+```text
+AdminResourceShell
+AdminResourceList
+DataView / table presentation
+AdminResourceStats
+AdminFormShell
+Tabs / dialogs / drawers
+Dirty-state guard
+Accessible live feedback
+```
 
----
+Domain-specific components remain responsible for semantic content. The shared shell handles layout and interaction consistency rather than domain behavior.
 
-## Astro Actions
+## URL-driven list state
 
-Toutes les actions sont dans `src/actions/admin/` et protégées par `assertAdmin()` + `adminRateLimit()`. Chaque mutation est auditée via `auditAdmin()`.
+Administrative resource state is represented in query parameters when applicable:
 
-### Helpers (`_helpers.ts`)
+```text
+?page=2
+&search=...
+&status=...
+&categoryId=...
+&sortBy=updatedAt
+&sortOrder=desc
+```
 
-| Fonction | Rôle |
-| :-- | :-- |
-| `assertAdmin(context)` | Vérifie le rôle admin dans le contexte de l'action |
-| `adminRateLimit(context, userId, scope, opts?)` | Rate limit par utilisateur + scope (30 req / 60s) |
-| `auditAdmin(context, userId, action, opts?)` | Log l'action dans `auditLog` |
+This preserves SSR determinism, navigation history, bookmarking and reproducible views.
 
-### Actions par domaine
+## Global admin surfaces
 
-| Fichier | Actions | Table(s) cible |
-| :-- | :-- | :-- |
-| `site.ts` | `updateSiteSettings` | `siteSettings` |
-| `contact.ts` | `updateContactInfo` | `contactInfo` |
-| `hours.ts` | `updateOpeningHours` | `openingHours` |
-| `social.ts` | `createSocialLink`, `updateSocialLink`, `deleteSocialLink`, `reorderSocialLinks` | `socialLinks` |
-| `navigation.ts` | `createNavigationItem`, `updateNavigationItem`, `deleteNavigationItem`, `reorderNavigationItems` | `navigationItems` |
-| `pages.ts` | `createPage`, `updatePage`, `deletePage`, `publishPage` | `pages` |
-| `sections.ts` | `createSection`, `updateSection`, `deleteSection`, `reorderSections` | `pageSections` |
-| `theme.ts` | `createTheme`, `updateTheme`, `deleteTheme` | `themeSettings` |
+The platform exposes the existing administrative areas under `src/pages/[lang]/admin/` and first-class module resources under the same localized namespace.
 
----
+Current CMS module examples:
 
-## Loaders (lecture DB)
+```text
+/{lang}/admin/blog
+/{lang}/admin/services
+```
 
-| Fichier | Fonctions | Utilisé par |
-| :-- | :-- | :-- |
-| `site.loader.ts` | `getSiteSettings()`, `getSocialLinks()`, `getContactInfo()`, `getOpeningHours()`, `getActiveTheme()`, `getAllThemes()` | AdminSitePage, AdminThemePage, BaseLayout |
-| `navigation.loader.ts` | `getMenu()` | AdminNavigationPage, Header |
-| `page.loader.ts` | `getPage()`, `getPagesList()` | AdminPagesPage, routes CMS dynamiques |
+with create/edit surfaces under each resource.
 
----
+Platform-level admin continues to cover users, organizations, audit, site settings, navigation, pages, media and theme management.
 
-## Composants admin
+## Organization admin surfaces
 
-| Composant | Fichier | Onglets / Sections |
-| :-- | :-- | :-- |
-| `AdminSitePage` | `src/components/pages/admin/AdminSitePage.astro` | Identité, Contact, Horaires, Réseaux sociaux |
-| `AdminNavigationPage` | `src/components/pages/admin/AdminNavigationPage.astro` | Menus (header, footer), items avec icônes, drag & drop |
-| `AdminThemePage` | `src/components/pages/admin/AdminThemePage.astro` | Liste des thèmes, CRUD, 7 tokens couleur, preview |
-| `AdminPagesPage` | `src/components/pages/admin/AdminPagesPage.astro` | Liste des pages, création, sections typées |
-| `AdminStatsPage` | `src/components/pages/admin/AdminStatsPage.astro` | Statistiques (users, orgs, signups récents) |
-| `AdminUsersPage` | `src/components/pages/admin/AdminUsersPage.astro` | Table users, recherche, ban, rôles |
-| `AdminOrgsPage` | `src/components/pages/admin/AdminOrgsPage.astro` | Table organisations |
-| `AdminAuditPage` | `src/components/pages/admin/AdminAuditPage.astro` | Journal d'audit (date, user, action, IP) |
-| `AdminSectionsEditor` | `src/components/pages/admin/AdminSectionsEditor.astro` | Éditeur de sections de page |
+Tenant-aware modules expose the same conceptual resource beneath:
 
-### IconPicker
+```text
+/{lang}/organizations/{slug}/admin/blog
+/{lang}/organizations/{slug}/admin/services
+```
 
-Le composant `AdminNavigationPage` utilise un sélecteur d'icônes basé sur l'API Iconify (`mdi:` prefix). Les icônes sont stockées dans la colonne `icon` de `navigationItems`.
+The organization route resolves the organization and passes its id as explicit tenant context to loaders and actions. The UI and resource contract are shared with global administration.
 
-### Upload d'images
+## Blog administration
 
-`AdminSitePage` intègre l'upload d'images via `POST /api/upload` (type `site`) pour :
+Blog remains a unified module admin rather than a collection of unrelated sub-applications. Its resource includes:
 
-- Logo clair (`logoLight`)
-- Logo sombre (`logoDark`)
-- Favicon (`favicon`)
-- Image OG (`ogImage`)
+```text
+Posts
+Categories
+Tags
+Moderation
+Statistics
+```
 
-Les fichiers sont stockés dans `public/uploads/images/site/`.
+Post management includes search, status, category, tag, author, featured, sticky and locale filters plus sorting and pagination. Statistics are calculated over the complete tenant dataset rather than the current page.
 
----
+Blog uses the shared admin contract for both global and organization-scoped administration.
 
-## i18n
+## Services administration
 
-Les traductions CMS sont sous la clé `admin` dans `src/i18n/{locale}/auth.ts` (4 locales : `fr`, `en`, `es`, `ar`).
+Services is the second complete CMS resource and uses the same administrative foundation. Its current resource supports:
 
-Sections traduites :
+```text
+search
+status
+category
+tag
+provider
+mobile
+locale
+sorting
+pagination
+statistics
+```
 
-- `admin.tabs` — noms des onglets (stats, users, organizations, auditLog, site, navigation, pages, theme)
-- `admin.stats` — labels du tableau de bord
-- `admin.users` — colonnes, rôles, actions, confirmations
-- `admin.organizations` — colonnes, actions
-- `admin.auditLog` — colonnes du journal
-- `admin.site` — labels des formulaires site, contact, horaires, réseaux sociaux
-- `admin.navigation` — labels navigation, items, icônes
-- `admin.theme` — labels thème, couleurs, fonts, actions CRUD
+Its editorial lifecycle is explicit:
 
----
+```text
+publish
+unpublish
+archive
+restore
+delete
+duplicate
+lock
+unlock
+revision restore
+```
 
-## Audit
+Global and organization administration use the same resource definition and domain actions with different tenant context.
 
-Toutes les mutations admin sont tracées dans la table `auditLog` via `auditAdmin()`.
+## Permissions
 
-| Action | Déclencheur |
-| :-- | :-- |
-| `SITE_SETTINGS_UPDATE` | `updateSiteSettings` |
-| `CONTACT_INFO_UPDATE` | `updateContactInfo` |
-| `OPENING_HOURS_UPDATE` | `updateOpeningHours` |
-| `SOCIAL_LINK_CREATE` / `SOCIAL_LINK_UPDATE` / `SOCIAL_LINK_DELETE` | Actions `social.*` |
-| `NAVIGATION_ITEM_CREATE` / `NAVIGATION_ITEM_UPDATE` / `NAVIGATION_ITEM_DELETE` | Actions `navigation.*` |
-| `PAGE_CREATE` / `PAGE_UPDATE` / `PAGE_DELETE` / `PAGE_PUBLISH` | Actions `pages.*` |
-| `PAGE_SECTION_CREATE` / `PAGE_SECTION_UPDATE` / `PAGE_SECTION_DELETE` | Actions `sections.*` |
-| `THEME_CREATE` / `THEME_UPDATE` / `THEME_DELETE` | Actions `theme.*` |
+UI visibility is not authorization. Every mutation performs the server-side permission check again.
 
----
+Global and organization resources use the existing Atomic RBAC statements. The organization roles are scoped to the organization supplied by the authenticated organization context.
 
-## Tests
+Destructive actions must require explicit confirmation, expose pending/error/success feedback and avoid duplicate submissions.
 
-| Type | Fichier | Tests | Couverture |
-| :-- | :-- | --: | :-- |
-| Unit | `tests/unit/cms-schemas.test.ts` | 80 | Exports tables, colonnes critiques |
-| Unit | `tests/unit/cms-seeds.test.ts` | 11 | Données seed valides, types, contraintes |
-| Unit | `tests/unit/cms-i18n.test.ts` | 16 | Clés i18n × 4 locales |
-| Unit | `tests/unit/cms-audit.test.ts` | 1 | AuditAction type couvre 19 actions CMS |
-| E2E | `tests/e2e/cms-admin.spec.ts` | 8 | Garde accès + chargement pages admin |
-| A11y | `.pa11yci.cjs` + `lighthouserc.cjs` | 12 URLs | WCAG AAA + Lighthouse ≥ 0.9 |
+## Forms, locale state and dirty protection
 
-> Les Astro Actions ne sont pas testées directement (pas de harness standard). La couverture E2E est structurelle (page loads + form visible).
+Complex forms participate in the shared dirty-state pattern. Locale changes, navigation and destructive exits must not silently discard unsaved content.
+
+Domain validation remains inside typed Actions/loaders. The admin shell is responsible only for interaction state and navigation protection.
+
+## Accessibility and responsive behavior
+
+Admin interactions must remain usable with keyboard navigation and visible focus. Icon-only controls require accessible names; tabs expose selection state; validation errors are associated with their fields; dialogs use semantic dialog behavior; asynchronous feedback uses accessible live regions.
+
+Desktop tables may collapse secondary information into row detail on smaller screens rather than introducing a second mobile data model.
+
+## i18n and RTL
+
+The current platform supports:
+
+```text
+fr
+ en
+es
+ar
+```
+
+Module labels, actions, validation feedback, confirmations and empty/loading states belong to their domain translation contracts. Shared layout and controls respect the locale direction, including RTL for Arabic.
+
+## Media and content
+
+The admin reuses Atomic's shared media and content infrastructure:
+
+```text
+MediaPicker
+mediaFiles
+ContentEditor
+RichContent
+internal-link resolver registry
+```
+
+A module must not create a private media upload engine or a parallel editor just to provide the same workflow.
+
+## Audit and lifecycle
+
+Resource mutations use the same platform audit boundary. Editorial state transitions are explicit actions validated by the module workflow and followed by the relevant revision/event/audit/cache behavior.
+
+## Future resource rule
+
+Adding a new module should not mean copying Blog's admin page. The module should define its domain resource, filter/sort schema, actions and presentation components, then consume the existing Admin Resource and design-system foundations.
+
+The architecture test is whether a second resource can reuse the shell, interactions, tenant handling and lifecycle conventions without inventing a second admin system.
