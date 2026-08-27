@@ -29,19 +29,12 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
     publicOnly ? Promise.resolve([] as { userId: string; sessionId: string; lockedAt: Date; expiresAt: Date }[]) : db.select({ userId: serviceLocks.userId, sessionId: serviceLocks.sessionId, lockedAt: serviceLocks.lockedAt, expiresAt: serviceLocks.expiresAt }).from(serviceLocks).where(eq(serviceLocks.serviceId, serviceId)).limit(1),
   ]);
 
-  const activeLock = lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null;
-  const coverMedia = row.service.coverImageId
-    ? (() => {
-        const mediaRow = media.find((entry) => entry.mediaId === row.service.coverImageId);
-        return mediaRow ? { id: mediaRow.mediaId, url: undefined as never, alt: mediaRow.altText } : null;
-      })()
-    : null;
-
-  let cover: { id: string; url: string; alt: string } | null = null;
+  let coverMedia: ServiceListItem["coverMedia"] = null;
   if (row.service.coverImageId) {
-    const [coverRow] = await db.select({ id: mediaFiles.id, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(mediaFiles).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, locale))).where(and(eq(mediaFiles.id, row.service.coverImageId), mediaTenantScope(organizationId))).limit(1);
-    if (coverRow?.url) cover = { id: coverRow.id, url: coverRow.url, alt: coverRow.alt ?? "" };
+    const [cover] = await db.select({ id: mediaFiles.id, url: mediaFiles.url, alt: mediaFileAlts.alt }).from(mediaFiles).leftJoin(mediaFileAlts, and(eq(mediaFileAlts.fileId, mediaFiles.id), eq(mediaFileAlts.locale, locale))).where(and(eq(mediaFiles.id, row.service.coverImageId), mediaTenantScope(organizationId))).limit(1);
+    if (cover?.url) coverMedia = { id: cover.id, url: cover.url, alt: cover.alt ?? "" };
   }
+  const activeLock = lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null;
 
   return {
     service: row.service,
@@ -50,7 +43,7 @@ async function loadServiceDetailById(serviceId: string, locale: Locale, organiza
     categories: categories.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })),
     tags: tags.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })),
     media,
-    coverMedia: cover,
+    coverMedia,
     availability,
     seo: seo[0] ?? null,
     availableLocales: translationLocales.map((item) => item.locale),
