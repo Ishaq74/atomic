@@ -65,5 +65,5 @@ export function assertModuleCapabilityProviders(module: AtomicModuleDefinition):
   }
   if (module.capabilities.search && !module.searchDefinition) throw new Error(`Module ${module.id} enables search without a search definition.`);
   if (!module.capabilities.search && module.searchDefinition) throw new Error(`Module ${module.id} declares a search definition without enabling search.`);
-  if (module.searchDefinition && module.searchDefinition.resourceId !== module.entity) throw new Error(`Module ${module.id} search definition must target ${module.entity}.`);
+  if (module.searchDefinition && !module.searchDefinition.resourceId.trim()) throw new Error(`Module ${module.id} search definition must have a non-empty resource id.`);
 }
