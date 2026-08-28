@@ -1,0 +1,29 @@
+name: Remove One-Time Cleanup Workflows
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Remove temporary cleanup workflows
+        run: |
+          rm -f .github/workflows/cleanup-all-branches.yml .github/workflows/remove-cleanup-workflows.yml
+          if git diff --quiet; then
+            echo "No temporary cleanup workflows remain."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A .github/workflows/cleanup-all-branches.yml .github/workflows/remove-cleanup-workflows.yml
+          git commit -m "chore(repo): remove temporary cleanup workflows"
+          git push origin main
