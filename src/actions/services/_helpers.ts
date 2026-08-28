@@ -2,6 +2,7 @@ export {
   resolveServiceTenant,
   assertServicePermission,
   assertServiceInTenant,
+  assertPublishedServiceInTenant,
   assertServiceCategoryInTenant,
   assertServiceTagInTenant,
   assertServiceMediaInTenant,
