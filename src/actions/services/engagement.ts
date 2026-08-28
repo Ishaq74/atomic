@@ -9,7 +9,7 @@ import type { Locale } from "@i18n/config";
 import { isValidLocale } from "@i18n/utils";
 import { getServiceNotificationTranslations } from "@/modules/services/i18n/notifications";
 import { getServiceTranslations } from "@/modules/services/i18n";
-import { assertPublishedServiceInTenant, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema, serviceRateLimit, assertServiceInTenant } from "./_helpers";
+import { assertPublishedServiceInTenant, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema, serviceRateLimit } from "./_helpers";
 import { auditService, invalidateServicesCache } from "./_helpers";
 import { createServiceNotification } from "./notification";
 
