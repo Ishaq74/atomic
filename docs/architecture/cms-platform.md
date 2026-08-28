@@ -2,6 +2,8 @@
 
 Atomic is a multi-tenant SSR application whose CMS is a platform for explicit domain modules. Blog and Services are the first two complete modules. Future Formations, Courses, Shop and Events must consume the same platform rather than create parallel mini-CMS implementations.
 
+For the concrete implementation inventory of the current reference modules, see [CMS Implementation Matrix](./cms-implementation.md). For the product-level synthesis of Concordia patterns, see [Concordia → Atomic synthesis](./concordia-synthesis.md).
+
 ## Module contract
 
 Every module owns its domain schema, actions, loaders, validation, permissions, routes, i18n and domain presentation. Shared capabilities are provided by Atomic Core.
