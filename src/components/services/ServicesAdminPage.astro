@@ -148,7 +148,7 @@ const et = getServiceEngagementTranslations(props.locale);
     });
 
     root.querySelectorAll<HTMLFormElement>("[data-service-tag-update]").forEach((form) => form.addEventListener("submit", async (event) => {
-      event.preventDefault(); const data = new FormData(form); const result = await actions.updateServiceTag({ id: form.dataset.id!, organizationId, locale, name: String(data.get("name")), slug: String(data.get("slug) || "")"), });
+      event.preventDefault(); const data = new FormData(form); const result = await actions.updateServiceTag({ id: form.dataset.id!, organizationId, locale, name: String(data.get("name")), slug: String(data.get("slug") || "") });
       if (result.error) showError(result.error); else refresh();
     }));
 
