@@ -1,87 +1,56 @@
 ---
 /**
- * DataView — Responsive data display molecule.
- * Renders both table and card views, showing the appropriate one based on viewport or user selection.
- *
- * Slots:
- *   - `toolbar-start`: Extra controls before the mode selector (e.g., search input)
- *   - `toolbar-end`: Extra controls after the mode selector (e.g., filters)
- *   - `table`: The table view content
- *   - `cards`: The cards/list view content
+ * DataView — responsive data display molecule.
+ * Cards are the mobile fallback; tables are the desktop fallback.
+ * An explicit mode selector is opt-in so localized admin resources can provide
+ * their own labels without leaking hard-coded English UI into the platform.
  */
 import { NativeSelect, NativeSelectOption } from '@atoms/native-select';
 
 interface Props {
-  /** Label for table mode */
   tableLabel?: string;
-  /** Label for cards mode */
   cardsLabel?: string;
+  showModeSelector?: boolean;
   class?: string;
 }
 
 const {
   tableLabel = 'Table',
   cardsLabel = 'Cards',
+  showModeSelector = true,
   class: className,
 } = Astro.props;
 ---
 
 <div class:list={['data-view', className]} data-mode="auto">
-  <!-- Toolbar -->
   <div class="mb-4 flex flex-wrap items-center gap-3">
     <slot name="toolbar-start" />
-    <div class="ml-auto flex items-center gap-3">
-      <slot name="toolbar-end" />
-      <NativeSelect class="data-view-mode w-auto text-sm">
-        <NativeSelectOption value="table">{tableLabel}</NativeSelectOption>
-        <NativeSelectOption value="cards">{cardsLabel}</NativeSelectOption>
-      </NativeSelect>
-    </div>
+    {showModeSelector ? (
+      <div class="ml-auto flex items-center gap-3">
+        <slot name="toolbar-end" />
+        <NativeSelect class="data-view-mode w-auto text-sm" aria-label={`${tableLabel} / ${cardsLabel}`}>
+          <NativeSelectOption value="table">{tableLabel}</NativeSelectOption>
+          <NativeSelectOption value="cards">{cardsLabel}</NativeSelectOption>
+        </NativeSelect>
+      </div>
+    ) : <slot name="toolbar-end" />}
   </div>
 
-  <!-- Table view -->
-  <div class="data-view-table" data-view="table">
-    <slot name="table" />
-  </div>
-
-  <!-- Cards view -->
-  <div class="data-view-cards" data-view="cards">
-    <slot name="cards" />
-  </div>
+  <div class="data-view-table" data-view="table"><slot name="table" /></div>
+  <div class="data-view-cards" data-view="cards"><slot name="cards" /></div>
 </div>
 
 <style>
-  /* Auto mode (before JS): cards on mobile, table on desktop */
-  .data-view[data-mode="auto"] [data-view="table"] {
-    display: none;
-  }
-  .data-view[data-mode="auto"] [data-view="cards"] {
-    display: block;
-  }
+  .data-view[data-mode="auto"] [data-view="table"] { display: none; }
+  .data-view[data-mode="auto"] [data-view="cards"] { display: block; }
   @media (min-width: 768px) {
-    .data-view[data-mode="auto"] [data-view="table"] {
-      display: block;
-    }
-    .data-view[data-mode="auto"] [data-view="cards"] {
-      display: none;
-    }
+    .data-view[data-mode="auto"] [data-view="table"] { display: block; }
+    .data-view[data-mode="auto"] [data-view="cards"] { display: none; }
   }
-
-  /* Explicit table mode — set via JS */
-  :global(.data-view[data-mode="table"]) [data-view="table"] {
-    display: block;
-  }
-  :global(.data-view[data-mode="table"]) [data-view="cards"] {
-    display: none;
-  }
-
-  /* Explicit cards mode — set via JS */
-  :global(.data-view[data-mode="cards"]) [data-view="table"] {
-    display: none;
-  }
-  :global(.data-view[data-mode="cards"]) [data-view="cards"] {
-    display: block;
-  }
+  :global(.data-view[data-mode="table"]) [data-view="table"] { display: block; }
+  :global(.data-view[data-mode="table"]) [data-view="cards"] { display: none; }
+  :global(.data-view[data-mode="cards"]) [data-view="table"] { display: none; }
+  :global(.data-view[data-mode="cards"]) [data-view="cards"] { display: block; }
 </style>
 
 <script>
@@ -89,14 +58,17 @@ const {
     document.querySelectorAll<HTMLElement>('.data-view').forEach((container) => {
       const select = container.querySelector('.data-view-mode');
       const nativeSelect = select?.closest('[data-slot="native-select-wrapper"]')?.querySelector('select') ?? select;
-      if (!nativeSelect) return;
-
-      // Set initial mode based on viewport
+      if (!nativeSelect) {
+        const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+        container.dataset.mode = isDesktop ? 'table' : 'cards';
+        return;
+      }
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
       const initialMode = isDesktop ? 'table' : 'cards';
       (nativeSelect as HTMLSelectElement).value = initialMode;
       container.dataset.mode = initialMode;
-
+      if (container.dataset.bound === 'true') return;
+      container.dataset.bound = 'true';
       nativeSelect.addEventListener('change', () => {
         container.dataset.mode = (nativeSelect as HTMLSelectElement).value;
       });

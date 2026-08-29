@@ -1,7 +1,7 @@
 import { blogRateLimit, invalidateBlogCache, auditBlog } from "./_helpers";
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogPostReactions, blogPostFavorites, blogPosts } from "@database/schemas";
 import { blogReactionFormSchema } from "@/lib/blog/validation";
@@ -17,6 +17,8 @@ export const toggleBlogReaction = defineAction({
     const db = getDrizzle();
 
     const { active, count: total } = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.postId}:${user.id}`}, 0))`);
+
       const [post] = await tx
         .select({ id: blogPosts.id })
         .from(blogPosts)
@@ -31,19 +33,11 @@ export const toggleBlogReaction = defineAction({
         .limit(1);
 
       if (existing?.reactionType === input.reactionType) {
-        await tx
-          .delete(blogPostReactions)
-          .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
+        await tx.delete(blogPostReactions).where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
       } else {
         // One reaction is the semantic contract: changing reaction replaces the prior one.
-        await tx
-          .delete(blogPostReactions)
-          .where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
-        await tx.insert(blogPostReactions).values({
-          postId: input.postId,
-          userId: user.id,
-          reactionType: input.reactionType,
-        });
+        await tx.delete(blogPostReactions).where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
+        await tx.insert(blogPostReactions).values({ postId: input.postId, userId: user.id, reactionType: input.reactionType });
       }
 
       const [{ value }] = await tx
@@ -87,11 +81,8 @@ export const toggleBlogFavorite = defineAction({
         .where(and(eq(blogPostFavorites.postId, input.postId), eq(blogPostFavorites.userId, user.id)))
         .limit(1);
 
-      if (existing) {
-        await tx.delete(blogPostFavorites).where(and(eq(blogPostFavorites.postId, input.postId), eq(blogPostFavorites.userId, user.id)));
-      } else {
-        await tx.insert(blogPostFavorites).values({ postId: input.postId, userId: user.id });
-      }
+      if (existing) await tx.delete(blogPostFavorites).where(and(eq(blogPostFavorites.postId, input.postId), eq(blogPostFavorites.userId, user.id)));
+      else await tx.insert(blogPostFavorites).values({ postId: input.postId, userId: user.id });
 
       const [{ value }] = await tx.select({ value: count() }).from(blogPostFavorites).where(eq(blogPostFavorites.postId, input.postId));
       return { active: !existing, count: Number(value) };

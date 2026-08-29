@@ -5,6 +5,7 @@ import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
+import AdminFormShell from "@organisms/AdminFormShell.astro";
 import AdminPostForm from "@/components/blog/AdminPostForm.astro";
 
 export const prerender = false;
@@ -38,14 +39,16 @@ const tags = tagRows.map((item) => ({
 <BaseLayout title={blogT.admin.newPost} description={blogT.admin.title}>
   <AuthLayout title={blogT.admin.newPost}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
-    <AdminPostForm
-      locale={locale}
-      blogT={blogT}
-      mode="create"
-      categories={categories}
-      tags={tags}
-      baseAdminUrl={baseAdminUrl}
-      basePublicUrl={basePublicUrl}
-    />
+    <AdminFormShell>
+      <AdminPostForm
+        locale={locale}
+        blogT={blogT}
+        mode="create"
+        categories={categories}
+        tags={tags}
+        baseAdminUrl={baseAdminUrl}
+        basePublicUrl={basePublicUrl}
+      />
+    </AdminFormShell>
   </AuthLayout>
 </BaseLayout>

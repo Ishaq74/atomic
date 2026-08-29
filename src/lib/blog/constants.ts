@@ -1,19 +1,37 @@
 import type { Locale } from "@i18n/config";
+import { assertTransition, canTransition, type WorkflowDefinition } from "@/lib/cms/workflow";
 
 export const BLOG_POST_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED", "DELETED"] as const;
 export type BlogPostStatus = (typeof BLOG_POST_STATUSES)[number];
 
-export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = {
-  DRAFT: ["PUBLISHED", "ARCHIVED", "DELETED"],
-  PUBLISHED: ["DRAFT", "ARCHIVED", "DELETED"],
-  ARCHIVED: ["DRAFT", "DELETED"],
-  DELETED: ["DRAFT"],
+export const BLOG_POST_WORKFLOW: WorkflowDefinition<BlogPostStatus> = {
+  states: BLOG_POST_STATUSES,
+  transitions: [
+    { from: "DRAFT", to: "PUBLISHED" },
+    { from: "DRAFT", to: "ARCHIVED" },
+    { from: "DRAFT", to: "DELETED" },
+    { from: "PUBLISHED", to: "DRAFT" },
+    { from: "PUBLISHED", to: "ARCHIVED" },
+    { from: "PUBLISHED", to: "DELETED" },
+    { from: "ARCHIVED", to: "DRAFT" },
+    { from: "ARCHIVED", to: "DELETED" },
+    { from: "DELETED", to: "DRAFT" },
+  ],
 };
 
+export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = Object.fromEntries(
+  BLOG_POST_STATUSES.map((status) => [
+    status,
+    BLOG_POST_WORKFLOW.transitions.filter((transition) => transition.from === status).map((transition) => transition.to),
+  ]),
+) as Record<BlogPostStatus, readonly BlogPostStatus[]>;
+
+export function canTransitionBlogPost(from: BlogPostStatus, to: BlogPostStatus): boolean {
+  return canTransition(BLOG_POST_WORKFLOW, from, to);
+}
+
 export function assertValidBlogPostTransition(from: BlogPostStatus, to: BlogPostStatus): void {
-  if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
-    throw new Error(`Invalid blog post status transition: ${from} → ${to}.`);
-  }
+  assertTransition(BLOG_POST_WORKFLOW, from, to);
 }
 
 export const BLOG_COMMENT_STATUSES = ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] as const;

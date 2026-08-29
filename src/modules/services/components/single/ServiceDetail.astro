@@ -1,0 +1,72 @@
+---
+import type { Locale } from "@i18n/config";
+import type { ServiceDetail as ServiceDetailData } from "@/modules/services/domain";
+import { formatServicePrice, formatServiceDuration, formatServiceRating } from "@/modules/services/utils";
+import { getServiceTranslations } from "@/modules/services/i18n";
+import RichContent from "@components/content/RichContent.astro";
+import { Prose } from "@atoms/prose";
+import ServiceEngagement from "./ServiceEngagement.astro";
+
+const { item, locale = "fr", organizationSlug = null } = Astro.props as { item: ServiceDetailData; locale?: Locale; organizationSlug?: string | null };
+const t = getServiceTranslations(locale);
+const title = item.translation?.title ?? item.service.slug;
+const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
+const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;
+const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/services` : `/${locale}/services`;
+
+function weekday(dayOfWeek: number): string {
+  const anchor = new Date(Date.UTC(2024, 0, 1 + dayOfWeek));
+  return new Intl.DateTimeFormat(locale, { weekday: "long", timeZone: "UTC" }).format(anchor);
+}
+---
+<article class="mx-auto max-w-5xl" data-service-detail data-service-id={item.service.id} data-organization-id={item.service.organizationId ?? ""}>
+  <header class="mb-8 space-y-4">
+    <div class="flex flex-wrap gap-2 text-sm text-muted-foreground">
+      {item.categories.map((category) => <a href={`${base}/${category.slug}`} class="rounded-full border px-3 py-1 hover:bg-muted">{category.name ?? category.slug}</a>)}
+    </div>
+    <h1 class="text-4xl font-bold tracking-tight">{title}</h1>
+    {item.translation?.excerpt && <p class="max-w-3xl text-lg text-muted-foreground">{item.translation.excerpt}</p>}
+    <div class="flex flex-wrap gap-4 text-sm">
+      {item.provider?.name && <span>{item.provider.name}</span>}
+      {price && <span class="font-semibold">{price}</span>}
+      {formatServiceDuration(item.service.durationMinutes) && <span>{formatServiceDuration(item.service.durationMinutes)}</span>}
+      {item.service.maxParticipants && <span>{item.service.maxParticipants} {t.labels.participants}</span>}
+      {rating !== null && <span aria-label={`${rating} / 5`}>★ {rating} ({item.service.ratingCount})</span>}
+    </div>
+  </header>
+  {item.coverMedia && <div class="mb-10 overflow-hidden rounded-2xl border"><img src={item.coverMedia.url} alt={item.coverMedia.alt || title} class="aspect-video w-full object-cover" loading="eager" /></div>}
+  <Prose size="full" class="max-w-none"><RichContent html={item.translation?.content ?? ""} /></Prose>
+  {item.availability.length > 0 && <section class="mt-10"><h2 class="text-2xl font-semibold">{t.labels.availability}</h2><div class="mt-4 grid gap-3 sm:grid-cols-2">{item.availability.map((slot) => <div class="rounded-xl border p-4"><div class="font-medium">{weekday(slot.dayOfWeek)}</div><div>{slot.startTime} – {slot.endTime} ({slot.timezone})</div></div>)}</div></section>}
+  {item.tags.length > 0 && <footer class="mt-10 flex flex-wrap gap-2">{item.tags.map((tag) => <a href={`${base}/tags/${tag.slug}`} class="rounded-full bg-muted px-3 py-1 text-sm hover:bg-muted/80">#{tag.name ?? tag.slug}</a>)}</footer>}
+  <ServiceEngagement serviceId={item.service.id} organizationId={item.service.organizationId} locale={locale} />
+</article>
+<script>
+  import { actions } from "astro:actions";
+
+  for (const root of document.querySelectorAll<HTMLElement>("[data-service-detail]")) {
+    const serviceId = root.dataset.serviceId;
+    if (!serviceId) continue;
+    const organizationId = root.dataset.organizationId || null;
+    let recorded = false;
+    const recordView = async () => {
+      if (recorded) return;
+      recorded = true;
+      try {
+        await actions.recordServiceView({ serviceId, organizationId, referrer: document.referrer || null });
+      } catch {
+        recorded = false;
+      }
+    };
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void recordView();
+          observer.disconnect();
+        }
+      }, { threshold: 0.01 });
+      observer.observe(root);
+    } else {
+      void recordView();
+    }
+  }
+</script>

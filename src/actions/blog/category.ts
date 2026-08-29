@@ -1,11 +1,12 @@
 import { defineAction, ActionError } from "astro:actions";
 import { z } from "astro/zod";
-import { eq, and, isNull, or, inArray } from "drizzle-orm";
+import { eq, and, isNull, or } from "drizzle-orm";
 import { getDrizzle } from "@database/drizzle";
 import { blogCategories, blogCategoryTranslations, blogPostCategories } from "@database/schemas";
 import { invalidateCache } from "@database/cache";
 import { DEFAULT_LOCALE, type Locale } from "@i18n/config";
 import { blogCategoryFormSchema, blogCategoryUpdateSchema } from "@/lib/blog/validation";
+import { assertAcyclicParent } from "@/lib/cms/taxonomy";
 import { assertBlogPermission, resolveBlogTenant, assertCategoryInTenant, blogRateLimit, auditBlog, blogOrganizationIdSchema } from "./_helpers";
 
 function categoryTenantScope(organizationId: string | null) {
@@ -26,17 +27,16 @@ async function assertLocalizedCategorySlugAvailable(organizationId: string | nul
 
 async function assertCategoryParentIsAcyclic(categoryId: string | null, parentId: string | null, organizationId: string | null) {
   if (!parentId) return;
-  if (categoryId === parentId) throw new ActionError({ code: "BAD_REQUEST", message: "Une catégorie ne peut pas être son propre parent." });
   const db = getDrizzle();
-  const visited = new Set<string>();
-  let currentId: string | null = parentId;
-  while (currentId) {
-    if (visited.has(currentId)) throw new ActionError({ code: "BAD_REQUEST", message: "La hiérarchie des catégories contient déjà un cycle." });
-    visited.add(currentId);
-    const [parent] = await db.select({ id: blogCategories.id, parentId: blogCategories.parentId }).from(blogCategories).where(and(eq(blogCategories.id, currentId), categoryTenantScope(organizationId))).limit(1);
-    if (!parent) throw new ActionError({ code: "BAD_REQUEST", message: "La catégorie parente est introuvable dans ce tenant." });
-    if (parent.id === categoryId) throw new ActionError({ code: "BAD_REQUEST", message: "Cette relation créerait un cycle dans la hiérarchie des catégories." });
-    currentId = parent.parentId;
+  const rows = await db
+    .select({ id: blogCategories.id, parentId: blogCategories.parentId })
+    .from(blogCategories)
+    .where(categoryTenantScope(organizationId));
+  try {
+    assertAcyclicParent(rows, categoryId, parentId);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid taxonomy hierarchy.";
+    throw new ActionError({ code: "BAD_REQUEST", message });
   }
 }
 
