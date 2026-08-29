@@ -60,10 +60,23 @@ export async function getServiceAdminById(id: string, locale: Locale, organizati
 
 export async function getServiceAdminStats(organizationId: string | null) {
   const db = getDrizzle(); const scope = tenantScope(services.organizationId, organizationId);
-  const [total, published, draft, archived, deleted, featured, views, reviews, comments] = await Promise.all([
-    db.select({ count: count() }).from(services).where(scope), db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "PUBLISHED"))), db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DRAFT"))), db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "ARCHIVED"))), db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DELETED"))), db.select({ count: count() }).from(services).where(and(scope, eq(services.isFeatured, true))), db.select({ total: sum(services.viewCount) }).from(services).where(scope), db.select({ count: count() }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(scope), db.select({ count: count() }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(scope),
+  const [total, published, draft, archived, deleted, featured, views, reviews, comments, pendingReviews, pendingComments, pendingReports] = await Promise.all([
+    db.select({ count: count() }).from(services).where(scope),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "PUBLISHED"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DRAFT"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "ARCHIVED"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.status, "DELETED"))),
+    db.select({ count: count() }).from(services).where(and(scope, eq(services.isFeatured, true))),
+    db.select({ total: sum(services.viewCount) }).from(services).where(scope),
+    db.select({ count: count() }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(scope, eq(serviceReviews.status, "APPROVED"))),
+    db.select({ count: count() }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(scope, eq(serviceComments.status, "APPROVED"))),
+    db.select({ count: count() }).from(serviceReviews).innerJoin(services, eq(services.id, serviceReviews.serviceId)).where(and(scope, eq(serviceReviews.status, "PENDING"))),
+    db.select({ count: count() }).from(serviceComments).innerJoin(services, eq(services.id, serviceComments.serviceId)).where(and(scope, eq(serviceComments.status, "PENDING"))),
+    db.select({ count: count() }).from(serviceReports).innerJoin(services, eq(services.id, serviceReports.serviceId)).where(and(scope, eq(serviceReports.status, "PENDING"))),
   ]);
-  return { total: Number(total[0]?.count ?? 0), published: Number(published[0]?.count ?? 0), draft: Number(draft[0]?.count ?? 0), archived: Number(archived[0]?.count ?? 0), deleted: Number(deleted[0]?.count ?? 0), featured: Number(featured[0]?.count ?? 0), views: Number(views[0]?.total ?? 0), reviews: Number(reviews[0]?.count ?? 0), comments: Number(comments[0]?.count ?? 0) };
+  return {
+    total: Number(total[0]?.count ?? 0), published: Number(published[0]?.count ?? 0), draft: Number(draft[0]?.count ?? 0), archived: Number(archived[0]?.count ?? 0), deleted: Number(deleted[0]?.count ?? 0), featured: Number(featured[0]?.count ?? 0), views: Number(views[0]?.total ?? 0), reviews: Number(reviews[0]?.count ?? 0), comments: Number(comments[0]?.count ?? 0), moderation: Number(pendingReviews[0]?.count ?? 0) + Number(pendingComments[0]?.count ?? 0) + Number(pendingReports[0]?.count ?? 0),
+  };
 }
 
 export async function getServiceAdminTaxonomy(organizationId: string | null, locale: Locale) {
