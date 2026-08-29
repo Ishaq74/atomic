@@ -61,7 +61,7 @@ export default [
     ratingCount: 2,
     seoScore: 81,
     publishedAt: null,
-    updatedBy: "44444444-44444444-4444-444444444444".replace("44444444-44444444", "44444444-44444444"),
+    updatedBy: "44444444-4444-4444-4444-444444444444",
     createdAt: new Date("2026-01-12T10:00:00.000Z"),
   },
 ];
