@@ -184,8 +184,12 @@ content/
   RichContent.astro
 molecules/
   AdminPagination/
+  AdminResourceStats.astro
   DataView/
 organisms/
+  AdminFormShell.astro
+  AdminResourceList.astro
+  AdminResourceShell.astro
   AdminSidebar/
   AuthLayout/
   AuthSidebar/
@@ -206,6 +210,10 @@ pages/
   HomePage/
   LegalPage.astro
   org/
+services/
+  AdminServiceForm.astro
+  AdminServiceList.astro
+  ServicesAdminPage.astro
 starwind/
   blog/
 wow/
@@ -229,8 +237,8 @@ images/
 ### Componentes
 
 - **atoms/** — 48 components
-- **molecules/** — 2 components
-- **organisms/** — 9 components
+- **molecules/** — 3 components
+- **organisms/** — 12 components
 - **pages/** — 10 components
 - **wow/** — 9 components
 
@@ -326,6 +334,9 @@ infra/
   02-indexes.sql
   03-constraints.sql
 loaders/
+  blog-admin-editor.loader.ts
+  blog-admin-moderation.loader.ts
+  blog-admin.loader.ts
   blog.loader.ts
   consent.loader.ts
   media.loader.ts
@@ -339,6 +350,9 @@ migrations/
   0003_brief_senator_kelly.sql
   0004_flashy_ezekiel_stane.sql
   0005_hard_joseph.sql
+  0006_services_module.sql
+  0007_services_search.sql
+  0008_services_notification_targets.sql
   meta/
     0000_snapshot.json
     0001_snapshot.json
@@ -356,6 +370,8 @@ schemas/
   navigation.schema.ts
   page-version.schema.ts
   page.schema.ts
+  services-engagement.schema.ts
+  services.schema.ts
   site.schema.ts
 schemas.ts
 ```
@@ -427,6 +443,33 @@ schemas.ts
 - `blog_post_links`: `id`, `sourcePostId`, `targetPostId`, `linkType`, `sortOrder`, `createdAt` _(sourcePost: one, targetPost: one)_
 - `blog_subscribers`: `id`, `organizationId`, `email`, `locale`, `token`, `tokenUsedAt`, `confirmationTokenHash`, `confirmationTokenExpiresAt`, `confirmationTokenUsedAt`, `unsubscribeTokenHash`, `unsubscribeTokenUsedAt`, `status`, `confirmedAt`, `unsubscribedAt`, `createdAt`, `updatedAt`
 
+**services.schema.ts**
+- `services`: `id`, `organizationId`, `providerId`, `slug`, `status`, `coverImageId`, `priceMinor`, `currency`, `durationMinutes`, `maxParticipants`, `isMobile`, `isFeatured`, `viewCount`, `ratingAverage100`, `ratingCount`, `seoScore`, `publishedAt`, `createdAt`, `updatedAt`, `updatedBy`, `lockedBy`, `lockedAt` _(organization: one, provider: one, updatedByUser: one, lockedByUser: one, coverImage: one, translations: many, categories: many, tags: many, media: many, availability: many, revisions: many, locks: one, seo: many, favorites: many, reviews: many, comments: many, reports: many, viewStats: many)_
+- `service_translations`: `id`, `serviceId`, `organizationId`, `locale`, `title`, `slug`, `excerpt`, `content`, `locationLabel`, `locationAddress`, `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalUrl`, `ogTitle`, `ogDescription`, `ogImageId`, `searchVector`, `createdAt`, `updatedAt` _(service: one, ogImage: one)_
+- `service_categories`: `id`, `organizationId`, `parentId`, `slug`, `icon`, `color`, `sortOrder`, `createdAt`, `updatedAt` _(organization: one, parent: one, children: many, translations: many, services: many)_
+- `service_category_translations`: `id`, `categoryId`, `organizationId`, `locale`, `name`, `slug`, `description`, `metaTitle`, `metaDescription`, `createdAt`, `updatedAt` _(category: one)_
+- `service_tags`: `id`, `organizationId`, `slug`, `color`, `createdAt`, `updatedAt` _(organization: one, translations: many, services: many)_
+- `service_tag_translations`: `id`, `tagId`, `organizationId`, `locale`, `name`, `slug`, `createdAt`, `updatedAt` _(tag: one)_
+- `service_category_links`: `serviceId`, `categoryId` _(service: one, category: one)_
+- `service_tag_links`: `serviceId`, `tagId` _(service: one, tag: one)_
+- `service_media`: `serviceId`, `mediaId`, `kind`, `altText`, `caption`, `sortOrder` _(service: one, file: one)_
+- `service_availability`: `id`, `serviceId`, `dayOfWeek`, `startTime`, `endTime`, `timezone`, `maxParticipants`, `createdAt` _(service: one)_
+- `service_revisions`: `id`, `serviceId`, `authorId`, `locale`, `title`, `slug`, `content`, `excerpt`, `status`, `revisionNote`, `createdAt` _(service: one, author: one)_
+- `service_locks`: `id`, `serviceId`, `userId`, `sessionId`, `lockedAt`, `expiresAt` _(service: one, user: one)_
+- `service_seo`: `id`, `serviceId`, `locale`, `focusKeyword`, `focusKeywordScore`, `readabilityScore`, `metaRobots`, `metaOgType`, `metaOgLocale`, `schemaMarkup`, `createdAt`, `updatedAt` _(service: one)_
+- `service_favorites`: `serviceId`, `userId`, `createdAt` _(service: one, user: one)_
+- `service_reviews`: `id`, `serviceId`, `authorId`, `rating`, `title`, `content`, `status`, `isRecommended`, `helpfulCount`, `createdAt`, `updatedAt` _(service: one, author: one, helpfulVotes: many)_
+- `service_review_helpful`: `reviewId`, `userId`, `isHelpful`, `createdAt` _(review: one, user: one)_
+- `service_comments`: `id`, `serviceId`, `authorId`, `parentId`, `content`, `status`, `createdAt`, `updatedAt` _(service: one, author: one, parent: one, replies: many)_
+- `service_reports`: `id`, `serviceId`, `commentId`, `reviewId`, `reporterId`, `reason`, `description`, `status`, `resolvedBy`, `resolvedAt`, `createdAt` _(service: one, comment: one, review: one, reporter: one, resolver: one)_
+- `service_view_stats`: `id`, `serviceId`, `viewedAt`, `date`, `hour`, `referrer`, `country` _(service: one)_
+
+**services-engagement.schema.ts**
+- `service_reactions`: `serviceId`
+- `service_notifications`: `id`
+- `service_attribute_definitions`: `id`
+- `service_attribute_values`: `serviceId`
+
 ### Migraciones
 
 - `0000_plain_old_lace.sql`
@@ -435,6 +478,9 @@ schemas.ts
 - `0003_brief_senator_kelly.sql`
 - `0004_flashy_ezekiel_stane.sql`
 - `0005_hard_joseph.sql`
+- `0006_services_module.sql`
+- `0007_services_search.sql`
+- `0008_services_notification_targets.sql`
 
 ### Comandos
 
@@ -484,6 +530,7 @@ src/actions/
   blog/
   index.ts
   org/
+  services/
 src/middleware.ts
 ```
 
@@ -559,6 +606,7 @@ robots.txt.ts
 rss.xml.ts
 sitemap-blog-org.xml.ts
 sitemap-cms.xml.ts
+sitemap-services-org.xml.ts
 [lang]/
   a-propos.astro
   admin/
@@ -570,6 +618,7 @@ sitemap-cms.xml.ts
     organizations.astro
     pages.astro
     roles.astro
+    services/
     site.astro
     stats.astro
     theme.astro
@@ -583,6 +632,12 @@ sitemap-cms.xml.ts
   index.astro
   organizations/
     [slug]/
+  services/
+    index.astro
+    tags/
+    [categorySlug]/
+    [categorySlug].astro
+    [slug].astro
   [slug].astro
 src/layouts/
 BaseLayout.astro
@@ -794,6 +849,7 @@ agents/
   designer.agent.md
   DevOpsExpert.agent.md
   elias.agent.md
+  faqir.md
   fatima.agent.md
   hawa.agent.md
   ishaq.agent.md
@@ -809,7 +865,6 @@ agents/
   yusra.agent.md
 dependabot.yml
 prompts/
-  plan-codeReview.prompt.md
 skills/
   accessibility/
     references/
