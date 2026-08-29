@@ -1,4 +1,4 @@
-import type { AtomicModuleCapabilityProviders } from "@/lib/cms/module-contract";
+import type { AtomicModuleCapabilityProviders } from "@/core/modules/module-contract";
 import { CMS_CAPABILITIES } from "@/core/capabilities";
 
 const ids = [
