@@ -14,7 +14,7 @@ interface Props {
   title: string;
   items: ServiceListItem[];
   meta: { page: number; totalPages: number };
-  stats: { total: number; published: number; draft: number; archived: number; deleted: number; featured: number; views: number; reviews: number; comments: number };
+  stats: { total: number; published: number; draft: number; archived: number; deleted: number; featured: number; views: number; reviews: number; comments: number; moderation: number };
   filters: ServiceAdminFilters;
   baseAdminUrl: string;
   organizationId: string | null;
@@ -40,7 +40,7 @@ const props = Astro.props as Props;
 const t = getServiceTranslations(props.locale);
 const et = getServiceEngagementTranslations(props.locale);
 ---
-<div data-services-admin-workspace data-organization-id={props.organizationId ?? ""} data-locale={props.locale}>
+<div data-services-admin-workspace data-organization-id={props.organizationId ?? ""} data-locale={props.locale} data-confirm-taxonomy-delete={t.admin.confirmDelete}>
   <AdminResourceShell title={props.title} description={t.admin.title}>
     <div class="p-4 sm:p-6">
       <p data-service-admin-status class="mb-4 text-sm" aria-live="polite" aria-atomic="true"></p>
@@ -108,7 +108,7 @@ const et = getServiceEngagementTranslations(props.locale);
           </>}
         </TabsContent>
 
-        <TabsContent value="stats" class="pt-4"><AdminResourceStats stats={[{ label: t.labels.services, value: props.stats.total }, { label: t.admin.status.PUBLISHED, value: props.stats.published }, { label: t.admin.status.DRAFT, value: props.stats.draft }, { label: t.admin.status.ARCHIVED, value: props.stats.archived }, { label: t.admin.status.DELETED, value: props.stats.deleted }, { label: t.labels.featured, value: props.stats.featured }, { label: t.labels.views, value: props.stats.views }, { label: t.labels.reviews, value: props.stats.reviews }, { label: et.commentTitle, value: props.stats.comments }]}/></TabsContent>
+        <TabsContent value="stats" class="pt-4"><AdminResourceStats stats={[{ label: t.labels.services, value: props.stats.total }, { label: t.admin.status.PUBLISHED, value: props.stats.published }, { label: t.admin.status.DRAFT, value: props.stats.draft }, { label: t.admin.status.ARCHIVED, value: props.stats.archived }, { label: t.admin.status.DELETED, value: props.stats.deleted }, { label: t.labels.featured, value: props.stats.featured }, { label: t.labels.views, value: props.stats.views }, { label: t.labels.reviews, value: props.stats.reviews }, { label: et.commentTitle, value: props.stats.comments }, { label: et.admin.moderation, value: props.stats.moderation }]}/></TabsContent>
       </Tabs>
     </div>
   </AdminResourceShell>
@@ -120,6 +120,7 @@ const et = getServiceEngagementTranslations(props.locale);
   for (const root of document.querySelectorAll<HTMLElement>("[data-services-admin-workspace]")) {
     const organizationId = root.dataset.organizationId || null;
     const locale = root.dataset.locale ?? "fr";
+    const confirmTaxonomyDelete = root.dataset.confirmTaxonomyDelete ?? "";
     const refresh = () => window.location.reload();
     const status = root.querySelector<HTMLElement>("[data-service-admin-status]");
     const showError = (error: { code?: string } | undefined) => { if (status) status.textContent = getServiceErrorMessage(locale, error?.code); };
@@ -137,7 +138,7 @@ const et = getServiceEngagementTranslations(props.locale);
     }));
 
     root.querySelectorAll<HTMLButtonElement>("[data-category-delete]").forEach((button) => button.addEventListener("click", async () => {
-      const form = button.closest("form"); if (!form || !confirmDelete(getServiceTranslations(locale).admin.confirmDelete)) return;
+      const form = button.closest("form"); if (!form || !confirmDelete(confirmTaxonomyDelete)) return;
       const result = await actions.deleteServiceCategory({ id: form.dataset.id!, organizationId }); if (result.error) showError(result.error); else refresh();
     }));
 
@@ -147,12 +148,12 @@ const et = getServiceEngagementTranslations(props.locale);
     });
 
     root.querySelectorAll<HTMLFormElement>("[data-service-tag-update]").forEach((form) => form.addEventListener("submit", async (event) => {
-      event.preventDefault(); const data = new FormData(form); const result = await actions.updateServiceTag({ id: form.dataset.id!, organizationId, locale, name: String(data.get("name")), slug: String(data.get("slug")) });
+      event.preventDefault(); const data = new FormData(form); const result = await actions.updateServiceTag({ id: form.dataset.id!, organizationId, locale, name: String(data.get("name")), slug: String(data.get("slug") || "") });
       if (result.error) showError(result.error); else refresh();
     }));
 
     root.querySelectorAll<HTMLButtonElement>("[data-tag-delete]").forEach((button) => button.addEventListener("click", async () => {
-      const form = button.closest("form"); if (!form || !confirmDelete(getServiceTranslations(locale).admin.confirmDelete)) return;
+      const form = button.closest("form"); if (!form || !confirmDelete(confirmTaxonomyDelete)) return;
       const result = await actions.deleteServiceTag({ id: form.dataset.id!, organizationId }); if (result.error) showError(result.error); else refresh();
     }));
 
