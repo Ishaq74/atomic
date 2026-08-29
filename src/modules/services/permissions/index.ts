@@ -45,6 +45,12 @@ export async function assertServiceInTenant(serviceId: string, tenant: ServiceTe
   return service;
 }
 
+export async function assertPublishedServiceInTenant(serviceId: string, tenant: ServiceTenantContext) {
+  const service = await assertServiceInTenant(serviceId, tenant);
+  if (service.status !== "PUBLISHED") throw new ActionError({ code: "NOT_FOUND", message: "Service introuvable." });
+  return service;
+}
+
 export async function assertServiceLockOwner(serviceId: string, userId: string, sessionId: string | null | undefined) {
   const [lock] = await getDrizzle().select({ userId: serviceLocks.userId, sessionId: serviceLocks.sessionId, expiresAt: serviceLocks.expiresAt }).from(serviceLocks).where(eq(serviceLocks.serviceId, serviceId)).limit(1);
   if (!lock || lock.expiresAt <= new Date()) return;

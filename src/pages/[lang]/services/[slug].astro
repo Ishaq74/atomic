@@ -16,9 +16,12 @@ if (categorySlug) return Astro.redirect(buildServiceUrl(locale, null, item.trans
 const t = getServiceTranslations(locale);
 const title = item.translation?.title ?? t.labels.service;
 const description = item.translation?.excerpt ?? t.meta.description;
-const jsonLd = buildServiceJsonLd({ name: title, description, slug: Astro.url.href, priceMinor: item.service.priceMinor, currency: item.service.currency, ratingAverage100: item.service.ratingAverage100, ratingCount: item.service.ratingCount });
+const canonicalUrl = buildServiceUrl(locale, null, item.translation?.slug ?? item.service.slug);
+const canonical = new URL(canonicalUrl, Astro.url.origin).href;
+const jsonLd = buildServiceJsonLd({ name: title, description, slug: canonical, priceMinor: item.service.priceMinor, currency: item.service.currency, ratingAverage100: item.service.ratingAverage100, ratingCount: item.service.ratingCount });
 ---
 <BaseLayout title={`${title} — ${t.meta.title}`} description={description}>
+  <link rel="canonical" href={canonical} />
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
   <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><ServiceDetail item={item} locale={locale} /></main>
 </BaseLayout>
