@@ -9,6 +9,8 @@ export const PATHS = {
   root:       path.resolve(__dirname, '../'),
   src:        path.resolve(__dirname, '../src'),
   components: path.resolve(__dirname, '../src/components'),
+  core:       path.resolve(__dirname, '../src/core'),
+  modules:    path.resolve(__dirname, '../src/modules'),
   styles:     path.resolve(__dirname, '../src/styles'),
   assets:     path.resolve(__dirname, '../src/assets'),
   database:   path.resolve(__dirname, '../src/database'),
