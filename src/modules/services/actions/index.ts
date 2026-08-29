@@ -1,6 +1,6 @@
 export { createService, updateService } from "@/actions/services/service";
 export { publishService, unpublishService, archiveService, restoreService, deleteService, duplicateService, lockService, unlockService, listServiceRevisions, restoreServiceRevision } from "@/actions/services/lifecycle";
-export { toggleServiceFavorite, createServiceReview, createServiceComment, createServiceReport, voteServiceReviewHelpful, listApprovedServiceReviews } from "@/actions/services/engagement";
+export { toggleServiceFavorite, createServiceReview, createServiceComment, createServiceReport, voteServiceReviewHelpful } from "@/actions/services/engagement";
 export { createServiceAvailability, updateServiceAvailability, deleteServiceAvailability } from "@/actions/services/availability";
 export { toggleServiceReaction } from "@/actions/services/reactions";
 export { listServiceNotifications, markServiceNotificationRead, markAllServiceNotificationsRead } from "@/actions/services/notification";
