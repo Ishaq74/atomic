@@ -17,6 +17,16 @@ AS $$
 $$;
 --> statement-breakpoint
 
+CREATE OR REPLACE FUNCTION "locale_to_regconfig"(locale text)
+RETURNS regconfig
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+  SELECT "atomic_service_locale_regconfig"(locale);
+$$;
+--> statement-breakpoint
+
 CREATE OR REPLACE FUNCTION "atomic_service_translation_search_vector"()
 RETURNS trigger
 LANGUAGE plpgsql
