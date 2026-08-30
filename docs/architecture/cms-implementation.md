@@ -27,6 +27,20 @@ This document is the canonical implementation map for the current CMS foundation
 | Audit | ✅ | ✅ | shared audit boundary |
 | Cache | ✅ | ✅ | targeted invalidation |
 
+## Merged implementation baseline
+
+The current `main` baseline contains the complete CMS foundation and both reference modules described by this matrix. The implementation sequence is:
+
+```text
+CMS/Admin Foundation
+        ↓
+Blog first-class module
+        ↓
+Services second first-class module
+```
+
+The merged baseline is intentionally **implementation-complete at the architecture/module level** while runtime proof remains the maintainer validation gate described in `TODO.md`. No separate “architecture-only” branch is required to consume these contracts.
+
 ## Physical module convention
 
 A first-class business module lives under:
