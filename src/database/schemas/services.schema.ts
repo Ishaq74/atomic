@@ -90,6 +90,7 @@ export const serviceTranslations = pgTable(
     uniqueIndex("service_translations_org_locale_slug_uidx").on(table.organizationId, table.locale, table.slug).where(sql`${table.organizationId} IS NOT NULL`),
     uniqueIndex("service_translations_global_locale_slug_uidx").on(table.locale, table.slug).where(sql`${table.organizationId} IS NULL`),
     index("service_translations_locale_slug_idx").on(table.locale, table.slug),
+    index("service_translations_search_vector_gin_idx").using("gin", table.searchVector),
   ],
 );
 
@@ -221,263 +222,26 @@ export const serviceAvailability = pgTable(
   ],
 );
 
-export const serviceRevisions = pgTable(
-  "service_revisions",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    locale: localeEnum,
-    title: text("title").notNull(),
-    slug: text("slug").notNull(),
-    content: text("content").notNull(),
-    excerpt: text("excerpt"),
-    status: text("status", { enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] }).notNull(),
-    revisionNote: text("revision_note"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [index("service_revisions_service_idx").on(table.serviceId), index("service_revisions_author_idx").on(table.authorId)],
-);
+export const serviceRevisions = pgTable("service_revisions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }), locale: localeEnum, title: text("title").notNull(), slug: text("slug").notNull(), content: text("content").notNull(), excerpt: text("excerpt"), status: text("status", { enum: ["DRAFT", "PUBLISHED", "ARCHIVED"] }).notNull(), revisionNote: text("revision_note"), createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [index("service_revisions_service_idx").on(table.serviceId), index("service_revisions_author_idx").on(table.authorId)]);
 
-export const serviceLocks = pgTable(
-  "service_locks",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }).unique(),
-    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    sessionId: text("session_id").notNull(),
-    lockedAt: timestamp("locked_at").defaultNow().notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-  },
-  (table) => [index("service_locks_user_idx").on(table.userId), check("service_locks_expiry_after_lock", sql`${table.expiresAt} > ${table.lockedAt}`)],
-);
+export const serviceLocks = pgTable("service_locks", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().unique().references(() => services.id, { onDelete: "cascade" }), userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }), sessionId: text("session_id").notNull(), lockedAt: timestamp("locked_at").defaultNow().notNull(), expiresAt: timestamp("expires_at").notNull(),
+}, (table) => [index("service_locks_user_idx").on(table.userId), check("service_locks_expiry_after_lock", sql`${table.expiresAt} > ${table.lockedAt}`)]);
 
-export const serviceSeo = pgTable(
-  "service_seo",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    locale: localeEnum,
-    focusKeyword: text("focus_keyword"),
-    focusKeywordScore: integer("focus_keyword_score"),
-    readabilityScore: integer("readability_score"),
-    metaRobots: text("meta_robots", { enum: ["index,follow", "noindex,follow", "index,nofollow", "noindex,nofollow"] }).default("index,follow"),
-    metaOgType: text("meta_og_type", { enum: ["service", "website"] }).default("service"),
-    metaOgLocale: text("meta_og_locale", { enum: ["fr_FR", "en_US", "ar_SA", "es_ES"] }),
-    schemaMarkup: text("schema_markup"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
-  },
-  (table) => [uniqueIndex("service_seo_service_locale_uidx").on(table.serviceId, table.locale)],
-);
+export const serviceSeo = pgTable("service_seo", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), locale: localeEnum, focusKeyword: text("focus_keyword"), focusKeywordScore: integer("focus_keyword_score"), readabilityScore: integer("readability_score"), metaRobots: text("meta_robots").default("index,follow"), metaOgType: text("meta_og_type").default("service"), metaOgLocale: text("meta_og_locale"), schemaMarkup: text("schema_markup"), createdAt: timestamp("created_at").defaultNow().notNull(), updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+}, (table) => [uniqueIndex("service_seo_service_locale_uidx").on(table.serviceId, table.locale)]);
 
-export const serviceFavorites = pgTable(
-  "service_favorites",
-  {
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.serviceId, table.userId] })],
-);
+export const serviceFavorites = pgTable("service_favorites", { serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }), createdAt: timestamp("created_at").defaultNow().notNull() }, (table) => [primaryKey({ columns: [table.serviceId, table.userId] })]);
 
-export const serviceReviews = pgTable(
-  "service_reviews",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-    rating: integer("rating").notNull(),
-    title: text("title"),
-    content: text("content").notNull(),
-    status: text("status", { enum: ["PENDING", "APPROVED", "REJECTED", "SPAM"] }).default("PENDING").notNull(),
-    isRecommended: boolean("is_recommended").default(true).notNull(),
-    helpfulCount: integer("helpful_count").default(0).notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
-  },
-  (table) => [
-    uniqueIndex("service_reviews_service_author_uidx").on(table.serviceId, table.authorId),
-    index("service_reviews_service_idx").on(table.serviceId),
-    index("service_reviews_status_idx").on(table.status),
-    check("service_reviews_rating_range", sql`${table.rating} BETWEEN 1 AND 5`),
-  ],
-);
+export const serviceComments = pgTable("service_comments", { id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), authorId: text("author_id").references(() => user.id, { onDelete: "set null" }), parentId: text("parent_id").references((): AnyPgColumn => serviceComments.id, { onDelete: "cascade" }), content: text("content").notNull(), status: text("status", { enum: ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] }).default("PENDING").notNull(), createdAt: timestamp("created_at").defaultNow().notNull(), updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull() }, (table) => [index("service_comments_service_idx").on(table.serviceId), index("service_comments_parent_idx").on(table.parentId), index("service_comments_status_idx").on(table.status)]);
 
-export const serviceReviewHelpful = pgTable(
-  "service_review_helpful",
-  {
-    reviewId: text("review_id").notNull().references(() => serviceReviews.id, { onDelete: "cascade" }),
-    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-    isHelpful: boolean("is_helpful").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [primaryKey({ columns: [table.reviewId, table.userId] })],
-);
+export const serviceReviews = pgTable("service_reviews", { id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), authorId: text("author_id").references(() => user.id, { onDelete: "set null" }), rating: integer("rating").notNull(), title: text("title"), content: text("content").notNull(), status: text("status", { enum: ["PENDING", "APPROVED", "REJECTED", "SPAM"] }).default("PENDING").notNull(), isRecommended: boolean("is_recommended").default(true).notNull(), helpfulCount: integer("helpful_count").default(0).notNull(), createdAt: timestamp("created_at").defaultNow().notNull(), updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull() }, (table) => [index("service_reviews_service_idx").on(table.serviceId), index("service_reviews_status_idx").on(table.status), uniqueIndex("service_reviews_service_author_uidx").on(table.serviceId, table.authorId), check("service_reviews_rating_range", sql`${table.rating} BETWEEN 1 AND 5`)]);
 
-export const serviceComments = pgTable(
-  "service_comments",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-    parentId: text("parent_id").references((): AnyPgColumn => serviceComments.id, { onDelete: "cascade" }),
-    content: text("content").notNull(),
-    status: text("status", { enum: ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] }).default("PENDING").notNull(),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
-  },
-  (table) => [index("service_comments_service_idx").on(table.serviceId), index("service_comments_parent_idx").on(table.parentId), index("service_comments_status_idx").on(table.status)],
-);
+export const serviceReports = pgTable("service_reports", { id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id"), commentId: text("comment_id").references(() => serviceComments.id, { onDelete: "cascade" }), reviewId: text("review_id").references(() => serviceReviews.id, { onDelete: "cascade" }), reporterId: text("reporter_id").references(() => user.id, { onDelete: "set null" }), reason: text("reason").notNull(), description: text("description"), status: text("status").default("PENDING").notNull(), resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }), resolvedAt: timestamp("resolved_at"), createdAt: timestamp("created_at").defaultNow().notNull() }, (table) => [index("service_reports_status_idx").on(table.status), check("service_reports_single_target", sql`((CASE WHEN ${table.serviceId} IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN ${table.commentId} IS NOT NULL THEN 1 ELSE 0 END) + (CASE WHEN ${table.reviewId} IS NOT NULL THEN 1 ELSE 0 END)) = 1`)]);
 
-export const serviceReports = pgTable(
-  "service_reports",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").references(() => services.id, { onDelete: "cascade" }),
-    commentId: text("comment_id").references(() => serviceComments.id, { onDelete: "cascade" }),
-    reviewId: text("review_id").references(() => serviceReviews.id, { onDelete: "cascade" }),
-    reporterId: text("reporter_id").references(() => user.id, { onDelete: "set null" }),
-    reason: text("reason", { enum: ["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"] }).notNull(),
-    description: text("description"),
-    status: text("status", { enum: ["PENDING", "REVIEWED", "RESOLVED", "REJECTED"] }).default("PENDING").notNull(),
-    resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }),
-    resolvedAt: timestamp("resolved_at"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (table) => [
-    index("service_reports_status_idx").on(table.status),
-    index("service_reports_reporter_idx").on(table.reporterId),
-    check("service_reports_single_target", sql`(((${table.serviceId} IS NOT NULL)::int + (${table.commentId} IS NOT NULL)::int + (${table.reviewId} IS NOT NULL)::int) = 1)`),
-  ],
-);
+export const serviceViewStats = pgTable("service_view_stats", { id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()), serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), viewedAt: timestamp("viewed_at").defaultNow().notNull(), date: text("date").notNull(), hour: integer("hour").notNull(), referrer: text("referrer"), country: varchar("country", { length: 2 }) }, (table) => [index("service_view_stats_service_idx").on(table.serviceId), check("service_view_stats_hour_range", sql`${table.hour} BETWEEN 0 AND 23`)]);
 
-export const serviceViewStats = pgTable(
-  "service_view_stats",
-  {
-    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-    serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }),
-    viewedAt: timestamp("viewed_at").defaultNow().notNull(),
-    date: text("date").notNull(),
-    hour: integer("hour").notNull(),
-    referrer: text("referrer"),
-    country: varchar("country", { length: 2 }),
-  },
-  (table) => [index("service_view_stats_service_date_idx").on(table.serviceId, table.date), index("service_view_stats_viewed_at_idx").on(table.viewedAt), check("service_view_stats_hour_range", sql`${table.hour} BETWEEN 0 AND 23`)],
-);
-
-export const servicesRelations = relations(services, ({ one, many }) => ({
-  organization: one(organization, { fields: [services.organizationId], references: [organization.id] }),
-  provider: one(user, { fields: [services.providerId], references: [user.id], relationName: "serviceProvider" }),
-  updatedByUser: one(user, { fields: [services.updatedBy], references: [user.id], relationName: "serviceUpdater" }),
-  lockedByUser: one(user, { fields: [services.lockedBy], references: [user.id], relationName: "serviceLocker" }),
-  coverImage: one(mediaFiles, { fields: [services.coverImageId], references: [mediaFiles.id] }),
-  translations: many(serviceTranslations),
-  categories: many(serviceCategoryLinks),
-  tags: many(serviceTagLinks),
-  media: many(serviceMedia),
-  availability: many(serviceAvailability),
-  revisions: many(serviceRevisions),
-  locks: one(serviceLocks, { fields: [services.id], references: [serviceLocks.serviceId] }),
-  seo: many(serviceSeo),
-  favorites: many(serviceFavorites),
-  reviews: many(serviceReviews),
-  comments: many(serviceComments),
-  reports: many(serviceReports),
-  viewStats: many(serviceViewStats),
-}));
-
-export const serviceTranslationsRelations = relations(serviceTranslations, ({ one }) => ({
-  service: one(services, { fields: [serviceTranslations.serviceId], references: [services.id] }),
-  ogImage: one(mediaFiles, { fields: [serviceTranslations.ogImageId], references: [mediaFiles.id] }),
-}));
-
-export const serviceCategoriesRelations = relations(serviceCategories, ({ one, many }) => ({
-  organization: one(organization, { fields: [serviceCategories.organizationId], references: [organization.id] }),
-  parent: one(serviceCategories, { fields: [serviceCategories.parentId], references: [serviceCategories.id], relationName: "serviceCategoryParent" }),
-  children: many(serviceCategories, { relationName: "serviceCategoryParent" }),
-  translations: many(serviceCategoryTranslations),
-  services: many(serviceCategoryLinks),
-}));
-
-export const serviceCategoryTranslationsRelations = relations(serviceCategoryTranslations, ({ one }) => ({
-  category: one(serviceCategories, { fields: [serviceCategoryTranslations.categoryId], references: [serviceCategories.id] }),
-}));
-
-export const serviceTagsRelations = relations(serviceTags, ({ one, many }) => ({
-  organization: one(organization, { fields: [serviceTags.organizationId], references: [organization.id] }),
-  translations: many(serviceTagTranslations),
-  services: many(serviceTagLinks),
-}));
-
-export const serviceTagTranslationsRelations = relations(serviceTagTranslations, ({ one }) => ({
-  tag: one(serviceTags, { fields: [serviceTagTranslations.tagId], references: [serviceTags.id] }),
-}));
-
-export const serviceCategoryLinksRelations = relations(serviceCategoryLinks, ({ one }) => ({
-  service: one(services, { fields: [serviceCategoryLinks.serviceId], references: [services.id] }),
-  category: one(serviceCategories, { fields: [serviceCategoryLinks.categoryId], references: [serviceCategories.id] }),
-}));
-
-export const serviceTagLinksRelations = relations(serviceTagLinks, ({ one }) => ({
-  service: one(services, { fields: [serviceTagLinks.serviceId], references: [services.id] }),
-  tag: one(serviceTags, { fields: [serviceTagLinks.tagId], references: [serviceTags.id] }),
-}));
-
-export const serviceMediaRelations = relations(serviceMedia, ({ one }) => ({
-  service: one(services, { fields: [serviceMedia.serviceId], references: [services.id] }),
-  file: one(mediaFiles, { fields: [serviceMedia.mediaId], references: [mediaFiles.id] }),
-}));
-
-export const serviceAvailabilityRelations = relations(serviceAvailability, ({ one }) => ({
-  service: one(services, { fields: [serviceAvailability.serviceId], references: [services.id] }),
-}));
-
-export const serviceRevisionsRelations = relations(serviceRevisions, ({ one }) => ({
-  service: one(services, { fields: [serviceRevisions.serviceId], references: [services.id] }),
-  author: one(user, { fields: [serviceRevisions.authorId], references: [user.id] }),
-}));
-
-export const serviceLocksRelations = relations(serviceLocks, ({ one }) => ({
-  service: one(services, { fields: [serviceLocks.serviceId], references: [services.id] }),
-  user: one(user, { fields: [serviceLocks.userId], references: [user.id] }),
-}));
-
-export const serviceSeoRelations = relations(serviceSeo, ({ one }) => ({
-  service: one(services, { fields: [serviceSeo.serviceId], references: [services.id] }),
-}));
-
-export const serviceFavoritesRelations = relations(serviceFavorites, ({ one }) => ({
-  service: one(services, { fields: [serviceFavorites.serviceId], references: [services.id] }),
-  user: one(user, { fields: [serviceFavorites.userId], references: [user.id] }),
-}));
-
-export const serviceReviewsRelations = relations(serviceReviews, ({ one, many }) => ({
-  service: one(services, { fields: [serviceReviews.serviceId], references: [services.id] }),
-  author: one(user, { fields: [serviceReviews.authorId], references: [user.id] }),
-  helpfulVotes: many(serviceReviewHelpful),
-}));
-
-export const serviceReviewHelpfulRelations = relations(serviceReviewHelpful, ({ one }) => ({
-  review: one(serviceReviews, { fields: [serviceReviewHelpful.reviewId], references: [serviceReviews.id] }),
-  user: one(user, { fields: [serviceReviewHelpful.userId], references: [user.id] }),
-}));
-
-export const serviceCommentsRelations = relations(serviceComments, ({ one, many }) => ({
-  service: one(services, { fields: [serviceComments.serviceId], references: [services.id] }),
-  author: one(user, { fields: [serviceComments.authorId], references: [user.id] }),
-  parent: one(serviceComments, { fields: [serviceComments.parentId], references: [serviceComments.id], relationName: "serviceCommentParent" }),
-  replies: many(serviceComments, { relationName: "serviceCommentParent" }),
-}));
-
-export const serviceReportsRelations = relations(serviceReports, ({ one }) => ({
-  service: one(services, { fields: [serviceReports.serviceId], references: [services.id] }),
-  comment: one(serviceComments, { fields: [serviceReports.commentId], references: [serviceComments.id] }),
-  review: one(serviceReviews, { fields: [serviceReports.reviewId], references: [serviceReviews.id] }),
-  reporter: one(user, { fields: [serviceReports.reporterId], references: [user.id] }),
-  resolver: one(user, { fields: [serviceReports.resolvedBy], references: [user.id] }),
-}));
-
-export const serviceViewStatsRelations = relations(serviceViewStats, ({ one }) => ({
-  service: one(services, { fields: [serviceViewStats.serviceId], references: [services.id] }),
-}));
+export { serviceReactions, serviceNotifications, serviceAttributeDefinitions, serviceAttributeValues } from "./services-engagement.schema";
