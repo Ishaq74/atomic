@@ -1,3 +1,7 @@
 ---
-// This legacy route intentionally contains no page implementation. Canonical service URLs include a category segment.
+import { redirect } from "astro:transitions";
+const locale = Astro.params.lang ?? "fr";
+const slug = Astro.params.slug;
+if (slug) return Astro.redirect(`/${locale}/services`, 301);
+return Astro.redirect(`/${locale}/services`, 301);
 ---
