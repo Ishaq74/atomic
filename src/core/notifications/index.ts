@@ -3,9 +3,9 @@ export type NotificationTarget =
   | { readonly postId: string; readonly commentId: string; readonly reviewId?: never }
   | { readonly postId: string; readonly commentId?: never; readonly reviewId: string };
 
-export interface NotificationContext extends NotificationTarget {
+export type NotificationContext = NotificationTarget & {
   readonly type: string;
-}
+};
 
 export function assertNotificationContext(context: NotificationContext): void {
   if (!context.type.trim()) throw new Error("Notification type cannot be empty");
