@@ -84,6 +84,18 @@ export const serviceUpdateSchema = z.object({
   id: z.string().uuid(),
 });
 
+export const serviceReportSchema = z.object({
+  serviceId: z.string().uuid(),
+  organizationId: serviceOrganizationIdSchema,
+  commentId: z.string().uuid().optional(),
+  reviewId: z.string().uuid().optional(),
+  reason: z.enum(["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"]),
+  description: nullableText(2000),
+}).refine((value) => Number(Boolean(value.commentId)) + Number(Boolean(value.reviewId)) === 1, {
+  path: ["commentId"],
+  message: "A report must target exactly one comment or review.",
+});
+
 export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
 
 /** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
