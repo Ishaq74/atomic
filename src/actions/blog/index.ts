@@ -16,6 +16,8 @@ export {
   restoreBlogPostRevision,
 } from "./lifecycle";
 
+export { bulkBlogPostLifecycle } from "./bulk";
+
 export { recordBlogPostView } from "./view";
 
 export {
@@ -79,5 +81,5 @@ export { updateUserProfile } from "./profile";
 export {
   subscribeBlogNewsletter,
   confirmBlogSubscription,
-  unsubscribeBlogNewsletter,
+  unsubscribeBlogSubscription,
 } from "./subscription";
