@@ -12,6 +12,7 @@ import {
   blogPostGalleries,
   blogPostGalleryMedia,
   blogPostLinks,
+  blogPostLocks,
 } from "@database/schemas";
 import { LOCALES } from "@i18n/config";
 import { BLOG_POST_TRANSITIONS, type BlogPostStatus } from "@/lib/blog/constants";
@@ -31,10 +32,13 @@ type DbTransaction = Parameters<Db["transaction"]>[0] extends (tx: infer T, ...a
 const lifecycleInput = z.object({ id: z.uuid(), organizationId: blogOrganizationIdSchema });
 
 function assertTransition(from: BlogPostStatus, to: BlogPostStatus): void {
-  if (from === to) return;
   if (!BLOG_POST_TRANSITIONS[from].includes(to)) {
     throw new ActionError({ code: "BAD_REQUEST", message: `Transition de statut invalide : ${from} → ${to}.` });
   }
+}
+
+function assertRevisionRestoreStatus(from: BlogPostStatus, to: BlogPostStatus): void {
+  if (from !== to) assertTransition(from, to);
 }
 
 function revisionStatus(status: BlogPostStatus): "DRAFT" | "PUBLISHED" | "ARCHIVED" {
@@ -182,14 +186,21 @@ export const restoreBlogPostRevision = defineAction({
     const [revision] = await db.select().from(blogPostRevisions).where(and(eq(blogPostRevisions.id, input.revisionId), eq(blogPostRevisions.postId, input.postId))).limit(1);
     if (!revision) throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." });
 
-    assertTransition(post.status as BlogPostStatus, revision.status as BlogPostStatus);
+    const [lock] = await db.select().from(blogPostLocks).where(eq(blogPostLocks.postId, input.postId)).limit(1);
+    const sessionId = context.locals.session?.id ?? "";
+    if (!lock || lock.expiresAt <= new Date() || lock.userId !== user.id || lock.sessionId !== sessionId) {
+      throw new ActionError({ code: "CONFLICT", message: "Le verrou de modification est requis pour restaurer une révision." });
+    }
+
+    const targetStatus = revision.status as BlogPostStatus;
+    assertRevisionRestoreStatus(post.status as BlogPostStatus, targetStatus);
 
     await db.transaction(async (tx) => {
       const [translation] = await tx.select().from(blogPostTranslations).where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale))).limit(1);
       if (translation) await tx.update(blogPostTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(eq(blogPostTranslations.id, translation.id));
       else await tx.insert(blogPostTranslations).values({ postId: input.postId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt });
-      await tx.update(blogPosts).set({ slug: revision.slug, status: revision.status, publishedAt: revision.status === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
-      await appendRevision(tx, input.postId, user.id, revision.status, `Restauration de la révision ${revision.id}`, revision.locale);
+      await tx.update(blogPosts).set({ slug: revision.slug, status: targetStatus, publishedAt: targetStatus === "PUBLISHED" ? (post.status === "PUBLISHED" ? post.publishedAt : new Date()) : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
+      await appendRevision(tx, input.postId, user.id, targetStatus, `Restauration de la révision ${revision.id}`, revision.locale);
     });
     auditBlog(context, user.id, "BLOG_POST_UPDATE", { resource: "blog_posts", resourceId: input.postId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } });
     invalidateBlogCache();
