@@ -81,5 +81,5 @@ export { updateUserProfile } from "./profile";
 export {
   subscribeBlogNewsletter,
   confirmBlogSubscription,
-  unsubscribeBlogSubscription,
+  unsubscribeBlogNewsletter,
 } from "./subscription";
