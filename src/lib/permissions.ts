@@ -29,7 +29,7 @@ export const statement = {
   serviceTag: ["create", "read", "update", "delete"],
   serviceComment: ["read", "update", "delete", "moderate"],
   serviceReview: ["read", "update", "delete", "moderate"],
-});
+} as const;
 
 export const ac = createAccessControl(statement);
 
