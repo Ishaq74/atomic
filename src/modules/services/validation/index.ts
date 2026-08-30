@@ -45,19 +45,19 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
+/** Create payload. Lifecycle state is deliberately excluded: creation always produces a draft. */
 export const serviceFormSchema = z.object({
   ...serviceEditableFields,
   isMobile: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
   categoryIds: z.array(z.string().uuid()).max(100).default([]),
   tagIds: z.array(z.string().uuid()).max(100).default([]),
-  status: z.literal("DRAFT").default("DRAFT"),
-  publishedAt: z.null().default(null),
 });
 
+/** Update payload. Lifecycle state is deliberately excluded: state changes are explicit actions. */
 export const serviceUpdateSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
-  locale: localeSchema,
+  locale: localeSchema.optional(),
   title: z.string().trim().min(1).max(180).optional(),
   slug: slugSchema.optional(),
   excerpt: nullableText(500),
@@ -84,6 +84,9 @@ export const serviceUpdateSchema = z.object({
   id: z.string().uuid(),
 });
 
+export type ServiceCreateInput = z.infer<typeof serviceFormSchema>;
+export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
+
 export const serviceReportSchema = z.object({
   serviceId: z.string().uuid(),
   organizationId: serviceOrganizationIdSchema,
@@ -95,8 +98,6 @@ export const serviceReportSchema = z.object({
   path: ["commentId"],
   message: "A report must target exactly one comment or review.",
 });
-
-export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
 
 /** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
 export const serviceAdminFiltersSchema = z.object({
@@ -115,6 +116,7 @@ export const serviceAdminFiltersSchema = z.object({
   sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
+export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
 
 export const serviceListFiltersSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
@@ -131,6 +133,7 @@ export const serviceListFiltersSchema = z.object({
   sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
+export type ServiceListFilters = z.input<typeof serviceListFiltersSchema>;
 
 export const serviceAvailabilitySchema = z.object({
   serviceId: z.string().uuid(),
