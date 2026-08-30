@@ -34,9 +34,7 @@ public/uploads/*
 tests-results/
 test-results/
 playwright-report/
-tests/reports/*/
-tests/reports/*.txt
-tests/reports/*.json
+
 tmp*
 
 # coverage reports

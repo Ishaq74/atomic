@@ -325,6 +325,29 @@ data/
   22-blog-subscribers.data.ts
   23-blog-post-galleries.data.ts
   23b-blog-post-gallery-media.data.ts
+  24-services.data.ts
+  24b-service-translations.data.ts
+  25-service-categories.data.ts
+  25b-service-category-translations.data.ts
+  26-service-tags.data.ts
+  26b-service-tag-translations.data.ts
+  27-service-category-links.data.ts
+  27b-service-tag-links.data.ts
+  28-service-media.data.ts
+  29-service-availability.data.ts
+  30-service-revisions.data.ts
+  31-service-locks.data.ts
+  32-service-seo.data.ts
+  33-service-favorites.data.ts
+  34-service-reviews.data.ts
+  34b-service-review-helpful.data.ts
+  35-service-comments.data.ts
+  36-service-reports.data.ts
+  37-service-view-stats.data.ts
+  38-service-reactions.data.ts
+  39-service-notifications.data.ts
+  40-service-attribute-definitions.data.ts
+  40b-service-attribute-values.data.ts
   manifest.ts
 drizzle.ts
 env.ts
@@ -352,6 +375,7 @@ migrations/
   0005_hard_joseph.sql
   0006_services_module.sql
   0007_services_search.sql
+  0007_services_search_vector.sql
   0008_services_notification_targets.sql
   meta/
     0000_snapshot.json
@@ -444,25 +468,24 @@ schemas.ts
 - `blog_subscribers`: `id`, `organizationId`, `email`, `locale`, `token`, `tokenUsedAt`, `confirmationTokenHash`, `confirmationTokenExpiresAt`, `confirmationTokenUsedAt`, `unsubscribeTokenHash`, `unsubscribeTokenUsedAt`, `status`, `confirmedAt`, `unsubscribedAt`, `createdAt`, `updatedAt`
 
 **services.schema.ts**
-- `services`: `id`, `organizationId`, `providerId`, `slug`, `status`, `coverImageId`, `priceMinor`, `currency`, `durationMinutes`, `maxParticipants`, `isMobile`, `isFeatured`, `viewCount`, `ratingAverage100`, `ratingCount`, `seoScore`, `publishedAt`, `createdAt`, `updatedAt`, `updatedBy`, `lockedBy`, `lockedAt` _(organization: one, provider: one, updatedByUser: one, lockedByUser: one, coverImage: one, translations: many, categories: many, tags: many, media: many, availability: many, revisions: many, locks: one, seo: many, favorites: many, reviews: many, comments: many, reports: many, viewStats: many)_
-- `service_translations`: `id`, `serviceId`, `organizationId`, `locale`, `title`, `slug`, `excerpt`, `content`, `locationLabel`, `locationAddress`, `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalUrl`, `ogTitle`, `ogDescription`, `ogImageId`, `searchVector`, `createdAt`, `updatedAt` _(service: one, ogImage: one)_
-- `service_categories`: `id`, `organizationId`, `parentId`, `slug`, `icon`, `color`, `sortOrder`, `createdAt`, `updatedAt` _(organization: one, parent: one, children: many, translations: many, services: many)_
-- `service_category_translations`: `id`, `categoryId`, `organizationId`, `locale`, `name`, `slug`, `description`, `metaTitle`, `metaDescription`, `createdAt`, `updatedAt` _(category: one)_
-- `service_tags`: `id`, `organizationId`, `slug`, `color`, `createdAt`, `updatedAt` _(organization: one, translations: many, services: many)_
-- `service_tag_translations`: `id`, `tagId`, `organizationId`, `locale`, `name`, `slug`, `createdAt`, `updatedAt` _(tag: one)_
-- `service_category_links`: `serviceId`, `categoryId` _(service: one, category: one)_
-- `service_tag_links`: `serviceId`, `tagId` _(service: one, tag: one)_
-- `service_media`: `serviceId`, `mediaId`, `kind`, `altText`, `caption`, `sortOrder` _(service: one, file: one)_
-- `service_availability`: `id`, `serviceId`, `dayOfWeek`, `startTime`, `endTime`, `timezone`, `maxParticipants`, `createdAt` _(service: one)_
-- `service_revisions`: `id`, `serviceId`, `authorId`, `locale`, `title`, `slug`, `content`, `excerpt`, `status`, `revisionNote`, `createdAt` _(service: one, author: one)_
-- `service_locks`: `id`, `serviceId`, `userId`, `sessionId`, `lockedAt`, `expiresAt` _(service: one, user: one)_
-- `service_seo`: `id`, `serviceId`, `locale`, `focusKeyword`, `focusKeywordScore`, `readabilityScore`, `metaRobots`, `metaOgType`, `metaOgLocale`, `schemaMarkup`, `createdAt`, `updatedAt` _(service: one)_
-- `service_favorites`: `serviceId`, `userId`, `createdAt` _(service: one, user: one)_
-- `service_reviews`: `id`, `serviceId`, `authorId`, `rating`, `title`, `content`, `status`, `isRecommended`, `helpfulCount`, `createdAt`, `updatedAt` _(service: one, author: one, helpfulVotes: many)_
-- `service_review_helpful`: `reviewId`, `userId`, `isHelpful`, `createdAt` _(review: one, user: one)_
-- `service_comments`: `id`, `serviceId`, `authorId`, `parentId`, `content`, `status`, `createdAt`, `updatedAt` _(service: one, author: one, parent: one, replies: many)_
-- `service_reports`: `id`, `serviceId`, `commentId`, `reviewId`, `reporterId`, `reason`, `description`, `status`, `resolvedBy`, `resolvedAt`, `createdAt` _(service: one, comment: one, review: one, reporter: one, resolver: one)_
-- `service_view_stats`: `id`, `serviceId`, `viewedAt`, `date`, `hour`, `referrer`, `country` _(service: one)_
+- `services`: `id`, `organizationId`, `providerId`, `slug`, `status`, `coverImageId`, `priceMinor`, `currency`, `durationMinutes`, `maxParticipants`, `isMobile`, `isFeatured`, `viewCount`, `ratingAverage100`, `ratingCount`, `seoScore`, `publishedAt`, `createdAt`, `updatedAt`, `updatedBy`, `lockedBy`, `lockedAt`
+- `service_translations`: `id`, `serviceId`, `organizationId`, `locale`, `title`, `slug`, `excerpt`, `content`, `locationLabel`, `locationAddress`, `metaTitle`, `metaDescription`, `metaKeywords`, `canonicalUrl`, `ogTitle`, `ogDescription`, `ogImageId`, `searchVector`, `createdAt`, `updatedAt`
+- `service_categories`: `id`, `organizationId`, `parentId`, `slug`, `icon`, `color`, `sortOrder`, `createdAt`, `updatedAt`
+- `service_category_translations`: `id`, `categoryId`, `organizationId`, `locale`, `name`, `slug`, `description`, `metaTitle`, `metaDescription`, `createdAt`, `updatedAt`
+- `service_tags`: `id`, `organizationId`, `slug`, `color`, `createdAt`, `updatedAt`
+- `service_tag_translations`: `id`, `tagId`, `organizationId`, `locale`, `name`, `slug`, `createdAt`, `updatedAt`
+- `service_category_links`: `serviceId`, `categoryId`
+- `service_tag_links`: `serviceId`, `tagId`
+- `service_media`: `serviceId`, `mediaId`, `kind`, `altText`, `caption`, `sortOrder`
+- `service_availability`: `id`, `serviceId`, `dayOfWeek`, `startTime`, `endTime`, `timezone`, `maxParticipants`, `createdAt`
+- `service_revisions`: `id`
+- `service_locks`: `id`
+- `service_seo`: `id`
+- `service_favorites`: `serviceId`
+- `service_comments`: `id`
+- `service_reviews`: `id`
+- `service_reports`: `id`
+- `service_view_stats`: `id`
 
 **services-engagement.schema.ts**
 - `service_reactions`: `serviceId`
@@ -480,6 +503,7 @@ schemas.ts
 - `0005_hard_joseph.sql`
 - `0006_services_module.sql`
 - `0007_services_search.sql`
+- `0007_services_search_vector.sql`
 - `0008_services_notification_targets.sql`
 
 ### Commands
@@ -581,6 +605,142 @@ src/middleware.ts
 ### Files
 
 ```
+src/core/
+admin/
+  confirmation.ts
+  filter-contract.ts
+  index.ts
+  resource-contract.ts
+attributes/
+  index.ts
+audit/
+  index.ts
+cache/
+  index.ts
+capabilities/
+  index.ts
+content/
+  index.ts
+  text.ts
+engagement/
+  index.ts
+index.ts
+localization/
+  index.ts
+  module-labels.ts
+locks/
+  index.ts
+media/
+  index.ts
+moderation/
+  index.ts
+modules/
+  bootstrap.ts
+  index.ts
+  module-contract.ts
+  module-registry.ts
+notifications/
+  index.ts
+presentation/
+  index.ts
+revision/
+  index.ts
+search/
+  contract.ts
+  index.ts
+  postgres.ts
+seo/
+  index.ts
+taxonomy/
+  index.ts
+workflow/
+  index.ts
+src/modules/
+blog/
+  actions/
+    index.ts
+  admin/
+    index.ts
+    resource.ts
+  capabilities.ts
+  components/
+    cards/
+      index.ts
+    lists/
+      index.ts
+    single/
+      index.ts
+    ui/
+      index.ts
+  domain/
+    index.ts
+  i18n/
+    index.ts
+  index.ts
+  loaders/
+    index.ts
+  module.ts
+  permissions/
+    index.ts
+  schema/
+    index.ts
+  search/
+    index.ts
+  seo/
+    index.ts
+  utils/
+    index.ts
+  validation/
+    index.ts
+services/
+  actions/
+    index.ts
+  admin/
+    index.ts
+    loader.ts
+    resource.ts
+  capabilities.ts
+  components/
+    cards/
+      index.ts
+      ServiceCard.astro
+    lists/
+      index.ts
+      ServiceGrid.astro
+    single/
+      index.ts
+      ServiceDetail.astro
+      ServiceEngagement.astro
+    ui/
+      index.ts
+      ServiceLocaleSwitcher.astro
+      ServiceMeta.astro
+  domain/
+    index.ts
+  i18n/
+    engagement.ts
+    form.ts
+    index.ts
+    notifications.ts
+    sort.ts
+  index.ts
+  loaders/
+    index.ts
+  module.ts
+  permissions/
+    index.ts
+  schema/
+    index.ts
+  search/
+    index.ts
+  seo/
+    index.ts
+  utils/
+    index.ts
+    urls.ts
+  validation/
+    index.ts
+  workflow.ts
 src/pages/
 404.astro
 500.astro
@@ -643,11 +803,16 @@ src/layouts/
 BaseLayout.astro
 ```
 
-The CMS manages localised pages with typed JSON content sections, navigation menus, page versioning and scheduled publishing. Content can be imported and exported. Routes are prefixed with the locale (`/fr/`, `/en/`, `/es/`, `/ar/`).
+Atomic CMS is organized around shared CMS/platform capabilities and first-class domain modules. The foundation covers localised content, shared media, taxonomy, SEO, search, publication workflow, revisions, locks, engagement/moderation boundaries, notifications, audit, cache and the reusable Admin Resource model. Blog is the first complete editorial module; Services is the second validation module. Transactional domains such as booking, enrollment, inventory, payments and orders remain separate cores.
 
 ### Tests
 
+- `tests/e2e/blog.spec.ts`
 - `tests/e2e/cms-admin.spec.ts`
+- `tests/e2e/services-lifecycle.spec.ts`
+- `tests/e2e/services.spec.ts`
+- `tests/integration/blog-actions.test.ts`
+- `tests/integration/blog-internal-link.test.ts`
 - `tests/integration/cms-admin.test.ts`
 - `tests/integration/consent-cms.test.ts`
 - `tests/integration/contact-api.test.ts`
@@ -668,13 +833,32 @@ The CMS manages localised pages with typed JSON content sections, navigation men
 - `tests/unit/admin-social.test.ts`
 - `tests/unit/admin-theme.test.ts`
 - `tests/unit/admin-versions.test.ts`
+- `tests/unit/blog-engagement-actions.test.ts`
+- `tests/unit/blog-gallery.test.ts`
+- `tests/unit/blog-helpers.test.ts`
+- `tests/unit/blog-lifecycle.test.ts`
+- `tests/unit/blog-link.test.ts`
+- `tests/unit/blog-loader.test.ts`
+- `tests/unit/blog-newsletter-routes.test.ts`
+- `tests/unit/blog-newsletter-service.test.ts`
+- `tests/unit/blog-post-actions.test.ts`
+- `tests/unit/blog-profile.test.ts`
+- `tests/unit/blog-public-visibility.test.ts`
+- `tests/unit/blog-subscription.test.ts`
+- `tests/unit/blog-taxonomy-actions.test.ts`
+- `tests/unit/blog-validation.test.ts`
 - `tests/unit/contact-api.test.ts`
 - `tests/unit/content-import-schema.test.ts`
 - `tests/unit/content-locking.test.ts`
+- `tests/unit/database/services-data-invariants.test.ts`
+- `tests/unit/database/services-data-shape.test.ts`
 - `tests/unit/export-data.test.ts`
 - `tests/unit/media-loader.test.ts`
 - `tests/unit/navigation-menus.test.ts`
 - `tests/unit/navigation-tree.test.ts`
+- `tests/unit/services-contract.test.ts`
+- `tests/unit/services-validation.test.ts`
+- `tests/unit/services-workflow-restore.test.ts`
 
 ## Media
 
