@@ -1,0 +1,231 @@
+══════════════════════════════════════════════════════════════════════════════════
+  ATOMIC — GLOBAL QA REPORT
+  Generated: 2026-08-30 16:58:33
+══════════════════════════════════════════════════════════════════════════════════
+
+  ❌ Type & Template Check (astro check)
+     161 errors, 0 warnings, 49 hints
+
+  • See tests/reports/check-report.txt for details
+
+  ❌ Lint (ESLint)
+     17 errors, 21 warnings
+
+  • See tests/reports/lint-report.txt for details
+
+  ❌ Unit & Integration Tests (Vitest)
+     1073/1163 passed, 90 failed
+
+  • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) lists published blog post slugs for the global tenant
+    AssertionError: expected 0 to be greater than 0
+  • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) resolver.listValidTargets matches getBlogValidLinkTargets
+    AssertionError: expected false to be true // Object.is equality
+  • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) resolver.resolve returns a published URL
+    AssertionError: expected false to be true // Object.is equality
+  • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) resolver.search finds posts by title
+    AssertionError: expected 0 to be greater than 0
+  • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) valid internal links are not flagged
+    AssertionError: expected [ { …(4) } ] to have a length of +0 but got 1
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data has exactly 4 consent rows (one per locale)
+    AssertionError: expected [] to have a length of 4 but got +0
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale fr has all required text fields populated
+    AssertionError: expected undefined to be defined
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale en has all required text fields populated
+    AssertionError: expected undefined to be defined
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale es has all required text fields populated
+    AssertionError: expected undefined to be defined
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale ar has all required text fields populated
+    AssertionError: expected undefined to be defined
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale fr has correct privacy policy URL
+    TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale en has correct privacy policy URL
+    TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale es has correct privacy policy URL
+    TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale ar has correct privacy policy URL
+    TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale fr has isActive=true
+    TypeError: Cannot read properties of undefined (reading 'isActive')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale en has isActive=true
+    TypeError: Cannot read properties of undefined (reading 'isActive')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale es has isActive=true
+    TypeError: Cannot read properties of undefined (reading 'isActive')
+  • tests\integration\consent-cms.test.ts › Consent CMS — Seed data locale ar has isActive=true
+    TypeError: Cannot read properties of undefined (reading 'isActive')
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns consent data for fr
+    AssertionError: expected null not to be null
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns consent data for en
+    AssertionError: expected null not to be null
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns consent data for es
+    AssertionError: expected null not to be null
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns consent data for ar
+    AssertionError: expected null not to be null
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns correct FR content
+    AssertionError: expected null not to be null
+  • tests\integration\consent-cms.test.ts › Consent CMS — getConsentSettings loader returns correct EN content
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data has exactly 4 legal pages (one per locale)
+    AssertionError: expected [] to have a length of 4 but got +0
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale fr has 3 FAQ sections
+    AssertionError: expected undefined to be defined
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale en has 3 FAQ sections
+    AssertionError: expected undefined to be defined
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale es has 3 FAQ sections
+    AssertionError: expected undefined to be defined
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale ar has 3 FAQ sections
+    AssertionError: expected undefined to be defined
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale fr section content is valid JSON with items
+    TypeError: Cannot read properties of undefined (reading 'id')
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale en section content is valid JSON with items
+    TypeError: Cannot read properties of undefined (reading 'id')
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale es section content is valid JSON with items
+    TypeError: Cannot read properties of undefined (reading 'id')
+  • tests\integration\legal-cms.test.ts › Legal CMS — Seed data locale ar section content is valid JSON with items
+    TypeError: Cannot read properties of undefined (reading 'id')
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader loads published legal page for fr
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader loads published legal page for en
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader loads published legal page for es
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader loads published legal page for ar
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader returns 3 visible sections for fr
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader returns 3 visible sections for en
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader returns 3 visible sections for es
+    AssertionError: expected null not to be null
+  • tests\integration\legal-cms.test.ts › Legal CMS — getPage loader returns 3 visible sections for ar
+    AssertionError: expected null not to be null
+  • tests\unit\blog-engagement-actions.test.ts › moderateBlogComment creates a single-target approval notification inside the moderation transaction
+    AssertionError: expected { userId: 'author-1', …(6) } to not have property "postId"
+  • tests\unit\blog-engagement-actions.test.ts › createBlogReview moderateBlogReview updates and notifies atomically when approving a review
+    AssertionError: expected { userId: 'reviewer-1', …(5) } to not have property "postId"
+  • tests\unit\blog-engagement-actions.test.ts › createBlogReview moderateBlogReview does not mislabel a rejected review as a rejected comment
+    TypeError: Cannot read properties of undefined (reading 'values')
+  • tests\unit\blog-engagement-actions.test.ts › toggleBlogReaction adds a reaction when none exists yet
+    TypeError: tx.execute is not a function
+  • tests\unit\blog-engagement-actions.test.ts › toggleBlogReaction removes an existing reaction (toggle off)
+    TypeError: tx.execute is not a function
+  • tests\unit\blog-engagement-actions.test.ts › toggleBlogReaction rejects reactions on posts that are not publicly visible
+    Error: expected TypeError: tx.execute is not a function to match object { code: 'NOT_FOUND' }
+  • tests\unit\blog-lifecycle.test.ts › blog post lifecycle rejects every illegal transition
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DRAFT ->…'
+  • tests\unit\blog-link.test.ts › checkBlogPostLinks reports an explicit target from another tenant as dead
+    Error: Un lien explicite cible un article d'un autre tenant.
+  • tests\unit\blog-newsletter-service.test.ts › blog newsletter business service stores purpose-separated hashes and builds links from the configured origin
+    AssertionError: expected [ 'null' ] to deeply equal [ 'newsletter', 'v2', 'pending' ]
+  • tests\unit\blog-newsletter-service.test.ts › blog newsletter business service atomically confirms only a pending, unused, unexpired v2 token
+    AssertionError: expected { status: 'CONFIRMED', …(5) } to match object { status: 'CONFIRMED', …(2) }
+  • tests\unit\blog-newsletter-service.test.ts › blog newsletter business service explicitly rotates a legacy confirmation token to a hashed unsubscribe token
+    AssertionError: expected null to be 'newsletter.v2.unsubscribe.i31QfN3I2JU…' // Object.is equality
+  • tests\unit\blog-newsletter-service.test.ts › blog newsletter business service consumes unsubscribe atomically while preserving confirmation history
+    AssertionError: expected { status: 'UNSUBSCRIBED', …(5) } to match object { status: 'UNSUBSCRIBED', …(1) }
+  • tests\unit\blog-taxonomy-actions.test.ts › createBlogCategory creates a category when the slug is available
+    TypeError: db.transaction is not a function
+  • tests\unit\blog-taxonomy-actions.test.ts › updateBlogCategory updates a category in the same tenant
+    TypeError: db.transaction is not a function
+  • tests\unit\blog-taxonomy-actions.test.ts › deleteBlogCategory reassigns posts to another category before deleting
+    TypeError: db.transaction is not a function
+  • tests\unit\editor-dom-safety.test.ts › editor DOM safety guards renders the admin dead-link report without innerHTML assembly
+    AssertionError: expected '---\r\nimport { getRelativeLocaleUrl …' to contain 'reportEl.replaceChildren'
+  • tests\unit\editor-dom-safety.test.ts › editor DOM safety guards guards dirty forms and marks successful saves clean
+    AssertionError: expected '---\r\nimport { getRelativeLocaleUrl …' to contain 'window.addEventListener(\'beforeunloa…'
+  • tests\unit\search-fts.test.ts › getRegconfig returns french for fr
+    TypeError: __vi_import_1__.getRegconfig is not a function
+  • tests\unit\search-fts.test.ts › getRegconfig returns english for en
+    TypeError: __vi_import_1__.getRegconfig is not a function
+  • tests\unit\search-fts.test.ts › getRegconfig returns spanish for es
+    TypeError: __vi_import_1__.getRegconfig is not a function
+  • tests\unit\search-fts.test.ts › getRegconfig returns simple for ar (no PG stemmer)
+    TypeError: __vi_import_1__.getRegconfig is not a function
+  • tests\unit\search-fts.test.ts › getRegconfig returns simple for unknown locale
+    TypeError: __vi_import_1__.getRegconfig is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery builds a simple single-word query with prefix match
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery builds a multi-word query with AND + prefix on last word
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles three words
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery strips tsquery operators from input
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery strips backslashes
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery returns null for empty string
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery returns null for whitespace only
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery returns null for string of only operators
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles extra whitespace between words
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles single character tokens after cleanup
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles mixed valid and invalid tokens
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles unicode characters
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\search-fts.test.ts › buildTsQuery handles Arabic text
+    TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects DRAFT -> DRAFT
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DRAFT ->…'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects PUBLISHED -> PUBLISHED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: PUBLISHE…'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects ARCHIVED -> ARCHIVED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: ARCHIVED…'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects DELETED -> DELETED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects ARCHIVED -> PUBLISHED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: ARCHIVED…'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects DELETED -> PUBLISHED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+  • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects DELETED -> ARCHIVED
+    AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+  • tests\unit\cms\capabilities.test.ts › CMS capability catalog contains every platform capability
+    AssertionError: expected [ 'attributes', 'audit', …(13) ] to deeply equal [ 'audit', 'cache', 'content', …(11) ]
+  • tests\unit\cms\resource-contract.test.ts › Atomic admin resource contract accepts matching entity and capability contracts
+    AssertionError: expected [Function] to not throw an error but 'TypeError: Cannot read properties of …' was thrown
+  • tests\unit\cms\resource-contract.test.ts › Atomic admin resource contract rejects list-dependent management without list support
+    AssertionError: expected [Function] to throw error including 'without list capability' but got 'Cannot read properties of undefined (…'
+  • tests\unit\database\seed-data-contract.test.ts › seed data contract maps every manifest entry to an existing non-empty dataset and schema table
+    AssertionError: Missing schema export: serviceReviewHelpful: expected undefined to be defined
+  • tests\unit\database\seed-manifest.test.ts › seed manifest contains every Services dataset exactly once and points to existing schema exports/files
+    AssertionError: expected undefined to be defined
+  • tests\unit\database\services-data-invariants.test.ts › Services seed invariants preserves tenant ownership across Services relationships
+    AssertionError: expected 'jولة-خاصة-بحيرة-انسي' to match /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+  • tests\unit\database\services-data-shape.test.ts › Services seed data is complete, non-empty and structurally compatible with every Drizzle table
+    AssertionError: serviceReviewHelpful schema export: expected undefined to be defined
+
+  ✅ End-to-End Tests (Playwright)
+     0/0 passed
+
+  ✅ Accessibility Audit (Pa11y — WCAG 2.1 AAA)
+     60/60 URLs clean
+
+  ❌ Performance & Quality Audit (Lighthouse CI)
+     4 page(s) audited, 1 below threshold (≥90)
+
+  • 1 page(s) scored below the 90 threshold (see lighthouse-report.txt for detail)
+
+══════════════════════════════════════════════════════════════════════════════════
+  GLOBAL STATUS
+══════════════════════════════════════════════════════════════════════════════════
+
+  Reports in scope: 6/6 (check, lint, vitest, playwright, pa11y, lighthouse)
+  Overall:           ❌ ISSUES DETECTED
+
+  ┌─────────────────────────────────────────────┬──────────────┬─────────┐
+  │ Report                                      │ Status       │ Result  │
+  ├─────────────────────────────────────────────┼──────────────┼─────────┤
+  │ Astro check                                 │ RED          │ 161 err │
+  │ ESLint                                      │ RED          │ 17 erro │
+  │ Vitest (unit/integration)                   │ RED          │ 1073/11 │
+  │ Playwright (e2e)                            │ GREEN        │ 0/0 pas │
+  │ Pa11y (a11y)                                │ GREEN        │ 60/60 U │
+  │ Lighthouse (perf)                           │ RED          │ 4 page( │
+  └─────────────────────────────────────────────┴──────────────┴─────────┘
+
+══════════════════════════════════════════════════════════════════════════════════
+  END OF GLOBAL REPORT — ACTION REQUIRED
+══════════════════════════════════════════════════════════════════════════════════

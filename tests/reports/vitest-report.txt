@@ -1,0 +1,910 @@
+════════════════════════════════════════════════════════════════════════════════
+  VITEST UNIT & INTEGRATION TEST REPORT
+  Generated: 2026-08-30 16:56:36
+════════════════════════════════════════════════════════════════════════════════
+
+  ✅ tests\integration\audit.test.ts  (0/0 passed)
+  ✅ tests\integration\auth-advanced.test.ts  (0/0 passed)
+  ✅ tests\integration\auth-flow.test.ts  (0/0 passed)
+  ✅ tests\integration\auth-org.test.ts  (0/0 passed)
+  ✅ tests\integration\auth.test.ts  (0/0 passed)
+  ✅ tests\integration\blog-actions.test.ts  (0/0 passed)
+  ❌ tests\integration\blog-internal-link.test.ts  (3/8 passed)
+  ✅ tests\integration\cms-admin.test.ts  (14/14 passed)
+  ❌ tests\integration\consent-cms.test.ts  (6/25 passed)
+  ✅ tests\integration\contact-api.test.ts  (13/13 passed)
+  ✅ tests\integration\db-health.test.ts  (4/4 passed)
+  ✅ tests\integration\export.test.ts  (0/0 passed)
+  ❌ tests\integration\legal-cms.test.ts  (2/19 passed)
+  ✅ tests\integration\middleware.test.ts  (0/0 passed)
+  ✅ tests\integration\navigation-cycle.test.ts  (6/6 passed)
+  ✅ tests\unit\admin-consent.test.ts  (5/5 passed)
+  ✅ tests\unit\admin-contact.test.ts  (10/10 passed)
+  ✅ tests\unit\admin-helpers.test.ts  (7/7 passed)
+  ✅ tests\unit\admin-hours.test.ts  (13/13 passed)
+  ✅ tests\unit\admin-media.test.ts  (26/26 passed)
+  ✅ tests\unit\admin-menus.test.ts  (13/13 passed)
+  ✅ tests\unit\admin-navigation-items.test.ts  (11/11 passed)
+  ✅ tests\unit\admin-pages-theme.test.ts  (9/9 passed)
+  ✅ tests\unit\admin-pages.test.ts  (26/26 passed)
+  ✅ tests\unit\admin-roles.test.ts  (21/21 passed)
+  ✅ tests\unit\admin-sections.test.ts  (16/16 passed)
+  ✅ tests\unit\admin-site-social-contact-hours.test.ts  (10/10 passed)
+  ✅ tests\unit\admin-site.test.ts  (7/7 passed)
+  ✅ tests\unit\admin-social.test.ts  (9/9 passed)
+  ✅ tests\unit\admin-theme.test.ts  (10/10 passed)
+  ✅ tests\unit\admin-versions.test.ts  (11/11 passed)
+  ✅ tests\unit\audit-fallback.test.ts  (1/1 passed)
+  ✅ tests\unit\auth-guards.test.ts  (0/0 passed)
+  ❌ tests\unit\blog-engagement-actions.test.ts  (32/38 passed)
+  ✅ tests\unit\blog-gallery.test.ts  (7/7 passed)
+  ✅ tests\unit\blog-helpers.test.ts  (14/14 passed)
+  ❌ tests\unit\blog-lifecycle.test.ts  (1/2 passed)
+  ❌ tests\unit\blog-link.test.ts  (5/6 passed)
+  ✅ tests\unit\blog-loader.test.ts  (14/14 passed)
+  ✅ tests\unit\blog-newsletter-routes.test.ts  (5/5 passed)
+  ❌ tests\unit\blog-newsletter-service.test.ts  (5/9 passed)
+  ✅ tests\unit\blog-post-actions.test.ts  (0/0 passed)
+  ✅ tests\unit\blog-profile.test.ts  (3/3 passed)
+  ✅ tests\unit\blog-public-visibility.test.ts  (1/1 passed)
+  ✅ tests\unit\blog-subscription.test.ts  (5/5 passed)
+  ❌ tests\unit\blog-taxonomy-actions.test.ts  (6/9 passed)
+  ✅ tests\unit\blog-validation.test.ts  (3/3 passed)
+  ✅ tests\unit\cache.test.ts  (12/12 passed)
+  ✅ tests\unit\cli-utils.test.ts  (12/12 passed)
+  ✅ tests\unit\cms-audit.test.ts  (1/1 passed)
+  ✅ tests\unit\cms-i18n.test.ts  (16/16 passed)
+  ✅ tests\unit\cms-schemas.test.ts  (85/85 passed)
+  ✅ tests\unit\cms-seeds.test.ts  (11/11 passed)
+  ✅ tests\unit\contact-api.test.ts  (12/12 passed)
+  ✅ tests\unit\contact-form-template.test.ts  (15/15 passed)
+  ✅ tests\unit\content-editor-helpers.test.ts  (14/14 passed)
+  ✅ tests\unit\content-import-schema.test.ts  (10/10 passed)
+  ✅ tests\unit\content-locking.test.ts  (6/6 passed)
+  ✅ tests\unit\db-env.test.ts  (16/16 passed)
+  ❌ tests\unit\editor-dom-safety.test.ts  (2/4 passed)
+  ✅ tests\unit\export-data.test.ts  (4/4 passed)
+  ✅ tests\unit\extract-ip.test.ts  (19/19 passed)
+  ✅ tests\unit\i18n-key-completeness.test.ts  (7/7 passed)
+  ✅ tests\unit\i18n-translations.test.ts  (12/12 passed)
+  ✅ tests\unit\i18n-urls.test.ts  (32/32 passed)
+  ✅ tests\unit\i18n-utils.test.ts  (6/6 passed)
+  ✅ tests\unit\loaders.test.ts  (9/9 passed)
+  ✅ tests\unit\mask-utils.test.ts  (10/10 passed)
+  ✅ tests\unit\media-list.test.ts  (4/4 passed)
+  ✅ tests\unit\media-loader.test.ts  (12/12 passed)
+  ✅ tests\unit\middleware-timeout.test.ts  (6/6 passed)
+  ✅ tests\unit\navigation-loader.test.ts  (7/7 passed)
+  ✅ tests\unit\navigation-menus.test.ts  (10/10 passed)
+  ✅ tests\unit\navigation-tree.test.ts  (10/10 passed)
+  ✅ tests\unit\permissions.test.ts  (0/0 passed)
+  ✅ tests\unit\production-hardening.test.ts  (9/9 passed)
+  ✅ tests\unit\rate-limit.test.ts  (9/9 passed)
+  ✅ tests\unit\sanitize.test.ts  (44/44 passed)
+  ✅ tests\unit\schema-validation.test.ts  (12/12 passed)
+  ❌ tests\unit\search-fts.test.ts  (2/20 passed)
+  ✅ tests\unit\section-content-xss.test.ts  (18/18 passed)
+  ✅ tests\unit\section-schemas.test.ts  (48/48 passed)
+  ✅ tests\unit\sections-sanitize.test.ts  (10/10 passed)
+  ✅ tests\unit\send-email.test.ts  (17/17 passed)
+  ✅ tests\unit\seo.test.ts  (32/32 passed)
+  ✅ tests\unit\services-contract.test.ts  (0/0 passed)
+  ✅ tests\unit\services-validation.test.ts  (7/7 passed)
+  ✅ tests\unit\services-workflow-restore.test.ts  (2/2 passed)
+  ✅ tests\unit\site-loader.test.ts  (13/13 passed)
+  ✅ tests\unit\smtp-env.test.ts  (20/20 passed)
+  ✅ tests\unit\smtp-providers.test.ts  (11/11 passed)
+  ✅ tests\unit\theme-tokens.test.ts  (34/34 passed)
+  ✅ tests\unit\upload-api.test.ts  (9/9 passed)
+  ✅ tests\unit\upload.test.ts  (19/19 passed)
+  ❌ tests\unit\blog\status-transitions.test.ts  (10/17 passed)
+  ✅ tests\unit\cms\admin-filter-contract.test.ts  (2/2 passed)
+  ❌ tests\unit\cms\capabilities.test.ts  (1/2 passed)
+  ✅ tests\unit\cms\module-boundaries.test.ts  (0/0 passed)
+  ✅ tests\unit\cms\module-contract.test.ts  (0/0 passed)
+  ✅ tests\unit\cms\module-registry.test.ts  (2/2 passed)
+  ❌ tests\unit\cms\resource-contract.test.ts  (4/6 passed)
+  ✅ tests\unit\cms\workflow.test.ts  (4/4 passed)
+  ❌ tests\unit\database\seed-data-contract.test.ts  (1/2 passed)
+  ❌ tests\unit\database\seed-manifest.test.ts  (2/3 passed)
+  ❌ tests\unit\database\services-data-invariants.test.ts  (4/5 passed)
+  ❌ tests\unit\database\services-data-shape.test.ts  (0/1 passed)
+  ✅ tests\unit\services\admin-contract.test.ts  (2/2 passed)
+  ✅ tests\unit\services\admin-resource.test.ts  (0/0 passed)
+  ✅ tests\unit\services\module-contract.test.ts  (0/0 passed)
+  ✅ tests\unit\services\urls.test.ts  (2/2 passed)
+  ✅ tests\unit\services\validation.test.ts  (6/6 passed)
+  ✅ tests\unit\services\workflow.test.ts  (3/3 passed)
+
+════════════════════════════════════════════════════════════════════════════════
+  SUMMARY
+════════════════════════════════════════════════════════════════════════════════
+
+  Total tests:   1163
+  Passed:        1073  
+  Failed:        90  ❌
+  Duration:      134s
+
+════════════════════════════════════════════════════════════════════════════════
+  FAILURES
+════════════════════════════════════════════════════════════════════════════════
+
+  Suite: tests\integration\blog-internal-link.test.ts
+  Test:  blog internal link resolver (integration) lists published blog post slugs for the global tenant
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected 0 to be greater than 0
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/blog-internal-link.test.ts:19:24
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    
+
+
+  Suite: tests\integration\blog-internal-link.test.ts
+  Test:  blog internal link resolver (integration) resolver.listValidTargets matches getBlogValidLinkTargets
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected false to be true // Object.is equality
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/blog-internal-link.test.ts:30:44
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules
+
+
+  Suite: tests\integration\blog-internal-link.test.ts
+  Test:  blog internal link resolver (integration) resolver.resolve returns a published URL
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected false to be true // Object.is equality
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/blog-internal-link.test.ts:38:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules
+
+
+  Suite: tests\integration\blog-internal-link.test.ts
+  Test:  blog internal link resolver (integration) resolver.search finds posts by title
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected 0 to be greater than 0
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/blog-internal-link.test.ts:55:28
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+r
+
+
+  Suite: tests\integration\blog-internal-link.test.ts
+  Test:  blog internal link resolver (integration) valid internal links are not flagged
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [ { …(4) } ] to have a length of +0 but got 1
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1389:20)
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data has exactly 4 consent rows (one per locale)
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [] to have a length of 4 but got +0
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1389:20)
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/nod
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale fr has all required text fields populated
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:42:17
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale en has all required text fields populated
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:42:17
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale es has all required text fields populated
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:42:17
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale ar has all required text fields populated
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:42:17
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale fr has correct privacy policy URL
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:75:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_mo
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale en has correct privacy policy URL
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:75:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_mo
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale es has correct privacy policy URL
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:75:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_mo
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale ar has correct privacy policy URL
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'privacyPolicyUrl')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:75:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_mo
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale fr has isActive=true
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'isActive')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:85:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.p
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale en has isActive=true
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'isActive')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:85:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.p
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale es has isActive=true
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'isActive')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:85:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.p
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — Seed data locale ar has isActive=true
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'isActive')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:85:16
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.p
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns consent data for fr
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:95:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns consent data for en
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:95:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns consent data for es
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:95:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns consent data for ar
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:95:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns correct FR content
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:104:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\integration\consent-cms.test.ts
+  Test:  Consent CMS — getConsentSettings loader returns correct EN content
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/consent-cms.test.ts:117:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data has exactly 4 legal pages (one per locale)
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [] to have a length of 4 but got +0
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1389:20)
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/nod
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale fr has 3 FAQ sections
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:43:18
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale en has 3 FAQ sections
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:43:18
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale es has 3 FAQ sections
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:43:18
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale ar has 3 FAQ sections
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:43:18
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale fr section content is valid JSON with items
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'id')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:67:43
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vit
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale en section content is valid JSON with items
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'id')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:67:43
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vit
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale es section content is valid JSON with items
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'id')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:67:43
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vit
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — Seed data locale ar section content is valid JSON with items
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'id')
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:67:43
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vit
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader loads published legal page for fr
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:89:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader loads published legal page for en
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:89:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader loads published legal page for es
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:89:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader loads published legal page for ar
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:89:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader returns 3 visible sections for fr
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:100:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader returns 3 visible sections for en
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:100:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader returns 3 visible sections for es
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:100:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\integration\legal-cms.test.ts
+  Test:  Legal CMS — getPage loader returns 3 visible sections for ar
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null not to be null
+    at C:/Users/Utilisateur/Documents/atomic/tests/integration/legal-cms.test.ts:100:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  moderateBlogComment creates a single-target approval notification inside the moderation transaction
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected { userId: 'author-1', …(6) } to not have property "postId"
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-engagement-actions.test.ts:270:60
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Documents/
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  createBlogReview moderateBlogReview updates and notifies atomically when approving a review
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected { userId: 'reviewer-1', …(5) } to not have property "postId"
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-engagement-actions.test.ts:299:62
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Document
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  createBlogReview moderateBlogReview does not mislabel a rejected review as a rejected comment
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: Cannot read properties of undefined (reading 'values')
+    at C:/Users/Utilisateur/Documents/atomic/src/actions/blog/review.ts:117:42
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  toggleBlogReaction adds a reaction when none exists yet
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: tx.execute is not a function
+    at C:/Users/Utilisateur/Documents/atomic/src/actions/blog/reaction.ts:20:16
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-engagement-actions.test.ts:146:55
+    at Mock (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  toggleBlogReaction removes an existing reaction (toggle off)
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: tx.execute is not a function
+    at C:/Users/Utilisateur/Documents/atomic/src/actions/blog/reaction.ts:20:16
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-engagement-actions.test.ts:146:55
+    at Mock (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest
+
+
+  Suite: tests\unit\blog-engagement-actions.test.ts
+  Test:  toggleBlogReaction rejects reactions on posts that are not publicly visible
+────────────────────────────────────────────────────────────────────────────────
+  Error: expected TypeError: tx.execute is not a function to match object { code: 'NOT_FOUND' }
+    at _Assertion.__VITEST_REJECTS__ (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1747:17)
+    at _Assertion.propertyGett
+
+
+  Suite: tests\unit\blog-lifecycle.test.ts
+  Test:  blog post lifecycle rejects every illegal transition
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DRAFT ->…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog-link.test.ts
+  Test:  checkBlogPostLinks reports an explicit target from another tenant as dead
+────────────────────────────────────────────────────────────────────────────────
+  Error: Un lien explicite cible un article d'un autre tenant.
+    at Object.handler (C:/Users/Utilisateur/Documents/atomic/src/actions/blog/check-links.ts:68:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-lin
+
+
+  Suite: tests\unit\blog-newsletter-service.test.ts
+  Test:  blog newsletter business service stores purpose-separated hashes and builds links from the configured origin
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [ 'null' ] to deeply equal [ 'newsletter', 'v2', 'pending' ]
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-newsletter-service.test.ts:166:37
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Document
+
+
+  Suite: tests\unit\blog-newsletter-service.test.ts
+  Test:  blog newsletter business service atomically confirms only a pending, unused, unexpired v2 token
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected { status: 'CONFIRMED', …(5) } to match object { status: 'CONFIRMED', …(2) }
+(4 matching properties omitted from actual)
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:
+
+
+  Suite: tests\unit\blog-newsletter-service.test.ts
+  Test:  blog newsletter business service explicitly rotates a legacy confirmation token to a hashed unsubscribe token
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected null to be 'newsletter.v2.unsubscribe.i31QfN3I2JU…' // Object.is equality
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-newsletter-service.test.ts:306:31
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisa
+
+
+  Suite: tests\unit\blog-newsletter-service.test.ts
+  Test:  blog newsletter business service consumes unsubscribe atomically while preserving confirmation history
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected { status: 'UNSUBSCRIBED', …(5) } to match object { status: 'UNSUBSCRIBED', …(1) }
+(4 matching properties omitted from actual)
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog-taxonomy-actions.test.ts
+  Test:  createBlogCategory creates a category when the slug is available
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: db.transaction is not a function
+    at Object.handler (C:/Users/Utilisateur/Documents/atomic/src/actions/blog/category.ts:53:31)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-taxonomy-actions.test.t
+
+
+  Suite: tests\unit\blog-taxonomy-actions.test.ts
+  Test:  updateBlogCategory updates a category in the same tenant
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: db.transaction is not a function
+    at Object.handler (C:/Users/Utilisateur/Documents/atomic/src/actions/blog/category.ts:78:14)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-taxonomy-actions.test.t
+
+
+  Suite: tests\unit\blog-taxonomy-actions.test.ts
+  Test:  deleteBlogCategory reassigns posts to another category before deleting
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: db.transaction is not a function
+    at Object.handler (C:/Users/Utilisateur/Documents/atomic/src/actions/blog/category.ts:101:14)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/blog-taxonomy-actions.test.
+
+
+  Suite: tests\unit\editor-dom-safety.test.ts
+  Test:  editor DOM safety guards renders the admin dead-link report without innerHTML assembly
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected '---\r\nimport { getRelativeLocaleUrl …' to contain 'reportEl.replaceChildren'
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/editor-dom-safety.test.ts:31:33
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@
+
+
+  Suite: tests\unit\editor-dom-safety.test.ts
+  Test:  editor DOM safety guards guards dirty forms and marks successful saves clean
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected '---\r\nimport { getRelativeLocaleUrl …' to contain 'window.addEventListener(\'beforeunloa…'
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/editor-dom-safety.test.ts:36:33
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  getRegconfig returns french for fr
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.getRegconfig is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:42:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  getRegconfig returns english for en
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.getRegconfig is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:46:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  getRegconfig returns spanish for es
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.getRegconfig is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:50:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  getRegconfig returns simple for ar (no PG stemmer)
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.getRegconfig is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:54:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  getRegconfig returns simple for unknown locale
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.getRegconfig is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:58:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery builds a simple single-word query with prefix match
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:64:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery builds a multi-word query with AND + prefix on last word
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:68:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles three words
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:72:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery strips tsquery operators from input
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:76:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery strips backslashes
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:80:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery returns null for empty string
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:84:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery returns null for whitespace only
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:88:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery returns null for string of only operators
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:92:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles extra whitespace between words
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:96:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at fi
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles single character tokens after cleanup
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:100:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at f
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles mixed valid and invalid tokens
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:104:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at f
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles unicode characters
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:108:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at f
+
+
+  Suite: tests\unit\search-fts.test.ts
+  Test:  buildTsQuery handles Arabic text
+────────────────────────────────────────────────────────────────────────────────
+  TypeError: __vi_import_1__.buildTsQuery is not a function
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/search-fts.test.ts:112:12
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at f
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects DRAFT -> DRAFT
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DRAFT ->…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects PUBLISHED -> PUBLISHED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: PUBLISHE…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects ARCHIVED -> ARCHIVED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: ARCHIVED…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects DELETED -> DELETED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects ARCHIVED -> PUBLISHED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: ARCHIVED…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects DELETED -> PUBLISHED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\blog\status-transitions.test.ts
+  Test:  blog post status transitions rejects DELETED -> ARCHIVED
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/ind
+
+
+  Suite: tests\unit\cms\capabilities.test.ts
+  Test:  CMS capability catalog contains every platform capability
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [ 'attributes', 'audit', …(13) ] to deeply equal [ 'audit', 'cache', 'content', …(11) ]
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/cms/capabilities.test.ts:23:50
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_m
+
+
+  Suite: tests\unit\cms\resource-contract.test.ts
+  Test:  Atomic admin resource contract accepts matching entity and capability contracts
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to not throw an error but 'TypeError: Cannot read properties of …' was thrown
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1552:16)
+    at Proxy.<anonymou
+
+
+  Suite: tests\unit\cms\resource-contract.test.ts
+  Test:  Atomic admin resource contract rejects list-dependent management without list support
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected [Function] to throw error including 'without list capability' but got 'Cannot read properties of undefined (…'
+    at Proxy.<anonymous> (file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+expect@4.1.11/node_modules/@vitest/expect/dist/index.js:1552:16)
+
+
+
+  Suite: tests\unit\database\seed-data-contract.test.ts
+  Test:  seed data contract maps every manifest entry to an existing non-empty dataset and schema table
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: Missing schema export: serviceReviewHelpful: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/database/seed-data-contract.test.ts:16:70
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisate
+
+
+  Suite: tests\unit\database\seed-manifest.test.ts
+  Test:  seed manifest contains every Services dataset exactly once and points to existing schema exports/files
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/database/seed-manifest.test.ts:42:61
+    at file:///C:/Users/Utilisateur/Documents/atomic/node_modules/.pnpm/@vitest+runner@4.1.11/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
+    at
+
+
+  Suite: tests\unit\database\services-data-invariants.test.ts
+  Test:  Services seed invariants preserves tenant ownership across Services relationships
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: expected 'jولة-خاصة-بحيرة-انسي' to match /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/database/services-data-invariants.test.ts:33:24
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur
+
+
+  Suite: tests\unit\database\services-data-shape.test.ts
+  Test:  Services seed data is complete, non-empty and structurally compatible with every Drizzle table
+────────────────────────────────────────────────────────────────────────────────
+  AssertionError: serviceReviewHelpful schema export: expected undefined to be defined
+    at C:/Users/Utilisateur/Documents/atomic/tests/unit/database/services-data-shape.test.ts:14:60
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at file:///C:/Users/Utilisateur/Docum
+
+
+════════════════════════════════════════════════════════════════════════════════
+  END OF REPORT — 1073/1163 passed
+════════════════════════════════════════════════════════════════════════════════

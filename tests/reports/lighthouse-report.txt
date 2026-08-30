@@ -1,0 +1,138 @@
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  LIGHTHOUSE CI PERFORMANCE & QUALITY REPORT
+  Generated: 2026-07-12 03:19:14
+  Pages audited: 4
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  CATEGORY SCORES
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Page                                    Perf  A11y  BP    SEO
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ✅ fr--a-propos                          90    100   93    92
+  ❌ fr--auth--profil                      89    100   93    92
+  ✅ fr--auth--tableau-de-bord             97    100   93    92
+  ✅ fr--home                              92    100   93    92
+
+  CORE WEB VITALS
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Page                                    FCP       LCP       SI        TBT       CLS
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+  fr--a-propos                            🟢809ms   🟢1.7s    🟢1.9s    🟢0ms     🟢0.000   
+  fr--auth--profil                        🟢1.2s    🟢1.8s    🟢1.2s    🟢0ms     🟢0.000   
+  fr--auth--tableau-de-bord               🟢825ms   🟢1.2s    🟢825ms   🟢0ms     🟢0.000   
+  fr--home                                🟢972ms   🟢1.5s    🟢1.6s    🟢0ms     🟢0.000   
+
+  Thresholds: 🟢 Good  🟡 Needs Improvement  🔴 Poor
+    Largest Contentful Paint: 🟢 ≤2500ms  🟡 ≤4000ms  🔴 >4000ms
+    First Contentful Paint: 🟢 ≤1800ms  🟡 ≤3000ms  🔴 >3000ms
+    Speed Index: 🟢 ≤3400ms  🟡 ≤5800ms  🔴 >5800ms
+    Total Blocking Time: 🟢 ≤200ms  🟡 ≤600ms  🔴 >600ms
+    Cumulative Layout Shift: 🟢 ≤0.1  🟡 ≤0.25  🔴 >0.25
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  SUMMARY
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  Performance          >= 90:  3/4  ⚠️
+  Accessibility        >= 90:  4/4  ✅
+  Best-practices       >= 90:  4/4  ✅
+  Seo                  >= 90:  4/4  ✅
+
+  Averages:
+    Performance          92.0
+    Accessibility        100.0
+    Best-practices       93.0
+    Seo                  92.0
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  FAILED AUDITS (score < 90)
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  📄 fr--a-propos
+  ──────────────────────────────────────────────────────────────────────
+      0  Browser errors were logged to the console
+      0  Largest Contentful Paint element (1,690 ms)
+      0  Enable text compression (Est savings of 276 KiB)
+      0  Issues were logged in the `Issues` panel in Chrome Devtools
+      0  Document does not have a valid `rel=canonical`
+     50  Image elements do not have explicit `width` and `height`
+     50  Eliminate render-blocking resources (Est savings of 0 ms)
+     50  Properly size images (Est savings of 208 KiB)
+     65  Speed Index (1.9 s)
+     74  Largest Contentful Paint (1.7 s)
+
+  📄 fr--auth--profil
+  ──────────────────────────────────────────────────────────────────────
+      0  Browser errors were logged to the console
+      0  Largest Contentful Paint element (1,820 ms)
+      0  Elements with visible text labels do not have matching accessible names.
+      0  Enable text compression (Est savings of 295 KiB)
+      0  Issues were logged in the `Issues` panel in Chrome Devtools
+      0  Document does not have a valid `rel=canonical`
+     50  Image elements do not have explicit `width` and `height`
+     50  Eliminate render-blocking resources (Est savings of 0 ms)
+     69  Largest Contentful Paint (1.8 s)
+     77  First Contentful Paint (1.2 s)
+
+  📄 fr--auth--tableau-de-bord
+  ──────────────────────────────────────────────────────────────────────
+      0  Browser errors were logged to the console
+      0  Elements with visible text labels do not have matching accessible names.
+      0  Enable text compression (Est savings of 287 KiB)
+      0  Issues were logged in the `Issues` panel in Chrome Devtools
+      0  Document does not have a valid `rel=canonical`
+     50  Image elements do not have explicit `width` and `height`
+     50  Eliminate render-blocking resources (Est savings of 0 ms)
+
+  📄 fr--home
+  ──────────────────────────────────────────────────────────────────────
+      0  Browser errors were logged to the console
+      0  Largest Contentful Paint element (1,490 ms)
+      0  Enable text compression (Est savings of 334 KiB)
+      0  Issues were logged in the `Issues` panel in Chrome Devtools
+      0  Document does not have a valid `rel=canonical`
+     50  Image elements do not have explicit `width` and `height`
+     50  Eliminate render-blocking resources (Est savings of 0 ms)
+     50  Serve images in next-gen formats (Est savings of 879 KiB)
+     50  Efficiently encode images (Est savings of 148 KiB)
+     50  Properly size images (Est savings of 750 KiB)
+     50  Avoid an excessive DOM size (921 elements)
+     80  Speed Index (1.6 s)
+     81  Largest Contentful Paint (1.5 s)
+     88  First Contentful Paint (1.0 s)
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  ACCESSIBILITY ISSUES
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+  📄 fr--auth--profil  (1 issue)
+  ──────────────────────────────────────────────────────────────────────
+    Rule:     label-content-name-mismatch
+    Title:    Elements with visible text labels do not have matching accessible names.
+    Selector: div.mx-auto > div.hidden > div.starwind-dropdown > button#starwind-dropdown0-trigger
+    Element:  <button class="starwind-dropdown-trigger inline-flex items-center justify-center transiti…" type="button" aria-haspopup=
+    Issue:    Fix any of the following:
+  Text inside the element is not included in the accessible name
+
+
+  📄 fr--auth--tableau-de-bord  (1 issue)
+  ──────────────────────────────────────────────────────────────────────
+    Rule:     label-content-name-mismatch
+    Title:    Elements with visible text labels do not have matching accessible names.
+    Selector: div.mx-auto > div.hidden > div.starwind-dropdown > button#starwind-dropdown0-trigger
+    Element:  <button class="starwind-dropdown-trigger inline-flex items-center justify-center transiti…" type="button" aria-haspopup=
+    Issue:    Fix any of the following:
+  Text inside the element is not included in the accessible name
+
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  PAGES PASSING ALL GATES
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  ✅ fr--a-propos  (90/100/93/92)
+  ✅ fr--auth--tableau-de-bord  (97/100/93/92)
+  ✅ fr--home  (92/100/93/92)
+
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+  END OF REPORT — 15/16 checks passed across 4 pages
+  HTML reports available in: tests/reports/lighthouse/
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════
