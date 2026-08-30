@@ -89,19 +89,11 @@ async function performTransition(
 
   const db = getDrizzle();
   await db.transaction(async (tx) => {
-    await tx.update(blogPosts).set({
-      status: to,
-      publishedAt: to === "PUBLISHED" ? new Date() : null,
-      updatedBy: user.id,
-    }).where(eq(blogPosts.id, input.id));
+    await tx.update(blogPosts).set({ status: to, publishedAt: to === "PUBLISHED" ? new Date() : null, updatedBy: user.id }).where(eq(blogPosts.id, input.id));
     await appendRevision(tx, input.id, user.id, to, note);
   });
 
-  auditBlog(context, user.id, action, {
-    resource: "blog_posts",
-    resourceId: input.id,
-    metadata: { organizationId: tenant.organizationId, from: post.status, to },
-  });
+  auditBlog(context, user.id, action, { resource: "blog_posts", resourceId: input.id, metadata: { organizationId: tenant.organizationId, from: post.status, to } });
   invalidateBlogCache();
   return { success: true };
 }
@@ -180,11 +172,14 @@ export const restoreBlogPostRevision = defineAction({
   input: z.object({ postId: z.uuid(), revisionId: z.uuid(), organizationId: blogOrganizationIdSchema }),
   handler: async (input, context) => {
     const tenant = resolveBlogTenant(input);
-    const user = await assertBlogPermission(context, tenant, { blog: ["update"] });
     const post = await assertPostInTenant(input.postId, tenant);
     const db = getDrizzle();
     const [revision] = await db.select().from(blogPostRevisions).where(and(eq(blogPostRevisions.id, input.revisionId), eq(blogPostRevisions.postId, input.postId))).limit(1);
     if (!revision) throw new ActionError({ code: "NOT_FOUND", message: "Révision introuvable." });
+
+    const targetStatus = revision.status as BlogPostStatus;
+    const requiredPermission = targetStatus === "PUBLISHED" ? "publish" : "update";
+    const user = await assertBlogPermission(context, tenant, { blog: [requiredPermission] });
 
     const [lock] = await db.select().from(blogPostLocks).where(eq(blogPostLocks.postId, input.postId)).limit(1);
     const sessionId = context.locals.session?.id ?? "";
@@ -192,7 +187,6 @@ export const restoreBlogPostRevision = defineAction({
       throw new ActionError({ code: "CONFLICT", message: "Le verrou de modification est requis pour restaurer une révision." });
     }
 
-    const targetStatus = revision.status as BlogPostStatus;
     assertRevisionRestoreStatus(post.status as BlogPostStatus, targetStatus);
 
     await db.transaction(async (tx) => {
