@@ -51,13 +51,13 @@ C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\organizations\[slug]\serv
   30:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
 
 C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\organizations\[slug]\services\[serviceSlug].astro
-  29:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
+  43:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
 
 C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\services\[categorySlug]\[slug].astro
   24:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
 
 C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\services\[slug].astro
-  25:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
+  35:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
 
 ✖ 38 problems (17 errors, 21 warnings)
   12 errors and 0 warnings potentially fixable with the `--fix` option.

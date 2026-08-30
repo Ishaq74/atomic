@@ -1,10 +1,10 @@
 ══════════════════════════════════════════════════════════════════════════════════
   ATOMIC — GLOBAL QA REPORT
-  Generated: 2026-08-30 16:58:33
+  Generated: 2026-08-30 19:22:11
 ══════════════════════════════════════════════════════════════════════════════════
 
   ❌ Type & Template Check (astro check)
-     161 errors, 0 warnings, 49 hints
+     111 errors, 0 warnings, 47 hints
 
   • See tests/reports/check-report.txt for details
 
@@ -14,8 +14,20 @@
   • See tests/reports/lint-report.txt for details
 
   ❌ Unit & Integration Tests (Vitest)
-     1073/1163 passed, 90 failed
+     1172/1279 passed, 10 skipped, 97 failed
 
+  • tests\integration\audit.test.ts › Audit — Hooks integration logs SIGN_UP when a user signs up
+    The field "issuer" does not exist in the "account" Drizzle schema. Please update your drizzle schema or re-generate using "npx auth@latest generate".
+  • tests\integration\audit.test.ts › Audit — Hooks integration does not log passwords in metadata
+    The field "issuer" does not exist in the "account" Drizzle schema. Please update your drizzle schema or re-generate using "npx auth@latest generate".
+  • tests\integration\audit.test.ts › Audit — Hooks integration filters metadata to SAFE_FIELDS only (no password in metadata)
+    The field "issuer" does not exist in the "account" Drizzle schema. Please update your drizzle schema or re-generate using "npx auth@latest generate".
+  • tests\integration\auth-flow.test.ts › Auth — Sign-up & Sign-in flow signUpEmail creates a new user (no session when emailVerification required)
+    The field "issuer" does not exist in the "account" Drizzle schema. Please update your drizzle schema or re-generate using "npx auth@latest generate".
+  • tests\integration\auth-flow.test.ts › Auth — Sign-up & Sign-in flow signInEmail returns a session for valid credentials
+    APIError: Invalid email or password
+  • tests\integration\auth-flow.test.ts › Auth — Sign-up & Sign-in flow signOut invalidates the session
+    Error: Failed query: insert into "session" ("id", "expires_at", "token", "created_at", "updated_at", "ip_address", "user_agent", "user_id", "impersonated_by", "active_organization_id") values ($1, $2, $3, $4, $5, $6, $7, default, default, d
   • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) lists published blog post slugs for the global tenant
     AssertionError: expected 0 to be greater than 0
   • tests\integration\blog-internal-link.test.ts › blog internal link resolver (integration) resolver.listValidTargets matches getBlogValidLinkTargets
@@ -168,6 +180,8 @@
     TypeError: __vi_import_1__.buildTsQuery is not a function
   • tests\unit\search-fts.test.ts › buildTsQuery handles Arabic text
     TypeError: __vi_import_1__.buildTsQuery is not a function
+  • tests\unit\services-contract.test.ts › Services module contract exposes a real admin resource contract compatible with the module
+    AssertionError: expected [ { id: 'search', …(2) }, …(7) ] to deeply equal ArrayContaining{…}
   • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects DRAFT -> DRAFT
     AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DRAFT ->…'
   • tests\unit\blog\status-transitions.test.ts › blog post status transitions rejects PUBLISHED -> PUBLISHED
@@ -184,18 +198,18 @@
     AssertionError: expected [Function] to throw error including 'Invalid blog post status transition: …' but got 'Invalid workflow transition: DELETED …'
   • tests\unit\cms\capabilities.test.ts › CMS capability catalog contains every platform capability
     AssertionError: expected [ 'attributes', 'audit', …(13) ] to deeply equal [ 'audit', 'cache', 'content', …(11) ]
+  • tests\unit\cms\module-contract.test.ts › Atomic module contracts registers Blog with the complete platform capability surface
+    AssertionError: expected { content: true, …(14) } to deeply equal { content: true, …(13) }
+  • tests\unit\cms\module-contract.test.ts › Atomic module contracts binds every enabled capability to the canonical Atomic catalog
+    AssertionError: expected false to be true // Object.is equality
   • tests\unit\cms\resource-contract.test.ts › Atomic admin resource contract accepts matching entity and capability contracts
     AssertionError: expected [Function] to not throw an error but 'TypeError: Cannot read properties of …' was thrown
   • tests\unit\cms\resource-contract.test.ts › Atomic admin resource contract rejects list-dependent management without list support
     AssertionError: expected [Function] to throw error including 'without list capability' but got 'Cannot read properties of undefined (…'
-  • tests\unit\database\seed-data-contract.test.ts › seed data contract maps every manifest entry to an existing non-empty dataset and schema table
-    AssertionError: Missing schema export: serviceReviewHelpful: expected undefined to be defined
-  • tests\unit\database\seed-manifest.test.ts › seed manifest contains every Services dataset exactly once and points to existing schema exports/files
-    AssertionError: expected undefined to be defined
   • tests\unit\database\services-data-invariants.test.ts › Services seed invariants preserves tenant ownership across Services relationships
     AssertionError: expected 'jولة-خاصة-بحيرة-انسي' to match /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-  • tests\unit\database\services-data-shape.test.ts › Services seed data is complete, non-empty and structurally compatible with every Drizzle table
-    AssertionError: serviceReviewHelpful schema export: expected undefined to be defined
+  • tests\unit\services\validation.test.ts › Services validation does not expose lifecycle fields on update
+    AssertionError: expected true to be false // Object.is equality
 
   ✅ End-to-End Tests (Playwright)
      0/0 passed
@@ -218,9 +232,9 @@
   ┌─────────────────────────────────────────────┬──────────────┬─────────┐
   │ Report                                      │ Status       │ Result  │
   ├─────────────────────────────────────────────┼──────────────┼─────────┤
-  │ Astro check                                 │ RED          │ 161 err │
+  │ Astro check                                 │ RED          │ 111 err │
   │ ESLint                                      │ RED          │ 17 erro │
-  │ Vitest (unit/integration)                   │ RED          │ 1073/11 │
+  │ Vitest (unit/integration)                   │ RED          │ 1172/12 │
   │ Playwright (e2e)                            │ GREEN        │ 0/0 pas │
   │ Pa11y (a11y)                                │ GREEN        │ 60/60 U │
   │ Lighthouse (perf)                           │ RED          │ 4 page( │

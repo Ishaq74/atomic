@@ -2,180 +2,30 @@
 > atomic@0.0.1 check C:\Users\Utilisateur\Documents\atomic
 > astro check
 
-[2m18:50:21[22m [34m[@astrojs/node][39m Enabling sessions with filesystem storage
-[33m[1m18:50:22[22m [WARN] [router][39m The route "/[lang]/organizations/[slug]/services/[categoryslug]" is defined in both "src/pages/[lang]/organizations/[slug]/services/[categorySlug].astro" and "src/pages/[lang]/organizations/[slug]/services/[serviceSlug].astro" using SSR mode. A dynamic SSR route cannot be defined more than once.
-[33m[1m18:50:22[22m [WARN] [router][39m A collision will result in a hard error in following versions of Astro.
-[33m[1m18:50:22[22m [WARN] [router][39m The route "/[lang]/services/[categoryslug]" is defined in both "src/pages/[lang]/services/[categorySlug].astro" and "src/pages/[lang]/services/[slug].astro" using SSR mode. A dynamic SSR route cannot be defined more than once.
-[33m[1m18:50:22[22m [WARN] [router][39m A collision will result in a hard error in following versions of Astro.
-[2m18:50:22[22m [34m[vite][39m Re-optimizing dependencies because lockfile has changed
-[2m18:50:25[22m [34m[content][39m Syncing content
-[2m18:50:25[22m [34m[content][39m Synced content
-[2m18:50:25[22m [34m[types][39m Generated [2m3.65s[22m
-[2m18:50:25[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\Utilisateur\Documents\atomic...
-[96msrc/actions/blog/bulk.ts[0m:[93m40[0m:[93m57[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"BLOG_POST_PUBLISH" | "BLOG_POST_ARCHIVE" | "BLOG_POST_RESTORE" | "BLOG_POST_DELETE"' is not assignable to parameter of type 'AuditAction'.
-  Type '"BLOG_POST_RESTORE"' is not assignable to type 'AuditAction'. Did you mean '"BLOG_POST_CREATE"'?
+[2m21:14:44[22m [34m[@astrojs/node][39m Enabling sessions with filesystem storage
+[33m[1m21:14:45[22m [WARN] [router][39m The route "/[lang]/organizations/[slug]/services/[categoryslug]" is defined in both "src/pages/[lang]/organizations/[slug]/services/[categorySlug].astro" and "src/pages/[lang]/organizations/[slug]/services/[serviceSlug].astro" using SSR mode. A dynamic SSR route cannot be defined more than once.
+[33m[1m21:14:45[22m [WARN] [router][39m A collision will result in a hard error in following versions of Astro.
+[33m[1m21:14:45[22m [WARN] [router][39m The route "/[lang]/services/[categoryslug]" is defined in both "src/pages/[lang]/services/[categorySlug].astro" and "src/pages/[lang]/services/[slug].astro" using SSR mode. A dynamic SSR route cannot be defined more than once.
+[33m[1m21:14:45[22m [WARN] [router][39m A collision will result in a hard error in following versions of Astro.
+[2m21:14:46[22m [34m[content][39m Syncing content
+[2m21:14:46[22m [34m[content][39m Synced content
+[2m21:14:46[22m [34m[types][39m Generated [2m1.41s[22m
+[2m21:14:46[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\Utilisateur\Documents\atomic...
+[96msrc/actions/blog/lifecycle.ts[0m:[93m67[0m:[93m1302[0m - [91merror[0m[90m ts(1005): [0m',' expected.
 
-[7m40[0m     for (const row of rows) auditBlog(context, user.id, auditFor[input.operation], { resource: "blog_posts", resourceId: row.id, metadata: { organizationId: tenant.organizationId, bulk: true, from: row.status, to } });
-[7m  [0m [91m                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m67[0m   await db.transaction(async (tx) => { const [translation] = await tx.select().from(blogPostTranslations).where(and(eq(blogPostTranslations.postId, input.postId), eq(blogPostTranslations.locale, revision.locale))).limit(1); if (translation) await tx.update(blogPostTranslations).set({ title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }).where(eq(blogPostTranslations.id, translation.id)); else await tx.insert(blogPostTranslations).values({ postId: input.postId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt }); await tx.update(blogPosts).set({ slug: revision.slug, status: targetStatus, publishedAt: targetStatus === "PUBLISHED" ? (post.status === "PUBLISHED" ? post.publishedAt : new Date()) : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId)); await appendRevision(tx, input.postId, user.id, targetStatus, `Restauration de la révision ${revision.id}`, revision.locale); }); auditBlog(context, user.id, "BLOG_POST_UPDATE", { resource: "blog_posts", resourceId: input.postId, metadata: { organizationId: tenant.organizationId, restoredRevisionId: input.revisionId } }); invalidateBlogCache(); return { success: true }; });
+[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ~[0m
 
-[96msrc/actions/blog/lifecycle.ts[0m:[93m224[0m:[93m153[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
-  Overload 1 of 3, '(left: PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; ... 6 more ...; generated: undefined; }, {}, {}>, right: "fr" | ... 3 more ... | SQLWrapper): SQL<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"fr" | "en" | "es" | "ar" | SQLWrapper'.
-  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string>'.
-      Type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
-  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+[96msrc/actions/services/_helpers.ts[0m:[93m15[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'and' is declared but its value is never read.
 
-[7m224[0m     const [collision] = await tx.select({ id: blogPostTranslations.id }).from(blogPostTranslations).where(and(eq(blogPostTranslations.slug, candidate), eq(blogPostTranslations.locale, locale), org)).limit(1);
-[7m   [0m [91m                                                                                                                                                        ~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m196[0m:[93m163[0m - [91merror[0m[90m ts(2339): [0mProperty 'publishedAt' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
+[7m15[0m import { and, eq } from "drizzle-orm";
+[7m  [0m [93m         ~~~[0m
 
-[7m196[0m       await tx.update(blogPosts).set({ slug: revision.slug, status: targetStatus, publishedAt: targetStatus === "PUBLISHED" ? (post.status === "PUBLISHED" ? post.publishedAt : new Date()) : null, updatedBy: user.id }).where(eq(blogPosts.id, input.postId));
-[7m   [0m [91m                                                                                                                                                                  ~~~~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m340[0m - [91merror[0m[90m ts(2339): [0mProperty 'seoScore' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                                                                                                                                                                                                                                                   ~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m309[0m - [91merror[0m[90m ts(2339): [0mProperty 'allowReviews' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m273[0m - [91merror[0m[90m ts(2339): [0mProperty 'commentStatus' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                                                                                                                                                                                ~~~~~~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m222[0m - [91merror[0m[90m ts(2339): [0mProperty 'isFeatured' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                                                                                                                             ~~~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m186[0m - [91merror[0m[90m ts(2339): [0mProperty 'featuredImageId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                                                                                         ~~~~~~~~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m144[0m:[93m114[0m - [91merror[0m[90m ts(2339): [0mProperty 'authorId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m144[0m       const [post] = await tx.insert(blogPosts).values({ organizationId: tenant.organizationId, authorId: source.authorId, slug: canonicalSlug, status: "DRAFT", featuredImageId: source.featuredImageId, isFeatured: source.isFeatured, isSticky: false, commentStatus: source.commentStatus, allowReviews: source.allowReviews, seoScore: source.seoScore, publishedAt: null, updatedBy: user.id }).returning();
-[7m   [0m [91m                                                                                                                 ~~~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m141[0m:[93m82[0m - [91merror[0m[90m ts(2339): [0mProperty 'slug' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m141[0m     const canonicalSlug = await uniqueCopySlug(db, tenant.organizationId, source.slug);
-[7m   [0m [91m                                                                                 ~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m96[0m:[93m31[0m - [91merror[0m[90m ts(2345): [0mArgument of type '"BLOG_POST_PUBLISH" | "BLOG_POST_UNPUBLISH" | "BLOG_POST_ARCHIVE" | "BLOG_POST_RESTORE"' is not assignable to parameter of type 'AuditAction'.
-  Type '"BLOG_POST_UNPUBLISH"' is not assignable to type 'AuditAction'. Did you mean '"BLOG_POST_PUBLISH"'?
-
-[7m96[0m   auditBlog(context, user.id, action, { resource: "blog_posts", resourceId: input.id, metadata: { organizationId: tenant.organizationId, from: post.status, to } });
-[7m  [0m [91m                              ~~~~~~[0m
-[96msrc/actions/blog/lifecycle.ts[0m:[93m59[0m:[93m66[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
-  Overload 1 of 3, '(left: PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; ... 6 more ...; generated: undefined; }, {}, {}>, right: "fr" | ... 3 more ... | SQLWrapper): SQL<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"fr" | "en" | "es" | "ar" | SQLWrapper'.
-  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string>'.
-      Type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
-  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "blog_post_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
-
-[7m59[0m     .where(and(eq(blogPostTranslations.postId, postId), locale ? eq(blogPostTranslations.locale, locale) : eq(blogPostTranslations.locale, LOCALES[0])))
-[7m  [0m [91m                                                                 ~~[0m
-
-[96msrc/actions/services/attributes.ts[0m:[93m6[0m:[93m33[0m - [91merror[0m[90m ts(2305): [0mModule '"./_helpers"' has no exported member 'assertServiceLockOwner'.
-
-[7m6[0m import { assertServiceInTenant, assertServiceLockOwner, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema } from "./_helpers";
-[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/actions/services/availability.ts[0m:[93m6[0m:[93m33[0m - [91merror[0m[90m ts(2305): [0mModule '"./_helpers"' has no exported member 'assertServiceLockOwner'.
-
-[7m6[0m import { assertServiceInTenant, assertServiceLockOwner, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema } from "./_helpers";
-[7m [0m [91m                                ~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/actions/services/engagement.ts[0m:[93m44[0m:[93m111[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m44[0m     const db = getDrizzle(); const locale = requestLocale(context.request.headers); let recipientId = service.providerId; let type: "NEW_COMMENT" | "REPLY_TO_COMMENT" = "NEW_COMMENT";
-[7m  [0m [91m                                                                                                              ~~~~~~~~~~[0m
-[96msrc/actions/services/engagement.ts[0m:[93m35[0m:[93m133[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m35[0m     if (review?.id) { const nt = getServiceNotificationTranslations(locale); await createServiceNotification({ recipientId: service.providerId, serviceId: input.serviceId, actorId: user.id, type: "NEW_REVIEW", reviewId: review.id, title: nt.reviewTitle, message: nt.reviewMessage, locale }); }
-[7m  [0m [91m                                                                                                                                    ~~~~~~~~~~[0m
-[96msrc/actions/services/engagement.ts[0m:[93m5[0m:[93m77[0m - [91merror[0m[90m ts(2724): [0m'"@database/schemas"' has no exported member named 'serviceReviewHelpful'. Did you mean 'serviceReviews'?
-
-[7m5[0m import { serviceComments, serviceFavorites, serviceReports, serviceReviews, serviceReviewHelpful } from "@database/schemas";
-[7m [0m [91m                                                                            ~~~~~~~~~~~~~~~~~~~~[0m
 [96msrc/actions/services/engagement.ts[0m:[93m1[0m:[93m22[0m - [93mwarning[0m[90m ts(6133): [0m'desc' is declared but its value is never read.
 
 [7m1[0m import { and, count, desc, eq } from "drizzle-orm";
 [7m [0m [93m                     ~~~~[0m
 
-[96msrc/actions/services/lifecycle.ts[0m:[93m73[0m:[93m151[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m73[0m   if (revision.status === "PUBLISHED") { const t = getServiceNotificationTranslations(locale); await createServiceNotification({ recipientId: current.providerId, serviceId: input.serviceId, actorId: user.id, type: "SERVICE_PUBLISHED", title: t.publishedTitle, message: t.publishedMessage, locale }); }
-[7m  [0m [91m                                                                                                                                                      ~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m71[0m:[93m192[0m - [91merror[0m[90m ts(2339): [0mProperty 'publishedAt' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m71[0m   try { await db.transaction(async (tx) => { await tx.update(services).set({ status: revision.status, publishedAt: revision.status === "PUBLISHED" ? (current.status === "PUBLISHED" ? current.publishedAt : new Date()) : null, updatedBy: user.id }).where(eq(services.id, input.serviceId)); await tx.insert(serviceTranslations).values({ serviceId: input.serviceId, organizationId: tenant.organizationId, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, metaTitle: revision.title }).onConflictDoUpdate({ target: [serviceTranslations.serviceId, serviceTranslations.locale], set: { title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, metaTitle: revision.title, organizationId: tenant.organizationId } }); await tx.insert(serviceRevisions).values({ serviceId: input.serviceId, authorId: user.id, locale: revision.locale, title: revision.title, slug: revision.slug, content: revision.content, excerpt: revision.excerpt, status: revision.status, revisionNote: "Revision restore" }); }); }
-[7m  [0m [91m                                                                                                                                                                                               ~~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m358[0m - [91merror[0m[90m ts(2339): [0mProperty 'isMobile' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                                                     ~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m324[0m - [91merror[0m[90m ts(2339): [0mProperty 'maxParticipants' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                   ~~~~~~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m283[0m - [91merror[0m[90m ts(2339): [0mProperty 'durationMinutes' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                                                                                                                          ~~~~~~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m249[0m - [91merror[0m[90m ts(2339): [0mProperty 'currency' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                                                                                        ~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m220[0m - [91merror[0m[90m ts(2339): [0mProperty 'priceMinor' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                                                           ~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m187[0m - [91merror[0m[90m ts(2339): [0mProperty 'coverImageId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                                                                                          ~~~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m47[0m:[93m118[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m47[0m       const [created] = await tx.insert(services).values({ organizationId: tenant.organizationId, providerId: source.providerId, slug: serviceSlug, status: "DRAFT", coverImageId: source.coverImageId, priceMinor: source.priceMinor, currency: source.currency, durationMinutes: source.durationMinutes, maxParticipants: source.maxParticipants, isMobile: source.isMobile, isFeatured: false, seoScore: null, publishedAt: null, updatedBy: user.id }).returning({ id: services.id }); duplicateId = created.id;
-[7m  [0m [91m                                                                                                                     ~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m43[0m:[93m77[0m - [91merror[0m[90m ts(2339): [0mProperty 'slug' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m43[0m   const serviceSlug = await uniqueServiceSlug(tenant.organizationId, source.slug); const translationSlugs = new Map<string, string>(); for (const translation of translations) translationSlugs.set(translation.locale, await uniqueTranslationSlug(tenant.organizationId, translation.locale, translation.slug));
-[7m  [0m [91m                                                                            ~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m27[0m:[93m193[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
-
-[7m27[0m   if (to === "PUBLISHED") { const locale = requestLocale(context.request.headers); const t = getServiceNotificationTranslations(locale); await createServiceNotification({ recipientId: current.providerId, serviceId: id, actorId: user.id, type: "SERVICE_PUBLISHED", title: t.publishedTitle, message: t.publishedMessage, locale }); }
-[7m  [0m [91m                                                                                                                                                                                                ~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m22[0m:[93m304[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
-  Overload 1 of 3, '(left: PgColumn<{ name: "locale"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; ... 6 more ...; generated: undefined; }, {}, {}>, right: "fr" | ... 3 more ... | SQLWrapper): SQL<...>', gave the following error.
-    Argument of type 'string' is not assignable to parameter of type '"fr" | "en" | "es" | "ar" | SQLWrapper'.
-  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string>'.
-      Type 'PgColumn<{ name: "locale"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
-  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
-    Argument of type 'PgColumn<{ name: "locale"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: "fr" | "en" | "es" | "ar"; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
-
-[7m22[0m async function uniqueTranslationSlug(organizationId: string | null, locale: string, sourceSlug: string): Promise<string> { const rows = await getDrizzle().select({ slug: serviceTranslations.slug }).from(serviceTranslations).where(and(tenantPredicate(serviceTranslations.organizationId, organizationId), eq(serviceTranslations.locale, locale))); const used = new Set(rows.map((row) => row.slug)); const base = `${sourceSlug}-copy`; let candidate = base; let suffix = 2; while (used.has(candidate)) candidate = `${base}-${suffix++}`; return candidate; }
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                               ~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m22[0m:[93m251[0m - [91merror[0m[90m ts(2345): [0mArgument of type 'PgColumn<{ name: "organization_id"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'PgColumn<{ name: "organization_id"; tableName: "services"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>'.
-  Type '{ name: "organization_id"; tableName: "service_translations"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; ... 5 more ...; generated: undefined; }' is not assignable to type '{ name: "organization_id"; tableName: "services"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }'.
-    Types of property 'tableName' are incompatible.
-      Type '"service_translations"' is not assignable to type '"services"'.
-
-[7m22[0m async function uniqueTranslationSlug(organizationId: string | null, locale: string, sourceSlug: string): Promise<string> { const rows = await getDrizzle().select({ slug: serviceTranslations.slug }).from(serviceTranslations).where(and(tenantPredicate(serviceTranslations.organizationId, organizationId), eq(serviceTranslations.locale, locale))); const used = new Set(rows.map((row) => row.slug)); const base = `${sourceSlug}-copy`; let candidate = base; let suffix = 2; while (used.has(candidate)) candidate = `${base}-${suffix++}`; return candidate; }
-[7m  [0m [91m                                                                                                                                                                                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-[96msrc/actions/services/lifecycle.ts[0m:[93m5[0m:[93m109[0m - [91merror[0m[90m ts(2305): [0mModule '"./_helpers"' has no exported member 'assertServiceLockOwner'.
-
-[7m5[0m import { assertServicePermission, assertServiceInTenant, resolveServiceTenant, serviceOrganizationIdSchema, assertServiceLockOwner } from "./_helpers";
-[7m [0m [91m                                                                                                            ~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/actions/services/media.ts[0m:[93m6[0m:[93m137[0m - [91merror[0m[90m ts(2305): [0mModule '"./_helpers"' has no exported member 'assertServiceLockOwner'.
-
-[7m6[0m import { assertServiceInTenant, assertServiceMediaInTenant, assertServicePermission, resolveServiceTenant, serviceOrganizationIdSchema, assertServiceLockOwner } from "./_helpers";
-[7m [0m [91m                                                                                                                                        ~~~~~~~~~~~~~~~~~~~~~~[0m
 [96msrc/actions/services/media.ts[0m:[93m13[0m:[93m820[0m - [91merror[0m[90m ts(1005): [0m',' expected.
 
 [7m13[0m export const removeServiceMedia = defineAction({ input: z.object({ serviceId: z.uuid(), mediaId: z.uuid(), organizationId: serviceOrganizationIdSchema }), handler: async (input, context) => { const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["update"] }); await assertServiceInTenant(input.serviceId, tenant); await assertServiceLockOwner(input.serviceId, user.id, context.locals.session?.id); await getDrizzle().delete(serviceMedia).where(and(eq(serviceMedia.serviceId, input.serviceId), eq(serviceMedia.mediaId, input.mediaId))); auditService(context, user.id, "SERVICE_UPDATE", { resource: "serviceMedia", resourceId: input.mediaId, metadata: { serviceId: input.serviceId, action: "REMOVE" } }); invalidateServicesCache(); return { success: true }; });
@@ -189,49 +39,15 @@
 [7m9[0m export const addServiceMedia = defineAction({ input: z.object({ serviceId: z.uuid(), mediaId: z.uuid(), organizationId: serviceOrganizationIdSchema, kind: z.enum(["GALLERY", "DOCUMENT"]).default("GALLERY"), altText: z.string().trim().min(1).max(300), caption: z.string().trim().max(500).optional().nullable(), sortOrder: z.coerce.number().int().min(0).default(0) }), handler: async (input, context) => { const tenant = resolveServiceTenant(input); const user = await assertServicePermission(context, tenant, { service: ["update"] }); await assertServiceInTenant(input.serviceId, tenant); await assertServiceLockOwner(input.serviceId, user.id, context.locals.session?.id); await assertServiceMediaInTenant(input.mediaId, tenant); await getDrizzle().insert(serviceMedia).values({ serviceId: input.serviceId, mediaId: input.mediaId, kind: input.kind, altText: input.altText, caption: input.caption ?? null, sortOrder: input.sortOrder }).onConflictDoUpdate({ target: [serviceMedia.serviceId, serviceMedia.mediaId], set: { kind: input.kind, altText: input.altText, caption: input.caption ?? null, sortOrder: input.sortOrder } }); auditService(context, user.id, "SERVICE_UPDATE", { resource: "serviceMedia", resourceId: input.mediaId, metadata: { serviceId: input.serviceId, action: "ADD" } }); invalidateServicesCache(); return { success: true }; });
 [7m [0m [91m                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ~[0m
 
-[96msrc/actions/services/moderation.ts[0m:[93m33[0m:[93m244[0m - [91merror[0m[90m ts(2339): [0mProperty 'providerId' does not exist on type '{ id: string; organizationId: string | null; status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"; }'.
+[96msrc/actions/services/service.ts[0m:[93m122[0m:[93m45[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
+  Overload 1 of 2, '(value: { locale: "fr" | "en" | "es" | "ar" | SQL<unknown> | Placeholder<string, any>; title: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<...> | "DRAFT" | "PUBLISHED" | "ARCHIVED"; ... 7 more ...; revisionNote?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type '"DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED"' is not assignable to type 'SQL<unknown> | Placeholder<string, any> | "DRAFT" | "PUBLISHED" | "ARCHIVED"'.
+      Type '"DELETED"' is not assignable to type 'SQL<unknown> | Placeholder<string, any> | "DRAFT" | "PUBLISHED" | "ARCHIVED"'.
+  Overload 2 of 2, '(values: { locale: "fr" | "en" | "es" | "ar" | SQL<unknown> | Placeholder<string, any>; title: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<...> | "DRAFT" | "PUBLISHED" | "ARCHIVED"; ... 7 more ...; revisionNote?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'serviceId' does not exist in type '{ locale: "fr" | "en" | "es" | "ar" | SQL<unknown> | Placeholder<string, any>; title: string | SQL<unknown> | Placeholder<string, any>; status: SQL<unknown> | Placeholder<...> | "DRAFT" | "PUBLISHED" | "ARCHIVED"; ... 7 more ...; revisionNote?: string | ... 3 more ... | undefined; }[]'.
 
-[7m33[0m   auditService(context, user.id, "SERVICE_REVIEW_MODERATE", { resource: "serviceReviews", resourceId: input.id, metadata: { status: input.status, ratingCount, ratingAverage100, organizationId: tenant.organizationId, serviceProviderId: service.providerId } }); invalidateServicesCache();
-[7m  [0m [91m                                                                                                                                                                                                                                                   ~~~~~~~~~~[0m
-
-[96msrc/actions/services/service.ts[0m:[93m32[0m:[93m494[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m32[0m     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content; const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt; const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : existingSeo?.focusKeyword ?? undefined });
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m32[0m:[93m414[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m32[0m     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content; const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt; const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : existingSeo?.focusKeyword ?? undefined });
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m32[0m:[93m352[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m32[0m     const content = input.content !== undefined ? sanitizeHtml(input.content) : existingTranslation?.content; const excerpt = input.excerpt !== undefined ? input.excerpt?.trim() || (content ? generateExcerpt(content) : null) : existingTranslation?.excerpt; const seoScore = calculateServiceSeoScore({ title: input.title ?? existingTranslation?.title, metaTitle: input.metaTitle ?? existingTranslation?.metaTitle, metaDescription: input.metaDescription ?? existingTranslation?.metaDescription, focusKeyword: input.focusKeyword !== undefined ? input.focusKeyword : existingSeo?.focusKeyword ?? undefined });
-[7m  [0m [91m                                                                                                                                                                                                                                                                                                                                                               ~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m29[0m:[93m45[0m - [91merror[0m[90m ts(2339): [0mProperty 'publishedAt' does not exist on type '{ locale: "fr" | "en" | "es" | "ar"; id: string; organizationId?: string | null | undefined; title?: string | undefined; slug?: string | undefined; excerpt?: string | null | undefined; ... 19 more ...; focusKeyword?: string | ... 1 more ... | undefined; }'.
-
-[7m29[0m     if (input.status !== undefined || input.publishedAt !== undefined) throw new ActionError({ code: "BAD_REQUEST", message: "La publication se gère via les actions de lifecycle explicites." });
-[7m  [0m [91m                                            ~~~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m29[0m:[93m15[0m - [91merror[0m[90m ts(2339): [0mProperty 'status' does not exist on type '{ locale: "fr" | "en" | "es" | "ar"; id: string; organizationId?: string | null | undefined; title?: string | undefined; slug?: string | undefined; excerpt?: string | null | undefined; ... 19 more ...; focusKeyword?: string | ... 1 more ... | undefined; }'.
-
-[7m29[0m     if (input.status !== undefined || input.publishedAt !== undefined) throw new ActionError({ code: "BAD_REQUEST", message: "La publication se gère via les actions de lifecycle explicites." });
-[7m  [0m [91m              ~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m16[0m:[93m249[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m16[0m     const content = sanitizeHtml(input.content); const excerpt = input.excerpt?.trim() || generateExcerpt(content); const seoScore = calculateServiceSeoScore({ title: input.title, metaTitle: input.metaTitle, metaDescription: input.metaDescription, focusKeyword: input.focusKeyword });
-[7m  [0m [91m                                                                                                                                                                                                                                                        ~~~~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m16[0m:[93m209[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m16[0m     const content = sanitizeHtml(input.content); const excerpt = input.excerpt?.trim() || generateExcerpt(content); const seoScore = calculateServiceSeoScore({ title: input.title, metaTitle: input.metaTitle, metaDescription: input.metaDescription, focusKeyword: input.focusKeyword });
-[7m  [0m [91m                                                                                                                                                                                                                ~~~~~~~~~~~~~~~[0m
-[96msrc/actions/services/service.ts[0m:[93m16[0m:[93m181[0m - [91merror[0m[90m ts(2322): [0mType 'string | null | undefined' is not assignable to type 'string | undefined'.
-  Type 'null' is not assignable to type 'string | undefined'.
-
-[7m16[0m     const content = sanitizeHtml(input.content); const excerpt = input.excerpt?.trim() || generateExcerpt(content); const seoScore = calculateServiceSeoScore({ title: input.title, metaTitle: input.metaTitle, metaDescription: input.metaDescription, focusKeyword: input.focusKeyword });
-[7m  [0m [91m                                                                                                                                                                                    ~~~~~~~~~[0m
+[7m122[0m           await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status, revisionNote: "Mise à jour" });
+[7m   [0m [91m                                            ~~~~~~[0m
 
 [96msrc/actions/services/taxonomy.ts[0m:[93m50[0m:[93m680[0m - [91merror[0m[90m ts(1005): [0m',' expected.
 
@@ -434,36 +250,6 @@
 [7m103[0m       const direction = el.dataset.revealDirection || "up";
 [7m   [0m [93m            ~~~~~~~~~[0m
 
-[96msrc/core/modules/bootstrap.ts[0m:[93m7[0m:[93m40[0m - [91merror[0m[90m ts(2307): [0mCannot find module '@/core/search/registry' or its corresponding type declarations.
-
-[7m7[0m import { registerSearchResource } from "@/core/search/registry";
-[7m [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/core/notifications/index.ts[0m:[93m14[0m:[93m50[0m - [91merror[0m[90m ts(2339): [0mProperty 'reviewId' does not exist on type 'NotificationContext'.
-
-[7m14[0m   if (context.reviewId !== undefined && !context.reviewId.trim()) throw new Error("Notification reviewId cannot be empty");
-[7m  [0m [91m                                                 ~~~~~~~~[0m
-[96msrc/core/notifications/index.ts[0m:[93m14[0m:[93m15[0m - [91merror[0m[90m ts(2339): [0mProperty 'reviewId' does not exist on type 'NotificationContext'.
-
-[7m14[0m   if (context.reviewId !== undefined && !context.reviewId.trim()) throw new Error("Notification reviewId cannot be empty");
-[7m  [0m [91m              ~~~~~~~~[0m
-[96msrc/core/notifications/index.ts[0m:[93m13[0m:[93m51[0m - [91merror[0m[90m ts(2339): [0mProperty 'commentId' does not exist on type 'NotificationContext'.
-
-[7m13[0m   if (context.commentId !== undefined && !context.commentId.trim()) throw new Error("Notification commentId cannot be empty");
-[7m  [0m [91m                                                  ~~~~~~~~~[0m
-[96msrc/core/notifications/index.ts[0m:[93m13[0m:[93m15[0m - [91merror[0m[90m ts(2339): [0mProperty 'commentId' does not exist on type 'NotificationContext'.
-
-[7m13[0m   if (context.commentId !== undefined && !context.commentId.trim()) throw new Error("Notification commentId cannot be empty");
-[7m  [0m [91m              ~~~~~~~~~[0m
-[96msrc/core/notifications/index.ts[0m:[93m12[0m:[93m16[0m - [91merror[0m[90m ts(2339): [0mProperty 'postId' does not exist on type 'NotificationContext'.
-
-[7m12[0m   if (!context.postId.trim()) throw new Error("Notification postId cannot be empty");
-[7m  [0m [91m               ~~~~~~[0m
-[96msrc/core/notifications/index.ts[0m:[93m6[0m:[93m46[0m - [91merror[0m[90m ts(2312): [0mAn interface can only extend an object type or intersection of object types with statically known members.
-
-[7m6[0m export interface NotificationContext extends NotificationTarget {
-[7m [0m [91m                                             ~~~~~~~~~~~~~~~~~~[0m
-
 [96msrc/database/schemas/services.schema.ts[0m:[93m1[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'relations' is declared but its value is never read.
 
 [7m1[0m import { relations, sql } from "drizzle-orm";
@@ -477,33 +263,6 @@ Add the `is:inline` directive explicitly to silence this hint.
 
 [7m123[0m     {jsonLd && <script type="application/ld+json" set:html={safeJsonLd(jsonLd)} />}
 [7m   [0m [93m                       ~~~~[0m
-
-[96msrc/lib/permissions.ts[0m:[93m32[0m:[93m2[0m - [91merror[0m[90m ts(1005): [0m',' expected.
-
-[7m32[0m });
-[7m  [0m [91m ~[0m
-
-[96msrc/lib/blog/constants.ts[0m:[93m22[0m:[93m99[0m - [91merror[0m[90m ts(2352): [0mConversion of type '{ [k: string]: ("DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED")[]; }' to type 'Record<"DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED", readonly ("DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED")[]>' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
-  Type '{ [k: string]: ("DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED")[]; }' is missing the following properties from type 'Record<"DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED", readonly ("DRAFT" | "PUBLISHED" | "ARCHIVED" | "DELETED")[]>': DRAFT, PUBLISHED, ARCHIVED, DELETED
-
-[7m 22[0m export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = Object.fromEntries(
-[7m   [0m [91m                                                                                                  ~~~~~~~~~~~~~~~~~~~[0m
-[7m 23[0m   BLOG_POST_STATUSES.map((status) => [
-[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-[7m...[0m 
-[7m 26[0m   ]),
-[7m   [0m [91m~~~~~[0m
-[7m 27[0m ) as Record<BlogPostStatus, readonly BlogPostStatus[]>;
-[7m   [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/lib/blog/utils.ts[0m:[93m77[0m:[93m21[0m - [91merror[0m[90m ts(2304): [0mCannot find name 'stripHtml'.
-
-[7m77[0m   const wordCount = stripHtml(content).split(/\s+/).filter(Boolean).length;
-[7m  [0m [91m                    ~~~~~~~~~[0m
-[96msrc/lib/blog/utils.ts[0m:[93m6[0m:[93m10[0m - [93mwarning[0m[90m ts(6133): [0m'BLOG_DEFAULTS' is declared but its value is never read.
-
-[7m6[0m import { BLOG_DEFAULTS, BLOG_OG_LOCALES, type BlogOgLocale } from "./constants";
-[7m [0m [93m         ~~~~~~~~~~~~~[0m
 
 [96msrc/lib/blog/validation.ts[0m:[93m62[0m:[93m62[0m - [93mwarning[0m[90m ts(6385): [0m'ZodIssueCode' is deprecated.
 
@@ -547,15 +306,14 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m11[0m ) as AtomicModuleCapabilityProviders;
 [7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
-[96msrc/modules/services/index.ts[0m:[93m15[0m:[93m1[0m - [91merror[0m[90m ts(2308): [0mModule "./domain" has already exported a member named 'ServiceDetail'. Consider explicitly re-exporting to resolve the ambiguity.
+[96msrc/modules/services/index.ts[0m:[93m18[0m:[93m1[0m - [91merror[0m[90m ts(2308): [0mModule "./validation" has already exported a member named 'ServiceAdminFilters'. Consider explicitly re-exporting to resolve the ambiguity.
 
-[7m15[0m export * from "./components/single";
-[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m18[0m export * from "./admin";
+[7m  [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/services/index.ts[0m:[93m8[0m:[93m1[0m - [91merror[0m[90m ts(2308): [0mModule "./validation" has already exported a member named 'serviceOrganizationIdSchema'. Consider explicitly re-exporting to resolve the ambiguity.
 
-[96msrc/modules/services/actions/index.ts[0m:[93m3[0m:[93m38[0m - [91merror[0m[90m ts(2307): [0mCannot find module '@/actions/services/bulk' or its corresponding type declarations.
-
-[7m3[0m export { bulkServiceLifecycle } from "@/actions/services/bulk";
-[7m [0m [91m                                     ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[7m8[0m export * from "./permissions";
+[7m [0m [91m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
 [96msrc/modules/services/admin/index.ts[0m:[93m9[0m:[93m15[0m - [91merror[0m[90m ts(2459): [0mModule '"./loader"' declares 'ServiceAdminFilters' locally, but it is not exported.
 
@@ -692,11 +450,6 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m37[0m   {item.coverMedia && <div class="mb-10 overflow-hidden rounded-2xl border"><img src={item.coverMedia.url} alt={item.coverMedia.alt || title} class="aspect-video w-full object-cover" loading="eager" /></div>}
 [7m  [0m [91m        ~~~~~~~~~~[0m
 
-[96msrc/modules/services/components/single/ServiceEngagement.astro[0m:[93m4[0m:[93m79[0m - [91merror[0m[90m ts(2724): [0m'"@database/schemas"' has no exported member named 'serviceReviewHelpful'. Did you mean 'serviceReviews'?
-
-[7m4[0m import { serviceComments, serviceFavorites, serviceReactions, serviceReviews, serviceReviewHelpful, user } from "@database/schemas";
-[7m [0m [91m                                                                              ~~~~~~~~~~~~~~~~~~~~[0m
-
 [96msrc/modules/services/loaders/index.ts[0m:[93m73[0m:[93m327[0m - [91merror[0m[90m ts(2769): [0mNo overload matches this call.
   Overload 1 of 3, '(left: PgColumn<{ name: "locale"; tableName: "media_file_alts"; dataType: "string"; columnType: "PgText"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
     Argument of type 'string | undefined' is not assignable to parameter of type 'string | SQLWrapper'.
@@ -817,74 +570,69 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m50[0m     revisions,
 [7m  [0m [91m    ~~~~~~~~~[0m
 
-[96msrc/modules/services/permissions/index.ts[0m:[93m8[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'serviceOrganizationIdSchema' is declared but its value is never read.
+[96msrc/modules/services/validation/index.ts[0m:[93m109[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m8[0m import { serviceOrganizationIdSchema } from "@/modules/services/validation";
-[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-
-[96msrc/modules/services/validation/index.ts[0m:[93m136[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
-
-[7m136[0m   serviceId: z.string().uuid(),
+[7m109[0m   serviceId: z.string().uuid(), dayOfWeek: z.coerce.number().int().min(0).max(6), startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), timezone: z.string().trim().min(1).max(64), maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
 [7m   [0m [93m                        ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m126[0m:[93m21[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m104[0m:[93m320[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m126[0m   tagId: z.string().uuid().optional(),
-[7m   [0m [93m                    ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m125[0m:[93m26[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[7m104[0m   organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
+[7m   [0m [93m                                                                                                                                                                                                                                                                                                                               ~~~~[0m
+[96msrc/modules/services/validation/index.ts[0m:[93m104[0m:[93m283[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m125[0m   categoryId: z.string().uuid().optional(),
-[7m   [0m [93m                         ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m109[0m:[93m21[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[7m104[0m   organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
+[7m   [0m [93m                                                                                                                                                                                                                                                                                          ~~~~[0m
+[96msrc/modules/services/validation/index.ts[0m:[93m99[0m:[93m320[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m109[0m   tagId: z.string().uuid().optional(),
-[7m   [0m [93m                    ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m108[0m:[93m26[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[7m99[0m   organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), authorId: z.string().trim().min(1).max(200).optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
+[7m  [0m [93m                                                                                                                                                                                                                                                                                                                               ~~~~[0m
+[96msrc/modules/services/validation/index.ts[0m:[93m99[0m:[93m283[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m108[0m   categoryId: z.string().uuid().optional(),
-[7m   [0m [93m                         ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m91[0m:[93m24[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[7m99[0m   organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), authorId: z.string().trim().min(1).max(200).optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
+[7m  [0m [93m                                                                                                                                                                                                                                                                                          ~~~~[0m
+[96msrc/modules/services/validation/index.ts[0m:[93m94[0m:[93m65[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m91[0m   reviewId: z.string().uuid().optional(),
-[7m  [0m [93m                       ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m90[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[7m94[0m   commentId: z.string().uuid().optional(), reviewId: z.string().uuid().optional(),
+[7m  [0m [93m                                                                ~~~~[0m
+[96msrc/modules/services/validation/index.ts[0m:[93m94[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m90[0m   commentId: z.string().uuid().optional(),
+[7m94[0m   commentId: z.string().uuid().optional(), reviewId: z.string().uuid().optional(),
 [7m  [0m [93m                        ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m88[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m93[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m88[0m   serviceId: z.string().uuid(),
+[7m93[0m   serviceId: z.string().uuid(), organizationId: serviceOrganizationIdSchema,
 [7m  [0m [93m                        ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m84[0m:[93m18[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m86[0m:[93m18[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m84[0m   id: z.string().uuid(),
+[7m86[0m   id: z.string().uuid(),
 [7m  [0m [93m                 ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m78[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { normalize?: boolean | undefined; pattern?: RegExp | undefined; abort?: boolean | undefined; hostname?: RegExp | undefined; protocol?: RegExp | undefined; error?: string | ... 1 more ... | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m80[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { normalize?: boolean | undefined; pattern?: RegExp | undefined; abort?: boolean | undefined; hostname?: RegExp | undefined; protocol?: RegExp | undefined; error?: string | ... 1 more ... | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m78[0m   canonicalUrl: z.string().url().optional().nullable(),
+[7m80[0m   canonicalUrl: z.string().url().optional().nullable(),
 [7m  [0m [93m                           ~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m74[0m:[93m30[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m76[0m:[93m30[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m74[0m   tagIds: z.array(z.string().uuid()).max(100).optional(),
+[7m76[0m   tagIds: z.array(z.string().uuid()).max(100).optional(),
 [7m  [0m [93m                             ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m73[0m:[93m35[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m75[0m:[93m35[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m73[0m   categoryIds: z.array(z.string().uuid()).max(100).optional(),
+[7m75[0m   categoryIds: z.array(z.string().uuid()).max(100).optional(),
 [7m  [0m [93m                                  ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m66[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m68[0m:[93m25[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m66[0m   ogImageId: z.string().uuid().optional().nullable(),
+[7m68[0m   ogImageId: z.string().uuid().optional().nullable(),
 [7m  [0m [93m                        ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m65[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m67[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m65[0m   coverImageId: z.string().uuid().optional().nullable(),
+[7m67[0m   coverImageId: z.string().uuid().optional().nullable(),
 [7m  [0m [93m                           ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m53[0m:[93m30[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m54[0m:[93m30[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m53[0m   tagIds: z.array(z.string().uuid()).max(100).default([]),
+[7m54[0m   tagIds: z.array(z.string().uuid()).max(100).default([]),
 [7m  [0m [93m                             ~~~~[0m
-[96msrc/modules/services/validation/index.ts[0m:[93m52[0m:[93m35[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
+[96msrc/modules/services/validation/index.ts[0m:[93m53[0m:[93m35[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { version?: "v8" | "v1" | "v2" | "v3" | "v4" | "v5" | "v6" | "v7" | undefined; abort?: boolean | undefined; error?: string | $ZodErrorMap<$ZodIssueInvalidStringFormat> | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
-[7m52[0m   categoryIds: z.array(z.string().uuid()).max(100).default([]),
+[7m53[0m   categoryIds: z.array(z.string().uuid()).max(100).default([]),
 [7m  [0m [93m                                  ~~~~[0m
 [96msrc/modules/services/validation/index.ts[0m:[93m40[0m:[93m28[0m - [93mwarning[0m[90m ts(6385): [0m'(params?: string | { normalize?: boolean | undefined; pattern?: RegExp | undefined; abort?: boolean | undefined; hostname?: RegExp | undefined; protocol?: RegExp | undefined; error?: string | ... 1 more ... | undefined; message?: string | undefined; } | undefined): ZodString' is deprecated.
 
@@ -959,17 +707,13 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m25[0m     const canonical = buildServiceUrl(locale, org.slug, service.translation.slug, service.categories[0]?.slug ?? null);
 [7m  [0m [93m          ~~~~~~~~~[0m
 
-[96msrc/pages/[lang]/organizations/[slug]/services/[serviceSlug].astro[0m:[93m9[0m:[93m1[0m - [93mwarning[0m[90m ts(6133): [0m'buildServiceUrl' is declared but its value is never read.
-
-[7m9[0m import { buildServiceUrl } from "@/modules/services/utils";
-[7m [0m [93m~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
-[96msrc/pages/[lang]/organizations/[slug]/services/[serviceSlug].astro[0m:[93m29[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
+[96msrc/pages/[lang]/organizations/[slug]/services/[serviceSlug].astro[0m:[93m43[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
 
 See docs for more details: https://docs.astro.build/en/guides/client-side-scripts/#script-processing.
 
 Add the `is:inline` directive explicitly to silence this hint.
 
-[7m29[0m   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+[7m43[0m   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 [7m  [0m [93m          ~~~~[0m
 
 [96msrc/pages/[lang]/organizations/[slug]/services/[categorySlug]/[serviceSlug].astro[0m:[93m30[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
@@ -986,13 +730,13 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m18[0m     const canonical = buildServiceUrl(locale, null, service.translation.slug, service.categories[0]?.slug ?? null);
 [7m  [0m [93m          ~~~~~~~~~[0m
 
-[96msrc/pages/[lang]/services/[slug].astro[0m:[93m25[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
+[96msrc/pages/[lang]/services/[slug].astro[0m:[93m35[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
 
 See docs for more details: https://docs.astro.build/en/guides/client-side-scripts/#script-processing.
 
 Add the `is:inline` directive explicitly to silence this hint.
 
-[7m25[0m   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+[7m35[0m   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
 [7m  [0m [93m          ~~~~[0m
 
 [96msrc/pages/[lang]/services/[categorySlug]/[slug].astro[0m:[93m24[0m:[93m11[0m - [93mwarning[0m[90m astro(4000): [0mThis script will be treated as if it has the `is:inline` directive because it contains an attribute. Therefore, features that require processing (e.g. using TypeScript or npm packages in the script) are unavailable.
@@ -1142,10 +886,10 @@ Add the `is:inline` directive explicitly to silence this hint.
 [7m6[0m     const ids = serviceAdminResource.list?.filters.map((filter) => filter.id) ?? [];
 [7m [0m [91m                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
 
-Result (899 files): 
-- 161 errors
+Result (900 files): 
+- 111 errors
 - 0 warnings
-- 49 hints
+- 47 hints
 
  ELIFECYCLE  Command failed with exit code 1.
 [ASTRO] SITE_URL is not set — using http://localhost:4321 fallback. Set SITE_URL for production builds.

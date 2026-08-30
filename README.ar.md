@@ -492,6 +492,7 @@ schemas.ts
 - `service_notifications`: `id`
 - `service_attribute_definitions`: `id`
 - `service_attribute_values`: `serviceId`
+- `service_review_helpful`: `reviewId`, `userId`, `isHelpful`, `createdAt`
 
 ### الترحيلات
 
@@ -649,6 +650,7 @@ search/
   contract.ts
   index.ts
   postgres.ts
+  registry.ts
 seo/
   index.ts
 taxonomy/

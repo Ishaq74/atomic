@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-30 16:58:33",
+  "generatedAt": "2026-08-30 19:22:11",
   "overall": "red",
   "reportsAvailable": 6,
   "sections": [
@@ -7,11 +7,11 @@
       "key": "check",
       "title": "Type & Template Check (astro check)",
       "ok": false,
-      "summary": "161 errors, 0 warnings, 49 hints",
+      "summary": "111 errors, 0 warnings, 47 hints",
       "metrics": {
-        "errors": 161,
+        "errors": 111,
         "warnings": 0,
-        "hints": 49
+        "hints": 47
       }
     },
     {
@@ -28,12 +28,12 @@
       "key": "vitest",
       "title": "Unit & Integration Tests (Vitest)",
       "ok": false,
-      "summary": "1073/1163 passed, 90 failed",
+      "summary": "1172/1279 passed, 10 skipped, 97 failed",
       "metrics": {
-        "total": 1163,
-        "passed": 1073,
-        "failed": 90,
-        "skipped": 0
+        "total": 1279,
+        "passed": 1172,
+        "failed": 97,
+        "skipped": 10
       }
     },
     {
