@@ -19,12 +19,14 @@ export const BLOG_POST_WORKFLOW: WorkflowDefinition<BlogPostStatus> = {
   ],
 };
 
-export const BLOG_POST_TRANSITIONS: Readonly<Record<BlogPostStatus, readonly BlogPostStatus[]>> = Object.fromEntries(
-  BLOG_POST_STATUSES.map((status) => [
-    status,
-    BLOG_POST_WORKFLOW.transitions.filter((transition) => transition.from === status).map((transition) => transition.to),
-  ]),
-) as Record<BlogPostStatus, readonly BlogPostStatus[]>;
+type TransitionMap<S extends string> = { [K in S]: readonly S[] };
+function buildTransitionMap<S extends string>(states: readonly S[], transitions: readonly { from: S; to: S }[]): TransitionMap<S> {
+  const map = {} as TransitionMap<S>;
+  for (const state of states) map[state] = transitions.filter((transition) => transition.from === state).map((transition) => transition.to);
+  return map;
+}
+
+export const BLOG_POST_TRANSITIONS = Object.freeze(buildTransitionMap(BLOG_POST_STATUSES, BLOG_POST_WORKFLOW.transitions));
 
 export function canTransitionBlogPost(from: BlogPostStatus, to: BlogPostStatus): boolean {
   return canTransition(BLOG_POST_WORKFLOW, from, to);

@@ -45,6 +45,7 @@ const serviceEditableFields = {
   focusKeyword: nullableText(120),
 };
 
+/** Creation always starts as draft; these literal fields exist only for backwards-compatible UI payloads. */
 export const serviceFormSchema = z.object({
   ...serviceEditableFields,
   isMobile: z.boolean().default(false),
@@ -55,9 +56,10 @@ export const serviceFormSchema = z.object({
   publishedAt: z.null().default(null),
 });
 
+/** Update payload never carries lifecycle state. State changes are explicit actions. */
 export const serviceUpdateSchema = z.object({
   organizationId: serviceOrganizationIdSchema,
-  locale: localeSchema,
+  locale: localeSchema.optional(),
   title: z.string().trim().min(1).max(180).optional(),
   slug: slugSchema.optional(),
   excerpt: nullableText(500),
@@ -84,70 +86,31 @@ export const serviceUpdateSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const serviceReportSchema = z.object({
-  serviceId: z.string().uuid(),
-  organizationId: serviceOrganizationIdSchema,
-  commentId: z.string().uuid().optional(),
-  reviewId: z.string().uuid().optional(),
-  reason: z.enum(["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"]),
-  description: nullableText(2000),
-}).refine((value) => Number(Boolean(value.commentId)) + Number(Boolean(value.reviewId)) === 1, {
-  path: ["commentId"],
-  message: "A report must target exactly one comment or review.",
-});
+export type ServiceCreateInput = z.infer<typeof serviceFormSchema>;
+export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 
+export const serviceReportSchema = z.object({
+  serviceId: z.string().uuid(), organizationId: serviceOrganizationIdSchema,
+  commentId: z.string().uuid().optional(), reviewId: z.string().uuid().optional(),
+  reason: z.enum(["SPAM", "ABUSIVE", "OFF_TOPIC", "HATE_SPEECH", "OTHER"]), description: nullableText(2000),
+}).refine((value) => Number(Boolean(value.commentId)) + Number(Boolean(value.reviewId)) === 1, { path: ["commentId"], message: "A report must target exactly one comment or review." });
+
+export const serviceAdminFiltersSchema = z.object({
+  organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), authorId: z.string().trim().min(1).max(200).optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
+});
 export type ServiceAdminFilters = z.input<typeof serviceAdminFiltersSchema>;
 
-/** Dedicated administrative contract. Public listing semantics must not be reused for admin data access. */
-export const serviceAdminFiltersSchema = z.object({
-  organizationId: serviceOrganizationIdSchema,
-  page: z.coerce.number().int().positive().max(10_000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().trim().max(120).optional(),
-  status: serviceStatusSchema.optional(),
-  categoryId: z.string().uuid().optional(),
-  tagId: z.string().uuid().optional(),
-  authorId: z.string().trim().min(1).max(200).optional(),
-  providerId: z.string().trim().min(1).max(200).optional(),
-  featured: queryBooleanSchema,
-  mobile: queryBooleanSchema,
-  locale: localeSchema.optional(),
-  sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
-});
-
 export const serviceListFiltersSchema = z.object({
-  organizationId: serviceOrganizationIdSchema,
-  page: z.coerce.number().int().positive().max(10_000).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  search: z.string().trim().max(120).optional(),
-  status: serviceStatusSchema.optional(),
-  categoryId: z.string().uuid().optional(),
-  tagId: z.string().uuid().optional(),
-  providerId: z.string().trim().min(1).max(200).optional(),
-  featured: queryBooleanSchema,
-  mobile: queryBooleanSchema,
-  locale: localeSchema.optional(),
-  sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"),
-  sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  organizationId: serviceOrganizationIdSchema, page: z.coerce.number().int().positive().max(10_000).default(1), limit: z.coerce.number().int().min(1).max(100).default(20), search: z.string().trim().max(120).optional(), status: serviceStatusSchema.optional(), categoryId: z.string().uuid().optional(), tagId: z.string().uuid().optional(), providerId: z.string().trim().min(1).max(200).optional(), featured: queryBooleanSchema, mobile: queryBooleanSchema, locale: localeSchema.optional(), sortBy: z.enum(["createdAt", "updatedAt", "publishedAt", "title", "priceMinor", "ratingAverage100", "viewCount"]).default("updatedAt"), sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
+export type ServiceListFilters = z.input<typeof serviceListFiltersSchema>;
 
 export const serviceAvailabilitySchema = z.object({
-  serviceId: z.string().uuid(),
-  dayOfWeek: z.coerce.number().int().min(0).max(6),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
-  timezone: z.string().trim().min(1).max(64),
-  maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
+  serviceId: z.string().uuid(), dayOfWeek: z.coerce.number().int().min(0).max(6), startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), endTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/), timezone: z.string().trim().min(1).max(64), maxParticipants: z.coerce.number().int().positive().max(1_000_000).optional().nullable(),
 }).refine((value) => value.startTime < value.endTime, { path: ["endTime"], message: "End time must be after start time." });
 
 export function calculateServiceSeoScore(input: { title?: string; metaTitle?: string; metaDescription?: string; focusKeyword?: string }): number {
   let score = 0;
-  if (input.title?.trim()) score += 25;
-  if (input.metaTitle?.trim()) score += 20;
-  if (input.metaDescription?.trim()) score += 20;
-  if (input.focusKeyword?.trim()) score += 15;
-  if ((input.title?.length ?? 0) >= 25) score += 10;
-  if ((input.metaDescription?.length ?? 0) >= 80) score += 10;
+  if (input.title?.trim()) score += 25; if (input.metaTitle?.trim()) score += 20; if (input.metaDescription?.trim()) score += 20; if (input.focusKeyword?.trim()) score += 15; if ((input.title?.length ?? 0) >= 25) score += 10; if ((input.metaDescription?.length ?? 0) >= 80) score += 10;
   return Math.min(100, score);
 }

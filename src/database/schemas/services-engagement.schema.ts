@@ -31,3 +31,17 @@ export const serviceAttributeValues = pgTable(
   { serviceId: text("service_id").notNull().references(() => services.id, { onDelete: "cascade" }), definitionId: text("definition_id").notNull().references(() => serviceAttributeDefinitions.id, { onDelete: "cascade" }), stringValue: text("string_value"), numberValue: integer("number_value"), booleanValue: boolean("boolean_value"), selectedValue: text("selected_value"), updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull() },
   (table) => [primaryKey({ columns: [table.serviceId, table.definitionId] }), index("service_attribute_values_definition_idx").on(table.definitionId)],
 );
+
+export const serviceReviewHelpful = pgTable(
+  "service_review_helpful",
+  {
+    reviewId: text("review_id").notNull().references(() => serviceReviews.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    isHelpful: boolean("is_helpful").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.reviewId, table.userId] }),
+    index("service_review_helpful_user_idx").on(table.userId),
+  ],
+);

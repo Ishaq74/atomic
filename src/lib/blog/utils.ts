@@ -3,8 +3,9 @@ import arBlog from "@i18n/blog/ar";
 import enBlog from "@i18n/blog/en";
 import esBlog from "@i18n/blog/es";
 import frBlog from "@i18n/blog/fr";
-import { BLOG_DEFAULTS, BLOG_OG_LOCALES, type BlogOgLocale } from "./constants";
-export { stripHtml, generateExcerpt } from "@/core/content/text";
+import { BLOG_OG_LOCALES, type BlogOgLocale } from "./constants";
+import { stripHtml } from "@/core/content/text";
+export { generateExcerpt, stripHtml } from "@/core/content/text";
 
 const BLOG_ROUTE_SEGMENTS: Record<Locale, string> = {
   fr: frBlog.routes.blog,

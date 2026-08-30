@@ -1,7 +1,7 @@
 import { ActionError } from "astro:actions";
 import type { ActionAPIContext } from "astro:actions";
-import { z } from "astro/zod";
 import { eq } from "drizzle-orm";
+import { z } from "astro/zod";
 import { getDrizzle } from "@database/drizzle";
 import { blogPosts, blogCategories, blogTags, mediaFiles } from "@database/schemas";
 import { logAuditEvent, extractIp, type AuditAction } from "@/lib/audit";
@@ -13,257 +13,81 @@ type Statement = typeof statement;
 export type BlogPermissions = { [K in keyof Statement]?: Statement[K][number][] };
 type BlogPermissionContext = Pick<ActionAPIContext, "locals" | "request">;
 
-export interface BlogTenantContext {
-  organizationId: string | null;
-  isOrgContext: boolean;
-}
-
+export interface BlogTenantContext { organizationId: string | null; isOrgContext: boolean; }
 export const blogOrganizationIdSchema = z.string().trim().min(1).optional().nullable();
 
-/**
- * Résout le tenant (organisation) à partir de l'input ou du contexte.
- * organizationId explicite = admin global ou org admin.
- * Si organizationId est absent/null, c'est le blog global.
- */
 export function resolveBlogTenant(input: { organizationId?: string | null }): BlogTenantContext {
-  return {
-    organizationId: input.organizationId ?? null,
-    isOrgContext: !!input.organizationId,
-  };
+  return { organizationId: input.organizationId ?? null, isOrgContext: Boolean(input.organizationId) };
 }
 
-/**
- * Capability check shared by actions and server-rendered admin pages.
- * Organization permissions are always resolved from the authenticated Better
- * Auth session; an organization id supplied by a client never grants access.
- */
-export async function hasBlogPermission(
-  context: BlogPermissionContext,
-  tenant: BlogTenantContext,
-  permissions: BlogPermissions,
-): Promise<boolean> {
+export async function hasBlogPermission(context: BlogPermissionContext, tenant: BlogTenantContext, permissions: BlogPermissions): Promise<boolean> {
   const user = context.locals.user;
   if (!user || user.banned) return false;
-
   try {
     const { auth } = await import("@/lib/auth");
     if (tenant.isOrgContext) {
-      const result = await auth.api.hasPermission({
-        headers: context.request.headers,
-        body: {
-          organizationId: tenant.organizationId!,
-          permissions: permissions as Record<string, string[]>,
-        },
-      });
+      const result = await auth.api.hasPermission({ headers: context.request.headers, body: { organizationId: tenant.organizationId!, permissions: permissions as Record<string, string[]> } });
       return result.success;
     }
-
-    const result = await auth.api.userHasPermission({
-      body: {
-        userId: user.id,
-        permissions: permissions as Record<string, string[]>,
-      },
-    });
+    const result = await auth.api.userHasPermission({ body: { userId: user.id, permissions: permissions as Record<string, string[]> } });
     return result.success;
   } catch {
     return false;
   }
 }
 
-/** Vérifie que l'utilisateur est connecté et a les permissions requises. */
-export async function assertBlogPermission(
-  context: ActionAPIContext,
-  tenant: BlogTenantContext,
-  permissions: BlogPermissions,
-) {
+export async function assertBlogPermission(context: ActionAPIContext, tenant: BlogTenantContext, permissions: BlogPermissions) {
   const user = context.locals.user;
-  if (!user) {
-    throw new ActionError({
-      code: "UNAUTHORIZED",
-      message: "Vous devez être connecté pour effectuer cette action.",
-    });
-  }
-  if (user.banned) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Compte suspendu." });
-  }
-
-  if (!(await hasBlogPermission(context, tenant, permissions))) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Permissions insuffisantes." });
-  }
-
+  if (!user) throw new ActionError({ code: "UNAUTHORIZED", message: "Vous devez être connecté pour effectuer cette action." });
+  if (user.banned) throw new ActionError({ code: "FORBIDDEN", message: "Compte suspendu." });
+  if (!(await hasBlogPermission(context, tenant, permissions))) throw new ActionError({ code: "FORBIDDEN", message: "Permissions insuffisantes." });
   return user;
 }
 
-/**
- * Vérifie qu'un post appartient bien au tenant demandé.
- */
 export async function assertPostInTenant(postId: string, tenant: BlogTenantContext) {
-  const db = getDrizzle();
-  const [post] = await db
-    .select({
-      id: blogPosts.id,
-      organizationId: blogPosts.organizationId,
-      status: blogPosts.status,
-    })
-    .from(blogPosts)
-    .where(eq(blogPosts.id, postId))
-    .limit(1);
-
-  if (!post) {
-    throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
-  }
-
-  const postOrgId = post.organizationId ?? null;
-  if (postOrgId !== tenant.organizationId) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Cet article n'appartient pas à ce tenant." });
-  }
-
+  const [post] = await getDrizzle().select().from(blogPosts).where(eq(blogPosts.id, postId)).limit(1);
+  if (!post) throw new ActionError({ code: "NOT_FOUND", message: "Article introuvable." });
+  if ((post.organizationId ?? null) !== tenant.organizationId) throw new ActionError({ code: "FORBIDDEN", message: "Cet article n'appartient pas à ce tenant." });
   return post;
 }
 
 export async function assertCategoryInTenant(categoryId: string, tenant: BlogTenantContext) {
-  const db = getDrizzle();
-  const [category] = await db
-    .select({ id: blogCategories.id, organizationId: blogCategories.organizationId })
-    .from(blogCategories)
-    .where(eq(blogCategories.id, categoryId))
-    .limit(1);
-
-  if (!category) {
-    throw new ActionError({ code: "NOT_FOUND", message: "Catégorie introuvable." });
-  }
-
-  const catOrgId = category.organizationId ?? null;
-  if (catOrgId !== tenant.organizationId) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Cette catégorie n'appartient pas à ce tenant." });
-  }
-
+  const [category] = await getDrizzle().select({ id: blogCategories.id, organizationId: blogCategories.organizationId }).from(blogCategories).where(eq(blogCategories.id, categoryId)).limit(1);
+  if (!category) throw new ActionError({ code: "NOT_FOUND", message: "Catégorie introuvable." });
+  if ((category.organizationId ?? null) !== tenant.organizationId) throw new ActionError({ code: "FORBIDDEN", message: "Cette catégorie n'appartient pas à ce tenant." });
   return category;
 }
 
 export async function assertTagInTenant(tagId: string, tenant: BlogTenantContext) {
-  const db = getDrizzle();
-  const [tag] = await db
-    .select({ id: blogTags.id, organizationId: blogTags.organizationId })
-    .from(blogTags)
-    .where(eq(blogTags.id, tagId))
-    .limit(1);
-
-  if (!tag) {
-    throw new ActionError({ code: "NOT_FOUND", message: "Tag introuvable." });
-  }
-
-  const tagOrgId = tag.organizationId ?? null;
-  if (tagOrgId !== tenant.organizationId) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Ce tag n'appartient pas à ce tenant." });
-  }
-
+  const [tag] = await getDrizzle().select({ id: blogTags.id, organizationId: blogTags.organizationId }).from(blogTags).where(eq(blogTags.id, tagId)).limit(1);
+  if (!tag) throw new ActionError({ code: "NOT_FOUND", message: "Tag introuvable." });
+  if ((tag.organizationId ?? null) !== tenant.organizationId) throw new ActionError({ code: "FORBIDDEN", message: "Ce tag n'appartient pas à ce tenant." });
   return tag;
 }
 
 export async function assertMediaInTenant(mediaId: string, tenant: BlogTenantContext) {
-  const db = getDrizzle();
-  const [media] = await db
-    .select({ id: mediaFiles.id, organizationId: mediaFiles.organizationId })
-    .from(mediaFiles)
-    .where(eq(mediaFiles.id, mediaId))
-    .limit(1);
-
-  if (!media) {
-    throw new ActionError({ code: "NOT_FOUND", message: "Média introuvable." });
-  }
-
-  const mediaOrgId = media.organizationId ?? null;
-  if (mediaOrgId !== tenant.organizationId) {
-    throw new ActionError({ code: "FORBIDDEN", message: "Ce média n'appartient pas à ce tenant." });
-  }
-
+  const [media] = await getDrizzle().select({ id: mediaFiles.id, organizationId: mediaFiles.organizationId }).from(mediaFiles).where(eq(mediaFiles.id, mediaId)).limit(1);
+  if (!media) throw new ActionError({ code: "NOT_FOUND", message: "Média introuvable." });
+  if ((media.organizationId ?? null) !== tenant.organizationId) throw new ActionError({ code: "FORBIDDEN", message: "Ce média n'appartient pas à ce tenant." });
   return media;
 }
 
-export function blogRateLimit(
-  _context: ActionAPIContext,
-  userId: string,
-  scope: string,
-  opts = { window: 60, max: 30 },
-) {
-  const safeScope = scope.replace(/:/g, "_");
-  const rl = checkRateLimit(`blog-${safeScope}:${userId}`, opts);
-  if (!rl.allowed) {
-    throw new ActionError({
-      code: "TOO_MANY_REQUESTS",
-      message: "Trop de requêtes. Veuillez réessayer dans quelques instants.",
-    });
-  }
+export function blogRateLimit(_context: ActionAPIContext, userId: string, scope: string, opts = { window: 60, max: 30 }) {
+  const rl = checkRateLimit(`blog-${scope.replace(/:/g, "_")}:${userId}`, opts);
+  if (!rl.allowed) throw new ActionError({ code: "TOO_MANY_REQUESTS", message: "Trop de requêtes. Veuillez réessayer dans quelques instants." });
 }
 
-/**
- * Rate-limit for public, unauthenticated-friendly blog endpoints (comments, reports).
- * Keys on IP address (like api/contact.ts) since a `userId` isn't always available
- * (guest comments) and isn't a reliable anti-abuse key anyway (trivial to bypass by
- * signing out). Falls back to a tighter shared global bucket when no IP can be
- * resolved (TRUST_PROXY not set), so the endpoint remains usable but still capped.
- */
-export function blogPublicRateLimit(
-  context: ActionAPIContext,
-  scope: string,
-  opts = { window: 300, max: 5 },
-) {
-  const safeScope = scope.replace(/:/g, "_");
+export function blogPublicRateLimit(context: ActionAPIContext, scope: string, opts = { window: 300, max: 5 }) {
   const ip = extractIp(context.request.headers, context.clientAddress);
-  const key = ip ? `blog-${safeScope}:${ip}` : `blog-${safeScope}:__global__`;
-  const rlOpts = ip ? opts : { window: opts.window, max: Math.max(1, Math.floor(opts.max / 3)) };
-  const rl = checkRateLimit(key, rlOpts);
-  if (!rl.allowed) {
-    throw new ActionError({
-      code: "TOO_MANY_REQUESTS",
-      message: "Trop de requêtes. Veuillez réessayer dans quelques instants.",
-    });
-  }
+  const key = ip ? `blog-${scope.replace(/:/g, "_")}:${ip}` : `blog-${scope.replace(/:/g, "_")}:__global__`;
+  const rl = checkRateLimit(key, ip ? opts : { window: opts.window, max: Math.max(1, Math.floor(opts.max / 3)) });
+  if (!rl.allowed) throw new ActionError({ code: "TOO_MANY_REQUESTS", message: "Trop de requêtes. Veuillez réessayer dans quelques instants." });
 }
 
-export function auditBlog(
-  context: ActionAPIContext,
-  userId: string,
-  action: AuditAction,
-  opts?: {
-    resource?: string;
-    resourceId?: string;
-    metadata?: Record<string, unknown>;
-  },
-) {
-  void logAuditEvent({
-    userId,
-    action,
-    resource: opts?.resource ?? null,
-    resourceId: opts?.resourceId ?? null,
-    metadata: opts?.metadata ?? null,
-    ipAddress: extractIp(context.request.headers, context.clientAddress),
-    userAgent: context.request.headers.get("user-agent"),
-  }).catch(() => {});
+export function auditBlog(context: ActionAPIContext, userId: string, action: AuditAction, opts?: { resource?: string; resourceId?: string; metadata?: Record<string, unknown> }) {
+  void logAuditEvent({ userId, action, resource: opts?.resource ?? null, resourceId: opts?.resourceId ?? null, metadata: opts?.metadata ?? null, ipAddress: extractIp(context.request.headers, context.clientAddress), userAgent: context.request.headers.get("user-agent") }).catch(() => {});
 }
 
-/**
- * Invalide le cache blog de façon ciblée (sous-préfixes) plutôt que de vider
- * aveuglément tout le préfixe `blog:` (qui inclurait d'éventuels autres modules).
- * Les préfixes correspondent exactement aux clés générées par blog.loader.ts :
- *   blog:post:  blog:list:  blog:related:  blog:author:
- *   blog:categories:  blog:category:  blog:tags:  blog:tag:
- *   blog:slugs:  blog:link-targets:
- */
 export function invalidateBlogCache() {
-  for (const prefix of [
-    "blog:post:",
-    "blog:list:",
-    "blog:related:",
-    "blog:author:",
-    "blog:categories:",
-    "blog:category:",
-    "blog:tags:",
-    "blog:tag:",
-    "blog:slugs:",
-    "blog:link-targets:",
-  ]) {
-    invalidateCache(prefix);
-  }
+  for (const prefix of ["blog:post:", "blog:list:", "blog:related:", "blog:author:", "blog:categories:", "blog:category:", "blog:tags:", "blog:tag:", "blog:slugs:", "blog:link-targets:"]) invalidateCache(prefix);
 }
