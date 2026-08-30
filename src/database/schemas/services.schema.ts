@@ -90,6 +90,7 @@ export const serviceTranslations = pgTable(
     uniqueIndex("service_translations_org_locale_slug_uidx").on(table.organizationId, table.locale, table.slug).where(sql`${table.organizationId} IS NOT NULL`),
     uniqueIndex("service_translations_global_locale_slug_uidx").on(table.locale, table.slug).where(sql`${table.organizationId} IS NULL`),
     index("service_translations_locale_slug_idx").on(table.locale, table.slug),
+    index("service_translations_search_vector_gin_idx").using("gin", table.searchVector),
   ],
 );
 
