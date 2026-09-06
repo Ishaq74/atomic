@@ -25,6 +25,7 @@ vi.mock('@database/drizzle', () => ({
       insert: mockInsert,
       update: mockUpdate,
       delete: mockDelete,
+      execute: vi.fn(() => Promise.resolve()),
     };
     return { ...db, transaction: (cb: (tx: typeof db) => Promise<any>) => mockTransaction(cb, db) };
   }),

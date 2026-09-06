@@ -1,5 +1,6 @@
 import { and, eq, ilike, isNull } from "drizzle-orm";
 import type { Locale } from "@i18n/config";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { getDrizzle } from "@database/drizzle";
 import { organization, serviceCategoryLinks, serviceCategories, serviceTranslations, services } from "@database/schemas";
 import { getServiceBySlug } from "@/modules/services/loaders";
@@ -14,8 +15,8 @@ async function organizationRouteSegment(organizationId: string | null): Promise<
   return row?.slug ?? null;
 }
 
-function tenantScope(column: typeof services.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
-function translationTenantScope(column: typeof serviceTranslations.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
+function tenantScope(column: AnyPgColumn<{ data: string | null }>, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
+function translationTenantScope(column: AnyPgColumn<{ data: string | null }>, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
 
 export const serviceInternalLinkResolver: InternalLinkResolver = {
   name: "services",

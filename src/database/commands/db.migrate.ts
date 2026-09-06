@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { getPgClient, shutdownDb } from '../drizzle';
 import { getConnectionLabel, dbNameFromUrl, getDbUrl } from '../env';
 import { c, logTarget, confirmProd, confirmDestructive, resetAllTables } from './_utils';
+import { splitSqlStatements, DDL_ALREADY_EXISTS_CODES } from './_migration-sql';
 import type { PoolClient } from 'pg';
 
 type MigrationRecord = { id: string; sql: string };
@@ -59,18 +60,24 @@ async function main() {
     // --- Apply pending migrations ───────────────────────────────────
     for (const migration of pending) {
       console.log(c.green(c.bold(`\n[migrate] → ${migration.id}`)));
-      const statements = migration.sql.split(/;\s*\n/).map(s => s.trim()).filter(Boolean);
+      const statements = splitSqlStatements(migration.sql);
 
       await client.query('BEGIN');
       try {
         for (const stmt of statements) {
-          if (!stmt) continue;
+          // Per-statement SAVEPOINT: a caught "already exists" error still aborts the
+          // enclosing Postgres transaction, so it must be rolled back to a savepoint
+          // before any further statement can run in the same transaction.
+          await client.query('SAVEPOINT migration_stmt');
           try {
             await client.query(stmt);
+            await client.query('RELEASE SAVEPOINT migration_stmt');
           } catch (error: unknown) {
             const pgCode = (error as { code?: string })?.code;
             const errMsg = error instanceof Error ? error.message : String(error);
-            if (pgCode && ['42P07', '42710', '42701'].includes(pgCode)) {
+            if (pgCode && DDL_ALREADY_EXISTS_CODES.has(pgCode)) {
+              await client.query('ROLLBACK TO SAVEPOINT migration_stmt');
+              await client.query('RELEASE SAVEPOINT migration_stmt');
               console.warn(c.yellow(`  ⚠️  Ignoré : ${errMsg}`));
             } else {
               throw error;

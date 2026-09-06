@@ -119,7 +119,7 @@ export const updateService = defineAction({
           if (input.tagIds.length) await tx.insert(serviceTagLinks).values(input.tagIds.map((tagId) => ({ serviceId: input.id, tagId })));
         }
         if (locale && (content !== undefined || input.title !== undefined || input.slug !== undefined)) {
-          await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status, revisionNote: "Mise à jour" });
+          await tx.insert(serviceRevisions).values({ serviceId: input.id, authorId: user.id, locale, title: input.title ?? existingTranslation?.title ?? "", slug: input.slug ?? existingTranslation?.slug ?? "", content: content ?? existingTranslation?.content ?? "", excerpt: excerpt ?? null, status: existing.status === "DELETED" ? "ARCHIVED" : existing.status, revisionNote: "Mise à jour" });
         }
       });
     } catch (error) {

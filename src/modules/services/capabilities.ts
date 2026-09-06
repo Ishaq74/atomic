@@ -8,4 +8,4 @@ const ids = [
 
 export const servicesCapabilityProviders = Object.fromEntries(
   ids.map((id) => [id, CMS_CAPABILITIES[id].implementations.join(" + ")]),
-) as AtomicModuleCapabilityProviders;
+) as unknown as AtomicModuleCapabilityProviders;

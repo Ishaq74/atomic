@@ -33,7 +33,9 @@ export function canTransitionBlogPost(from: BlogPostStatus, to: BlogPostStatus):
 }
 
 export function assertValidBlogPostTransition(from: BlogPostStatus, to: BlogPostStatus): void {
-  assertTransition(BLOG_POST_WORKFLOW, from, to);
+  if (!canTransitionBlogPost(from, to)) {
+    throw new Error(`Invalid blog post status transition: ${from} → ${to}.`);
+  }
 }
 
 export const BLOG_COMMENT_STATUSES = ["PENDING", "APPROVED", "REJECTED", "SPAM", "TRASH"] as const;

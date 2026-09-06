@@ -4,7 +4,7 @@ import { assertValidBlogPostTransition, BLOG_POST_TRANSITIONS, type BlogPostStat
 describe("blog post lifecycle", () => {
   it("documents every legal transition", () => {
     const legal: Array<[BlogPostStatus, BlogPostStatus]> = Object.entries(BLOG_POST_TRANSITIONS)
-      .flatMap(([from, targets]) => targets.map((to) => [from as BlogPostStatus, to] as const));
+      .flatMap(([from, targets]) => targets.map((to) => [from as BlogPostStatus, to] as [BlogPostStatus, BlogPostStatus]));
 
     for (const [from, to] of legal) expect(() => assertValidBlogPostTransition(from, to)).not.toThrow();
   });

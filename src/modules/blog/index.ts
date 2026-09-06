@@ -4,6 +4,7 @@ export * from "@/modules/blog/domain";
 export * from "@/modules/blog/schema";
 export * from "@/modules/blog/actions";
 export * from "@/modules/blog/loaders";
+export { getBlogModerationQueue } from "@/modules/blog/actions";
 export * from "@/modules/blog/validation";
 export * from "@/modules/blog/permissions";
 export * from "@/modules/blog/search";

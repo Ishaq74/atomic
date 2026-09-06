@@ -169,7 +169,6 @@ export const moderateBlogComment = defineAction({
             userId: comment.authorId,
             organizationId: comment.organizationId,
             type: "COMMENT_APPROVED",
-            postId: comment.postId,
             commentId: comment.id,
             fromUserId: user.id,
             metadata: { content: newContent.slice(0, 200) },
@@ -179,7 +178,6 @@ export const moderateBlogComment = defineAction({
             userId: comment.authorId,
             organizationId: comment.organizationId,
             type: "COMMENT_REJECTED",
-            postId: comment.postId,
             commentId: comment.id,
             fromUserId: user.id,
           });

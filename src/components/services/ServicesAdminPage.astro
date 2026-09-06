@@ -119,7 +119,7 @@ const et = getServiceEngagementTranslations(props.locale);
 
   for (const root of document.querySelectorAll<HTMLElement>("[data-services-admin-workspace]")) {
     const organizationId = root.dataset.organizationId || null;
-    const locale = root.dataset.locale ?? "fr";
+    const locale = (root.dataset.locale ?? "fr") as "fr" | "en" | "es" | "ar";
     const confirmTaxonomyDelete = root.dataset.confirmTaxonomyDelete ?? "";
     const refresh = () => window.location.reload();
     const status = root.querySelector<HTMLElement>("[data-service-admin-status]");

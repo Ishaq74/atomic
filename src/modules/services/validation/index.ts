@@ -84,7 +84,7 @@ export const serviceUpdateSchema = z.object({
   locationAddress: nullableText(500),
   focusKeyword: nullableText(120),
   id: z.string().uuid(),
-});
+}).strict();
 
 export type ServiceCreateInput = z.infer<typeof serviceFormSchema>;
 export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;

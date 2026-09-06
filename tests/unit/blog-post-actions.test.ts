@@ -99,7 +99,7 @@ function context() {
 }
 
 beforeEach(() => {
-  select.mockReset();
+  select.mockReset().mockReturnValue(chain());
   insert.mockReset();
   update.mockReset();
   remove.mockReset();

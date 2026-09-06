@@ -6,6 +6,7 @@ const moduleA = {
   entity: "entity_a",
   capabilities: {
     content: false,
+    attributes: false,
     localization: false,
     media: false,
     seo: false,
@@ -21,6 +22,7 @@ const moduleA = {
     cache: false,
   },
   capabilityProviders: {
+    attributes: "attributes",
     content: "content",
     localization: "localization",
     media: "media",

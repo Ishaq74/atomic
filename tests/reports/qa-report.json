@@ -1,39 +1,39 @@
 {
-  "generatedAt": "2026-08-30 19:22:11",
+  "generatedAt": "2026-09-06 18:06:11",
   "overall": "red",
   "reportsAvailable": 6,
   "sections": [
     {
       "key": "check",
       "title": "Type & Template Check (astro check)",
-      "ok": false,
-      "summary": "111 errors, 0 warnings, 47 hints",
+      "ok": true,
+      "summary": "0 errors, 0 warnings, 53 hints",
       "metrics": {
-        "errors": 111,
+        "errors": 0,
         "warnings": 0,
-        "hints": 47
+        "hints": 53
       }
     },
     {
       "key": "lint",
       "title": "Lint (ESLint)",
-      "ok": false,
-      "summary": "17 errors, 21 warnings",
+      "ok": true,
+      "summary": "0 errors, 21 warnings",
       "metrics": {
-        "errors": 17,
+        "errors": 0,
         "warnings": 21
       }
     },
     {
       "key": "vitest",
       "title": "Unit & Integration Tests (Vitest)",
-      "ok": false,
-      "summary": "1172/1279 passed, 10 skipped, 97 failed",
+      "ok": true,
+      "summary": "1309/1309 passed",
       "metrics": {
-        "total": 1279,
-        "passed": 1172,
-        "failed": 97,
-        "skipped": 10
+        "total": 1309,
+        "passed": 1309,
+        "failed": 0,
+        "skipped": 0
       }
     },
     {
@@ -64,10 +64,10 @@
       "key": "lighthouse",
       "title": "Performance & Quality Audit (Lighthouse CI)",
       "ok": false,
-      "summary": "4 page(s) audited, 1 below threshold (≥90)",
+      "summary": "36 page(s) audited, 7 below threshold (≥90)",
       "metrics": {
-        "pages": 4,
-        "belowThreshold": 1
+        "pages": 36,
+        "belowThreshold": 7
       }
     }
   ]

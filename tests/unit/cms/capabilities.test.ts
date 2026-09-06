@@ -7,6 +7,7 @@ const capabilities = [
   "media",
   "seo",
   "taxonomy",
+  "attributes",
   "search",
   "publication",
   "revisions",

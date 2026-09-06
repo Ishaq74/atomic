@@ -9,6 +9,7 @@ import { buildBlogPostUrl } from "@/lib/blog/utils";
 import { buildServiceUrl } from "@/modules/services/utils";
 import { publicBlogPostColumnsScope } from "@/lib/blog/public-visibility";
 import { buildTsQuery, getRegconfig } from "@/core/search";
+export { buildTsQuery, getRegconfig };
 
 export const prerender = false;
 const ERROR_CODES = { QUERY_TOO_SHORT: "QUERY_TOO_SHORT", INVALID_LOCALE: "INVALID_LOCALE", RATE_LIMITED: "RATE_LIMITED" } as const;
@@ -107,7 +108,7 @@ export const GET: APIRoute = async ({ url, clientAddress }) => {
     LIMIT ${limit}
   `);
 
-  const rows = Array.isArray(raw) ? raw : ((raw as { rows?: typeof raw }).rows ?? []);
+  const rows = raw.rows;
   return new Response(JSON.stringify({
     query: q,
     locale,

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
 
 // `astro:actions` is a virtual module resolved only by the Astro build pipeline.
 // In tests we provide the minimal shim (defineAction passthrough + ActionError).
@@ -54,6 +54,7 @@ describe('blog actions — integration (real DB)', () => {
   let globalPostId: string;
   let globalPostSlug: string;
   let realUserId: string;
+  let originalUserRole: string | null;
 
   beforeAll(async () => {
     const [post] = await db
@@ -66,9 +67,15 @@ describe('blog actions — integration (real DB)', () => {
     globalPostId = post.id;
     globalPostSlug = post.slug;
 
-    const [realUser] = await db.select({ id: user.id }).from(user).limit(1);
+    const [realUser] = await db.select({ id: user.id, role: user.role }).from(user).limit(1);
     if (!realUser) throw new Error('No user seeded — run db:seed');
     realUserId = realUser.id;
+    originalUserRole = realUser.role;
+    await db.update(user).set({ role: "admin" }).where(eq(user.id, realUserId));
+  });
+
+  afterAll(async () => {
+    await db.update(user).set({ role: originalUserRole }).where(eq(user.id, realUserId));
   });
 
   it('listBlogPostRevisions returns revisions for a seeded post', async () => {

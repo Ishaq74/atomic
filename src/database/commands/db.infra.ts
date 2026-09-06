@@ -2,9 +2,9 @@ import path from 'path';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { getPgClient, shutdownDb } from '../drizzle';
 import { c, logTarget, confirmProd } from './_utils';
+import { splitSqlStatements } from './_migration-sql';
 
 const INFRA_DIR = path.resolve(process.cwd(), 'src/database/infra');
-const STATEMENT_BREAKPOINT = /-->\s*statement-breakpoint\s*\n/g;
 const isDryRun = process.argv.includes('--dry-run');
 
 async function main() {
@@ -49,10 +49,7 @@ async function main() {
     for (const file of files) {
       const fullPath = path.join(INFRA_DIR, file);
       const sql = readFileSync(fullPath, 'utf8');
-      const statements = sql
-        .split(STATEMENT_BREAKPOINT)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const statements = splitSqlStatements(sql);
 
       const count = statements.length;
       console.log(c.green(c.bold(`\n[infra] → ${file} (${count} statement${count > 1 ? 's' : ''})`)));

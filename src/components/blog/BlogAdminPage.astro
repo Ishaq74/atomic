@@ -12,7 +12,7 @@ import type { BlogPostListItem } from "@/modules/blog/domain";
 import type { getBlogModerationQueue } from "@database/loaders/blog.loader";
 import { blogPostAdminResource } from "@/modules/blog";
 
-interface PostRow extends Pick<BlogPostListItem, "post" | "translation" | "author" | "categories"> {}
+interface PostRow { post: BlogPostListItem["post"]; translation: { id: string; locale: Locale; title: string; slug: string } | null; author: BlogPostListItem["author"]; categories: BlogPostListItem["categories"]; }
 interface TaxonomyItem { id: string; slug: string; name: string; description?: string | null; color?: string | null; icon?: string | null; parentId?: string | null; sortOrder?: number | null; postCount: number; }
 interface FilterOptions { categories: { id: string; name: string }[]; tags: { id: string; name: string }[]; authors: { id: string; name: string | null }[] }
 interface Props {
@@ -82,8 +82,8 @@ function buildLocaleHref(targetLocale: Locale): string { return `${getRelativeLo
             { label: blogT.statuses.DRAFT, value: stats.draft },
             { label: blogT.admin.archive, value: stats.archived },
             { label: blogT.statuses.DELETED, value: stats.deleted },
-            { label: blogT.featured, value: stats.featured },
-            { label: blogT.sticky, value: stats.sticky },
+            { label: blogT.labels.featured, value: stats.featured },
+            { label: blogT.labels.sticky, value: stats.sticky },
             { label: blogT.admin.views, value: stats.views },
             { label: blogT.admin.moderation, value: moderationCount },
           ]} />

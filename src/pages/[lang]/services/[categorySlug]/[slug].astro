@@ -21,6 +21,6 @@ const jsonLd = buildServiceJsonLd({ name: title, description, slug: new URL(cano
 ---
 <BaseLayout title={`${title} — ${t.meta.title}`} description={description}>
   <link rel="canonical" href={new URL(canonicalUrl, Astro.url.origin).href} />
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+  <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
   <main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><ServiceDetail item={item} locale={locale} /></main>
 </BaseLayout>

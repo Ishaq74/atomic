@@ -143,7 +143,7 @@ export const createBlogPost = defineAction({
 });
 
 export const updateBlogPost = defineAction({
-  input: blogPostUpdateSchema.extend({
+  input: blogPostUpdateSchema.safeExtend({
     organizationId: blogOrganizationIdSchema,
     categoryIds: z.array(z.uuid()).max(10).optional(),
     tagIds: z.array(z.uuid()).max(20).optional(),

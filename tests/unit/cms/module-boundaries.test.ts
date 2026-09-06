@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("astro:actions", () => ({
+  ActionError: class extends Error {},
+  defineAction: (definition: unknown) => definition,
+}));
+
+vi.mock("@/modules/blog/components/cards", () => ({}));
+vi.mock("@/modules/blog/components/lists", () => ({}));
+vi.mock("@/modules/blog/components/single", () => ({}));
+vi.mock("@/modules/blog/components/ui", () => ({}));
+vi.mock("@/modules/blog/admin", () => ({}));
+
 import { blogModule, blogPostAdminResource, blogSearchDefinition } from "@/modules/blog";
 import { assertSearchResourceDefinition } from "@/core/search";
 

@@ -72,6 +72,7 @@ export interface ServiceDetail {
   translation: ServiceTranslation | null;
   provider: ServiceListItem["provider"];
   categories: ServiceListItem["categories"];
+  coverMedia: ServiceListItem["coverMedia"];
   tags: { id: string; slug: string; name: string | null }[];
   media: { id: string; mediaId: string; kind: "GALLERY" | "DOCUMENT"; altText: string; caption: string | null; sortOrder: number }[];
   availability: { id: string; dayOfWeek: number; startTime: string; endTime: string; timezone: string; maxParticipants: number | null }[];

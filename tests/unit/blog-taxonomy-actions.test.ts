@@ -18,12 +18,10 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 
 vi.mock('@database/drizzle', () => ({
-  getDrizzle: vi.fn(() => ({
-    select: mockSelect,
-    insert: mockInsert,
-    update: mockUpdate,
-    delete: mockDelete,
-  })),
+  getDrizzle: vi.fn(() => {
+    const db = { select: mockSelect, insert: mockInsert, update: mockUpdate, delete: mockDelete };
+    return { ...db, transaction: (callback: (tx: typeof db) => Promise<unknown>) => callback(db) };
+  }),
 }));
 
 vi.mock('@database/schemas', () => ({
@@ -86,6 +84,7 @@ function makeMutationChain(returningRows: any[] = []) {
     values: vi.fn(() => chain),
     set: vi.fn(() => chain),
     where: vi.fn(() => chain),
+    onConflictDoNothing: vi.fn(() => Promise.resolve(undefined)),
     returning: vi.fn(() => Promise.resolve(returningRows)),
     then: (resolve: any) => resolve(undefined),
   };
@@ -153,9 +152,10 @@ describe('deleteBlogCategory', () => {
   it('reassigns posts to another category before deleting', async () => {
     mockSelect
       .mockReturnValueOnce(makeChain([{ id: 'cat-1', organizationId: null }])) // assertCategoryInTenant (target)
-      .mockReturnValueOnce(makeChain([{ id: 'cat-2', organizationId: null }])); // assertCategoryInTenant (reassignTo)
-    const updateChain = makeMutationChain();
-    mockUpdate.mockReturnValue(updateChain);
+      .mockReturnValueOnce(makeChain([{ id: 'cat-2', organizationId: null }])) // assertCategoryInTenant (reassignTo)
+      .mockReturnValueOnce(makeChain([{ postId: 'post-1' }])); // affected post-category relations
+    const insertChain = makeMutationChain();
+    mockInsert.mockReturnValue(insertChain);
     mockDelete.mockReturnValue(makeMutationChain());
 
     const result = await deleteCategory.handler(
@@ -164,8 +164,8 @@ describe('deleteBlogCategory', () => {
     );
 
     expect(result).toEqual({ success: true });
-    expect(updateChain.set).toHaveBeenCalledWith({ categoryId: 'cat-2' });
-    expect(mockDelete).toHaveBeenCalled();
+    expect(insertChain.values).toHaveBeenCalledWith([{ postId: 'post-1', categoryId: 'cat-2' }]);
+    expect(mockDelete).toHaveBeenCalledTimes(2);
   });
 });
 

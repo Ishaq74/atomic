@@ -3,11 +3,6 @@
 > eslint "src/**/*.{js,ts,astro}"
 
 
-C:\Users\Utilisateur\Documents\atomic\src\components\blog\AdminPostForm.astro
-  37:504  error  Unexpected class using the ternary operator                                           astro/prefer-object-class-list
-  37:851  error  Unexpected class using the ternary operator                                           astro/prefer-object-class-list
-  38:28   error  Use <output> instead of the "status" role to ensure accessibility across all devices  astro/jsx-a11y/prefer-tag-over-role
-
 C:\Users\Utilisateur\Documents\atomic\src\components\blog\PostCard.astro
   159:3  warning  Unused CSS selector `.post-card`                                      astro/no-unused-css-selector
   179:3  warning  Unused CSS selector `.post-card__image`                               astro/no-unused-css-selector
@@ -33,33 +28,5 @@ C:\Users\Utilisateur\Documents\atomic\src\components\blog\sidebars\NewsletterSid
   146:3  warning  Unused CSS selector `.newsletter-sidebar__input`  astro/no-unused-css-selector
   167:5  warning  Unused CSS selector `.newsletter-sidebar__input`  astro/no-unused-css-selector
 
-C:\Users\Utilisateur\Documents\atomic\src\modules\services\components\cards\ServiceCard.astro
-  16:124  error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  16:153  error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  16:182  error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  17:33   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  17:79   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  20:45   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  22:39   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  23:76   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-  24:70   error  Unexpected class using the ternary operator  astro/prefer-object-class-list
+✖ 21 problems (0 errors, 21 warnings)
 
-C:\Users\Utilisateur\Documents\atomic\src\modules\services\components\ui\ServiceLocaleSwitcher.astro
-  20:195  error  Unexpected class using the ternary operator  astro/prefer-object-class-list
-
-C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\organizations\[slug]\services\[categorySlug]\[serviceSlug].astro
-  30:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
-
-C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\organizations\[slug]\services\[serviceSlug].astro
-  43:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
-
-C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\services\[categorySlug]\[slug].astro
-  24:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
-
-C:\Users\Utilisateur\Documents\atomic\src\pages\[lang]\services\[slug].astro
-  35:38  error  `set:html` can lead to XSS attack  astro/no-set-html-directive
-
-✖ 38 problems (17 errors, 21 warnings)
-  12 errors and 0 warnings potentially fixable with the `--fix` option.
-
- ELIFECYCLE  Command failed with exit code 1.

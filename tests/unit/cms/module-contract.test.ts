@@ -13,6 +13,7 @@ describe("Atomic module contracts", () => {
       media: true,
       seo: true,
       taxonomy: true,
+      attributes: false,
       search: true,
       publication: true,
       revisions: true,
@@ -27,7 +28,7 @@ describe("Atomic module contracts", () => {
 
   it("binds every enabled capability to the canonical Atomic catalog", () => {
     for (const capability of Object.keys(blogModule.capabilities) as Array<keyof typeof blogModule.capabilities>) {
-      expect(blogModule.capabilities[capability]).toBe(true);
+      if (!blogModule.capabilities[capability]) continue;
       expect(blogModule.capabilityProviders[capability]).toBe(CMS_CAPABILITIES[capability].implementations.join(" + "));
     }
   });

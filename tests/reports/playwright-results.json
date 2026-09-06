@@ -101,13 +101,13 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
-      "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
+      "message": "Error: Process from config.webServer exited early.",
+      "stack": "Error: Process from config.webServer exited early."
     }
   ],
   "stats": {
-    "startTime": "2026-08-30T19:20:20.993Z",
-    "duration": 8010.397000000001,
+    "startTime": "2026-09-06T17:37:29.625Z",
+    "duration": 41990.26,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

@@ -1,15 +1,23 @@
 // Navigation items seed — one row per item × locale. References menus by id.
 export default [
   // ── Header (fr) ──
+  { id: "nav-header-fr-services", menuId: "menu-header", locale: "fr", label: "Services", url: "/fr/services", sortOrder: 0, icon: "mdi:calendar-star", parentId: null, isActive: true, openInNewTab: false },
+  { id: "nav-header-fr-blog", menuId: "menu-header", locale: "fr", label: "Blog", url: "/fr/blog", sortOrder: 1, icon: "mdi:post-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "fr", label: "À propos", url: "/fr/a-propos", sortOrder: 0, icon: "mdi:information-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "fr", label: "Contact", url: "/fr/contact", sortOrder: 1, icon: "mdi:email-outline", parentId: null, isActive: true, openInNewTab: false },
   // ── Header (en) ──
+  { id: "nav-header-en-services", menuId: "menu-header", locale: "en", label: "Services", url: "/en/services", sortOrder: 0, icon: "mdi:calendar-star", parentId: null, isActive: true, openInNewTab: false },
+  { id: "nav-header-en-blog", menuId: "menu-header", locale: "en", label: "Blog", url: "/en/blog", sortOrder: 1, icon: "mdi:post-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "en", label: "About", url: "/en/about", sortOrder: 0, icon: "mdi:information-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "en", label: "Contact", url: "/en/contact", sortOrder: 1, icon: "mdi:email-outline", parentId: null, isActive: true, openInNewTab: false },
   // ── Header (es) ──
+  { id: "nav-header-es-services", menuId: "menu-header", locale: "es", label: "Servicios", url: "/es/services", sortOrder: 0, icon: "mdi:calendar-star", parentId: null, isActive: true, openInNewTab: false },
+  { id: "nav-header-es-blog", menuId: "menu-header", locale: "es", label: "Blog", url: "/es/blog", sortOrder: 1, icon: "mdi:post-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "es", label: "Acerca de", url: "/es/acerca-de", sortOrder: 0, icon: "mdi:information-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "es", label: "Contacto", url: "/es/contacto", sortOrder: 1, icon: "mdi:email-outline", parentId: null, isActive: true, openInNewTab: false },
   // ── Header (ar) ──
+  { id: "nav-header-ar-services", menuId: "menu-header", locale: "ar", label: "الخدمات", url: "/ar/services", sortOrder: 0, icon: "mdi:calendar-star", parentId: null, isActive: true, openInNewTab: false },
+  { id: "nav-header-ar-blog", menuId: "menu-header", locale: "ar", label: "المدونة", url: "/ar/blog", sortOrder: 1, icon: "mdi:post-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "ar", label: "حول", url: "/ar/من-نحن", sortOrder: 0, icon: "mdi:information-outline", parentId: null, isActive: true, openInNewTab: false },
   { menuId: "menu-header", locale: "ar", label: "اتصل بنا", url: "/ar/اتصل-بنا", sortOrder: 1, icon: "mdi:email-outline", parentId: null, isActive: true, openInNewTab: false },
 

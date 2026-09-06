@@ -36,7 +36,9 @@ export const toggleBlogReaction = defineAction({
         await tx.delete(blogPostReactions).where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
       } else {
         // One reaction is the semantic contract: changing reaction replaces the prior one.
+        if (existing) {
         await tx.delete(blogPostReactions).where(and(eq(blogPostReactions.postId, input.postId), eq(blogPostReactions.userId, user.id)));
+        }
         await tx.insert(blogPostReactions).values({ postId: input.postId, userId: user.id, reactionType: input.reactionType });
       }
 

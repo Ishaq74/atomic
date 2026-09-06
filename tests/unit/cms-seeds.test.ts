@@ -129,6 +129,17 @@ describe('Seed — navigation items', () => {
     expect(locales).toContain('es');
     expect(locales).toContain('ar');
   });
+  it('includes public Blog and Services routes in every header locale', async () => {
+    const { default: data } = await import('@database/data/07b-navigation-items.data');
+    const headerItems = data.filter((item: any) => item.menuId === 'menu-header');
+
+    for (const locale of ['fr', 'en', 'es', 'ar']) {
+      expect(headerItems).toEqual(expect.arrayContaining([
+        expect.objectContaining({ locale, url: `/${locale}/blog`, isActive: true }),
+        expect.objectContaining({ locale, url: `/${locale}/services`, isActive: true }),
+      ]));
+    }
+  });
 });
 
 describe('Seed — theme', () => {

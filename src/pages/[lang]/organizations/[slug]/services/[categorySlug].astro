@@ -4,7 +4,7 @@ import { getDrizzle } from "@database/drizzle";
 import { organization } from "@database/schemas";
 import { eq } from "drizzle-orm";
 import { getServices, getServiceCategories, getServiceBySlug } from "@/modules/services/loaders";
-import { ServiceGrid } from "@/modules/services/components/lists";
+import ServicesListingPage from "@/modules/services/components/lists/ServicesListingPage.astro";
 import { getServiceTranslations } from "@/modules/services/i18n";
 import { buildServiceUrl } from "@/modules/services/utils";
 import type { Locale } from "@i18n/config";
@@ -20,15 +20,14 @@ const t = getServiceTranslations(locale);
 const categories = await getServiceCategories(locale, org.id);
 const category = categories.find((row) => (row.translation?.slug ?? row.category.slug) === categorySlug);
 if (!category) {
-  const service = await getServiceBySlug(categorySlug, locale, org.id);
-  if (service?.translation) {
-    const canonical = buildServiceUrl(locale, org.slug, service.translation.slug, service.categories[0]?.slug ?? null);
-    return Astro.redirect(canonical, 301);
-  }
-  return Astro.redirect(`/${locale}/organizations/${orgSlug}/services`);
+ const service = await getServiceBySlug(categorySlug, locale, org.id);
+ if (service?.translation) return Astro.redirect(buildServiceUrl(locale, org.slug, service.translation.slug, service.categories[0]?.slug ?? null), 301);
+ return Astro.redirect(`/${locale}/organizations/${orgSlug}/services`);
 }
 const data = await getServices({ organizationId: org.id, categoryId: category.category.id, page }, locale, true);
+const categoryItems = categories.map((row) => ({ slug: row.translation?.slug ?? row.category.slug, name: row.translation?.name ?? row.category.slug }));
+const title = category.translation?.name ?? category.category.slug;
 ---
-<BaseLayout title={`${category.translation?.name ?? category.category.slug} — ${org.name}`} description={category.translation?.description ?? t.meta.description}><main class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8"><header class="mb-10 space-y-2"><p class="text-sm text-muted-foreground">{org.name}</p><h1 class="text-4xl font-bold">{category.translation?.name ?? category.category.slug}</h1>{category.translation?.description && <p class="max-w-3xl text-muted-foreground">{category.translation.description}</p>}</header>{data.items.length ? <ServiceGrid items={data.items} locale={locale} organizationSlug={org.slug} /> : <p class="rounded-xl border p-10 text-center text-muted-foreground">{t.labels.noResults}</p>}
-    {data.totalPages > 1 && <nav class="mt-10 flex justify-center gap-2" aria-label={t.labels.page}>{page > 1 && <a class="rounded-md border px-4 py-2" href={`?page=${page - 1}`} aria-label={t.labels.previous}>{t.labels.previous}</a>}{page < data.totalPages && <a class="rounded-md border px-4 py-2" href={`?page=${page + 1}`} aria-label={t.labels.next}>{t.labels.next}</a>}</nav>}
-  </main></BaseLayout>
+<BaseLayout title={`${title} - ${org.name}`} description={category.translation?.description ?? t.meta.description}>
+  <main><ServicesListingPage locale={locale} title={title} description={category.translation?.description} items={data.items} meta={data} baseUrl={`/${locale}/organizations/${org.slug}/services/${categorySlug}`} categories={categoryItems} organizationSlug={org.slug} organizationName={org.name} activeCategorySlug={categorySlug} /></main>
+</BaseLayout>

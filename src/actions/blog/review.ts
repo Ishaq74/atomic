@@ -109,7 +109,7 @@ export const moderateBlogReview = defineAction({
         .where(eq(blogPostReviews.id, input.reviewId));
 
       if (
-        (input.status === "APPROVED" || input.status === "REJECTED")
+        input.status === "APPROVED"
         && review.status !== input.status
         && review.authorId
         && review.authorId !== user.id
@@ -117,8 +117,7 @@ export const moderateBlogReview = defineAction({
         await tx.insert(blogNotifications).values({
           userId: review.authorId,
           organizationId: review.organizationId,
-          type: input.status === "APPROVED" ? "REVIEW_APPROVED" : "REVIEW_REJECTED",
-          postId: review.postId,
+          type: "REVIEW_APPROVED",
           reviewId: review.id,
           fromUserId: user.id,
         });

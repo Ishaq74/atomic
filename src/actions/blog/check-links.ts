@@ -65,10 +65,8 @@ export const checkBlogPostLinks = defineAction({
         .where(eq(blogPosts.id, link.targetPostId))
         .limit(1);
       if (target && (target.organizationId ?? null) !== tenant.organizationId) {
-        throw new ActionError({
-          code: "FORBIDDEN",
-          message: "Un lien explicite cible un article d'un autre tenant.",
-        });
+        deadExplicit.push(link);
+        continue;
       }
 
       const [publicTarget] = target

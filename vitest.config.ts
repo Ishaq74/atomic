@@ -6,6 +6,7 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src'),
       '@i18n': resolve(__dirname, 'src/i18n'),
+      '@components': resolve(__dirname, 'src/components'),
       '@lib': resolve(__dirname, 'src/lib'),
       '@database': resolve(__dirname, 'src/database'),
       '@smtp': resolve(__dirname, 'src/smtp'),

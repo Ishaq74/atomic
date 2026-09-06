@@ -162,15 +162,13 @@ describe("blog newsletter business service", () => {
     expect(unsubscribeToken).toMatch(/^newsletter\.unsubscribe\.v2\./);
     expect(confirmationToken).not.toBe(unsubscribeToken);
 
-    const storedParts = String(insertedValues[0].token).split(".");
-    expect(storedParts.slice(0, 3)).toEqual(["newsletter", "v2", "pending"]);
-    expect(Number(storedParts[3])).toBeGreaterThan(Date.now());
-    expect(storedParts[4]).toBe("confirm");
-    expect(storedParts[5]).toBe(sha256(confirmationToken!));
-    expect(storedParts[6]).toBe("unsubscribe");
-    expect(storedParts[7]).toBe(sha256(unsubscribeToken!));
-    expect(String(insertedValues[0].token)).not.toContain(confirmationToken!);
-    expect(String(insertedValues[0].token)).not.toContain(unsubscribeToken!);
+expect(insertedValues[0].token).toBeNull();
+    expect(insertedValues[0].confirmationTokenHash).toBe(sha256(confirmationToken!));
+    expect(insertedValues[0].unsubscribeTokenHash).toBe(sha256(unsubscribeToken!));
+    expect(insertedValues[0].confirmationTokenExpiresAt).toBeInstanceOf(Date);
+    expect((insertedValues[0].confirmationTokenExpiresAt as Date).getTime()).toBeGreaterThan(Date.now());
+    expect(JSON.stringify(insertedValues[0])).not.toContain(confirmationToken!);
+    expect(JSON.stringify(insertedValues[0])).not.toContain(unsubscribeToken!);
 
     const auditPayload = auditMocks.logAuditEvent.mock.calls[0][0];
     expect(JSON.stringify(auditPayload)).not.toContain("reader@example.com");
@@ -268,18 +266,19 @@ describe("blog newsletter business service", () => {
     const result = await blogNewsletterService.confirm({ token });
 
     expect(result).toEqual({ consumed: true });
-    expect(rootSets[0]).toMatchObject({
+expect(rootSets[0]).toMatchObject({
       status: "CONFIRMED",
       unsubscribedAt: null,
-      tokenUsedAt: null,
+      confirmationTokenHash: sha256(token),
     });
     expect(rootSets[0].confirmedAt).toBeInstanceOf(Date);
+    expect(rootSets[0].confirmationTokenUsedAt).toBeInstanceOf(Date);
+    expect(rootSets[0]).not.toHaveProperty("tokenUsedAt");
 
     const compiled = new PgDialect().sqlToQuery(rootWhere[0] as any);
-    expect(compiled.sql).toContain('"status" =');
-    expect(compiled.sql).toContain('"token_used_at" is null');
-    expect(compiled.sql).toContain("split_part");
-    expect(compiled.sql).toContain("::bigint >=");
+expect(compiled.sql).toContain('"confirmation_token_hash" =');
+    expect(compiled.sql).toContain('"confirmation_token_used_at" is null');
+    expect(compiled.sql).toContain('"confirmation_token_expires_at" >=');
     expect(auditMocks.logAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "BLOG_NEWSLETTER_CONFIRM",
@@ -303,10 +302,12 @@ describe("blog newsletter business service", () => {
     const result = await blogNewsletterService.confirm({ token: "legacy-token" });
 
     expect(result).toEqual({ consumed: true });
-    expect(rootSets[0].token).toBe(
-      `newsletter.v2.unsubscribe.${sha256("legacy-token")}`,
-    );
-    expect(rootSets[0].tokenUsedAt).toBeNull();
+expect(rootSets[0]).toMatchObject({
+      token: null,
+      unsubscribeTokenHash: sha256("legacy-token"),
+      unsubscribeTokenUsedAt: null,
+    });
+    expect(rootSets[0].tokenUsedAt).toBeInstanceOf(Date);
   });
 
   it("consumes unsubscribe atomically while preserving confirmation history", async () => {
@@ -316,16 +317,19 @@ describe("blog newsletter business service", () => {
     const result = await blogNewsletterService.unsubscribe({ token });
 
     expect(result).toEqual({ consumed: true });
-    expect(rootSets[0]).toMatchObject({
+expect(rootSets[0]).toMatchObject({
       status: "UNSUBSCRIBED",
-      token: `newsletter.v2.unsubscribe.${sha256(token)}`,
+      token: null,
+      unsubscribeTokenHash: sha256(token),
     });
-    expect(rootSets[0].tokenUsedAt).toBeInstanceOf(Date);
+    expect(rootSets[0].unsubscribeTokenUsedAt).toBeInstanceOf(Date);
     expect(rootSets[0].unsubscribedAt).toBeInstanceOf(Date);
+    expect(rootSets[0]).not.toHaveProperty("tokenUsedAt");
     expect(rootSets[0]).not.toHaveProperty("confirmedAt");
 
     const compiled = new PgDialect().sqlToQuery(rootWhere[0] as any);
-    expect(compiled.sql).toContain('"token_used_at" is null');
+    expect(compiled.sql).toContain('"unsubscribe_token_hash" =');
+    expect(compiled.sql).toContain('"unsubscribe_token_used_at" is null');
     expect(compiled.sql).toContain('"status" =');
   });
 });

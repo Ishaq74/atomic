@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/auth-guards";
 import { getBlogTranslations } from "@i18n/utils";
 import { getBlogCategories, getBlogTags } from "@database/loaders/blog.loader";
 import { getBlogPostEditorData } from "@database/loaders/blog-admin-editor.loader";
+import { hasBlogPermission, resolveBlogTenant } from "@/actions/blog/_helpers";
 import BaseLayout from "@layouts/BaseLayout.astro";
 import AuthLayout from "@organisms/AuthLayout/AuthLayout.astro";
 import AdminSidebar from "@organisms/AdminSidebar/AdminSidebar.astro";
@@ -14,6 +15,12 @@ export const prerender = false;
 const result = await requirePermission(Astro, { blog: ["update"] });
 if ("redirect" in result) return result.redirect;
 const { locale, authT } = result;
+const tenant = resolveBlogTenant({});
+const [canCreate, canPublish, canDelete] = await Promise.all([
+  hasBlogPermission(Astro, tenant, { blog: ["create"] }),
+  hasBlogPermission(Astro, tenant, { blog: ["publish"] }),
+  hasBlogPermission(Astro, tenant, { blog: ["delete"] }),
+]);
 const blogT = await getBlogTranslations(locale);
 const postId = Astro.params.id;
 const baseAdminUrl = `/${locale}/admin/blog`;
@@ -49,7 +56,7 @@ const editorData: BlogPostEditorData = {
   <AuthLayout title={blogT.admin.editPost}>
     <AdminSidebar slot="sidebar" t={authT} locale={locale} activeItem="blog" />
     <AdminFormShell>
-      <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} />
+      <AdminPostForm locale={locale} blogT={blogT} mode="edit" editorData={editorData} categories={categories} tags={tags} baseAdminUrl={baseAdminUrl} basePublicUrl={basePublicUrl} canCreate={canCreate} canUpdate={true} canPublish={canPublish} canDelete={canDelete} />
     </AdminFormShell>
   </AuthLayout>
 </BaseLayout>

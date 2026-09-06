@@ -1,12 +1,14 @@
 import { and, asc, count, desc, eq, inArray, isNull, sql, sum } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { getDrizzle } from "@database/drizzle";
 import { mediaFileAlts, mediaFiles, serviceAvailability, serviceCategories, serviceCategoryLinks, serviceCategoryTranslations, serviceComments, serviceMedia, serviceReports, serviceRevisions, serviceReviews, serviceSeo, serviceTagLinks, serviceTagTranslations, serviceTags, serviceTranslations, services, serviceLocks, user } from "@database/schemas";
 import type { Locale } from "@i18n/config";
 import type { ServiceDetail, ServiceListItem } from "@/modules/services/domain";
 import { serviceAdminFiltersSchema, type ServiceAdminFilters } from "@/modules/services/validation";
+export type { ServiceAdminFilters } from "@/modules/services/validation";
 
-function tenantScope(column: typeof services.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
-function tenantJoinScope(column: typeof serviceTranslations.organizationId, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
+function tenantScope(column: AnyPgColumn<{ data: string | null }>, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
+function tenantJoinScope(column: AnyPgColumn<{ data: string | null }>, organizationId: string | null) { return organizationId === null ? isNull(column) : eq(column, organizationId); }
 
 export async function getServiceAdminData(organizationId: string | null, locale: Locale, input: Partial<ServiceAdminFilters> = {}): Promise<{ items: ServiceListItem[]; page: number; limit: number; total: number; totalPages: number }> {
   const filters = serviceAdminFiltersSchema.parse({ ...input, organizationId, locale: input.locale ?? locale });
@@ -55,7 +57,7 @@ export async function getServiceAdminById(id: string, locale: Locale, organizati
     db.select({ id: serviceRevisions.id, locale: serviceRevisions.locale, title: serviceRevisions.title, slug: serviceRevisions.slug, status: serviceRevisions.status, revisionNote: serviceRevisions.revisionNote, createdAt: serviceRevisions.createdAt }).from(serviceRevisions).where(eq(serviceRevisions.serviceId, id)).orderBy(desc(serviceRevisions.createdAt)).limit(50),
     db.select({ userId: serviceLocks.userId, sessionId: serviceLocks.sessionId, lockedAt: serviceLocks.lockedAt, expiresAt: serviceLocks.expiresAt }).from(serviceLocks).where(eq(serviceLocks.serviceId, id)).limit(1),
   ]);
-  return { service: row.service, translation: row.translation ? { locale: row.translation.locale, title: row.translation.title, slug: row.translation.slug, excerpt: row.translation.excerpt, content: row.translation.content, locationLabel: row.translation.locationLabel, locationAddress: row.translation.locationAddress, metaTitle: row.translation.metaTitle, metaDescription: row.translation.metaDescription, metaKeywords: row.translation.metaKeywords, canonicalUrl: row.translation.canonicalUrl, ogTitle: row.translation.ogTitle, ogDescription: row.translation.ogDescription, ogImageId: row.translation.ogImageId } : null, provider: row.provider, categories: categories.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })), tags: tags.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })), media, availability, seo: seo[0] ?? null, availableLocales: locales.map((item) => item.locale), revisions, lock: lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null };
+  return { service: row.service, translation: row.translation ? { locale: row.translation.locale, title: row.translation.title, slug: row.translation.slug, excerpt: row.translation.excerpt, content: row.translation.content, locationLabel: row.translation.locationLabel, locationAddress: row.translation.locationAddress, metaTitle: row.translation.metaTitle, metaDescription: row.translation.metaDescription, metaKeywords: row.translation.metaKeywords, canonicalUrl: row.translation.canonicalUrl, ogTitle: row.translation.ogTitle, ogDescription: row.translation.ogDescription, ogImageId: row.translation.ogImageId } : null, provider: row.provider, coverMedia: null, categories: categories.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })), tags: tags.map((item) => ({ id: item.id, slug: item.slug, name: item.name ?? null })), media, availability, seo: seo[0] ?? null, availableLocales: locales.map((item) => item.locale), revisions, lock: lockRows[0] && lockRows[0].expiresAt > new Date() ? lockRows[0] : null };
 }
 
 export async function getServiceAdminStats(organizationId: string | null) {

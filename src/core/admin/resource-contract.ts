@@ -61,25 +61,28 @@ const ACTION_CAPABILITY_REQUIREMENTS: Readonly<Partial<Record<keyof ResourceActi
 };
 
 export function assertResourceCompatibility(module: AtomicModuleDefinition, resource: AdminResourceDefinition): void {
+  const management = resource.management ?? {};
+  const actions = resource.actions ?? {};
+
   if (module.entity !== resource.entity) {
     throw new Error(`Resource ${resource.id} targets ${resource.entity}, but module ${module.id} owns ${module.entity}.`);
   }
 
   for (const [action, capability] of Object.entries(ACTION_CAPABILITY_REQUIREMENTS)) {
-    if (resource.actions[action as keyof ResourceActionCapabilities] === true && module.capabilities[capability as keyof AtomicModuleDefinition["capabilities"]] !== true) {
+    if (actions[action as keyof ResourceActionCapabilities] === true && module.capabilities[capability as keyof AtomicModuleDefinition["capabilities"]] !== true) {
       throw new Error(`Resource ${resource.id} enables ${action}, but module ${module.id} does not enable ${capability}.`);
     }
   }
 
-  if (resource.management.filters && !resource.management.list) throw new Error(`Resource ${resource.id} enables filters without list capability.`);
-  if (resource.management.search && !resource.management.list) throw new Error(`Resource ${resource.id} enables search without list capability.`);
-  if (resource.management.sort && !resource.management.list) throw new Error(`Resource ${resource.id} enables sort without list capability.`);
-  if (resource.management.pagination && !resource.management.list) throw new Error(`Resource ${resource.id} enables pagination without list capability.`);
-  if (resource.management.selection && !resource.management.list) throw new Error(`Resource ${resource.id} enables selection without list capability.`);
-  if (resource.management.facets && !resource.management.filters) throw new Error(`Resource ${resource.id} enables facets without filters capability.`);
-  if (resource.management.savedViews && !resource.management.list) throw new Error(`Resource ${resource.id} enables saved views without list capability.`);
-  if (resource.actions.bulk && !resource.management.selection) throw new Error(`Resource ${resource.id} enables bulk actions without selection capability.`);
-  if (resource.list?.defaultSort && !resource.management.sort) throw new Error(`Resource ${resource.id} defines a default sort without sort capability.`);
-  if (resource.list && !resource.management.list) throw new Error(`Resource ${resource.id} defines list configuration without list capability.`);
-  if ((resource.list?.bulkActions?.length ?? 0) > 0 && resource.actions.bulk !== true) throw new Error(`Resource ${resource.id} defines bulk actions without bulk capability.`);
+  if (management.filters && !management.list) throw new Error(`Resource ${resource.id} enables filters without list capability.`);
+  if (management.search && !management.list) throw new Error(`Resource ${resource.id} enables search without list capability.`);
+  if (management.sort && !management.list) throw new Error(`Resource ${resource.id} enables sort without list capability.`);
+  if (management.pagination && !management.list) throw new Error(`Resource ${resource.id} enables pagination without list capability.`);
+  if (management.selection && !management.list) throw new Error(`Resource ${resource.id} enables selection without list capability.`);
+  if (management.facets && !management.filters) throw new Error(`Resource ${resource.id} enables facets without filters capability.`);
+  if (management.savedViews && !management.list) throw new Error(`Resource ${resource.id} enables saved views without list capability.`);
+  if (actions.bulk && !management.selection) throw new Error(`Resource ${resource.id} enables bulk actions without selection capability.`);
+  if (resource.list?.defaultSort && !management.sort) throw new Error(`Resource ${resource.id} defines a default sort without sort capability.`);
+  if (resource.list && !management.list) throw new Error(`Resource ${resource.id} defines list configuration without list capability.`);
+  if ((resource.list?.bulkActions?.length ?? 0) > 0 && actions.bulk !== true) throw new Error(`Resource ${resource.id} defines bulk actions without bulk capability.`);
 }

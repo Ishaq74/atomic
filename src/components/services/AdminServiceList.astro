@@ -59,6 +59,7 @@ const stats = [
 </div>
 <script>
   import { actions } from "astro:actions";
+  import { toast } from "@atoms/toast";
   import { getServiceErrorMessage } from "@/modules/services/i18n";
   for (const root of document.querySelectorAll<HTMLElement>("[data-service-admin-root]")) {
     const organizationId = root.dataset.organizationId || null; const confirmDelete = root.dataset.confirmDelete ?? ""; const confirmArchive = root.dataset.confirmArchive ?? ""; const actionError = root.dataset.actionError ?? ""; const locale = root.dataset.locale ?? "fr";
