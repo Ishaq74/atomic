@@ -2,7 +2,7 @@
 import { Icon } from "astro-icon/components";
 import type { Locale } from "@i18n/config";
 import type { ServiceListItem } from "@/modules/services/domain";
-import { formatServicePrice, formatServiceDuration, formatServiceRating } from "@/modules/services/utils";
+import { formatServicePrice, formatServiceDuration, formatServiceRating, buildServiceUrl } from "@/modules/services/utils";
 import { getServiceTranslations } from "@/modules/services/i18n";
 
 const { item, locale = "fr", variant = "default", organizationSlug = null } = Astro.props as {
@@ -14,8 +14,7 @@ const { item, locale = "fr", variant = "default", organizationSlug = null } = As
 const t = getServiceTranslations(locale);
 const title = item.translation?.title ?? item.service.slug;
 const category = item.categories[0];
-const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/services` : `/${locale}/services`;
-const href = category ? `${base}/${category.slug}/${item.translation?.slug ?? item.service.slug}` : `${base}/${item.translation?.slug ?? item.service.slug}`;
+const href = buildServiceUrl(locale, organizationSlug, item.translation?.slug ?? item.service.slug, category?.slug ?? null);
 const price = formatServicePrice(item.service.priceMinor, item.service.currency, locale);
 const duration = formatServiceDuration(item.service.durationMinutes);
 const rating = item.service.ratingCount ? formatServiceRating(item.service.ratingAverage100) : null;

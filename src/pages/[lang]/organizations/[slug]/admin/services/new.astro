@@ -19,9 +19,9 @@ if (!orgData) return Astro.redirect(`/${locale}/auth/${authT.routes.dashboard}`)
 const { org, members } = orgData;
 const orgRole = getUserOrgRole(members, user.id);
 const tenant = resolveServiceTenant({ organizationId: org.id });
-if (!(await hasServicePermission(Astro, tenant, { service: ["create"] }))) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
+if (!(await hasServicePermission(Astro, tenant, { service: ["create"] }))) return Astro.redirect(`/${locale}/${orgSlug}/admin/services`);
 const t = getServiceTranslations(locale as Locale);
-const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/services`;
+const baseAdminUrl = `/${locale}/${org.slug}/admin/services`;
 ---
 <BaseLayout title={`${t.admin.newService} — ${org.name}`} description={t.meta.description}>
   <AuthLayout title={org.name}>

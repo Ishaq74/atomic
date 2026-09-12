@@ -12,7 +12,7 @@ import BlogListingPage from "@pages/blog/BlogListingPage.astro";
 export const prerender = false;
 
 const locale = toLocale(Astro.params.lang);
-const orgSlug = Astro.params.slug;
+const orgSlug = Astro.params.organization;
 const blogT = await getBlogTranslations(locale);
 
 if (!orgSlug) {
@@ -32,7 +32,7 @@ if (!org) {
   return Astro.rewrite('/404');
 }
 
-const baseUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
+const baseUrl = `/${locale}/${org.slug}/${blogT.routes.blog}`;
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
 const searchQuery = Astro.url.searchParams.get("q")?.trim() || undefined;
 
@@ -63,7 +63,7 @@ const alternateUrls = Object.fromEntries(
   await Promise.all(
     LOCALES.map(async (loc) => {
       const locBlogT = await getBlogTranslations(loc);
-      return [loc, `/${loc}/organizations/${org.slug}/${locBlogT.routes.blog}`];
+      return [loc, `/${loc}/${org.slug}/${locBlogT.routes.blog}`];
     }),
   ),
 );

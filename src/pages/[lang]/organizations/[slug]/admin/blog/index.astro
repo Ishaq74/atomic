@@ -50,8 +50,8 @@ const filters = {
   sortBy: (p.get("sortBy") || "updatedAt") as "createdAt" | "updatedAt" | "publishedAt" | "title" | "viewCount",
   sortOrder: (p.get("sortOrder") || "desc") as "asc" | "desc",
 };
-const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
-const basePublicUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
+const baseAdminUrl = `/${locale}/${org.slug}/admin/blog`;
+const basePublicUrl = `/${locale}/${org.slug}/${blogT.routes.blog}`;
 const [{ rows, meta, stats }, categoryRows, tagRows, moderation, authors, adminTags, moderationCount] = await Promise.all([
   getBlogAdminPostData(org.id, locale, filters),
   getBlogCategories(org.id, locale),

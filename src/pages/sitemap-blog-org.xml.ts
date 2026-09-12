@@ -35,7 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
     for (const locale of LOCALES) {
       try {
         const blogT = await getBlogTranslations(locale as Locale);
-        const baseBlog = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
+        const baseBlog = `/${locale}/${org.slug}/${blogT.routes.blog}`;
         urls.push(urlEntry(baseUrl, baseBlog));
 
         const categories = await getBlogCategories(org.id, locale as Locale);

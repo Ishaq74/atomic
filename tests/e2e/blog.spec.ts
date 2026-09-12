@@ -161,7 +161,7 @@ function buildGlobalPostUrl(slug: string) {
 }
 
 function buildOrgPostUrl(slug: string) {
-  return `/fr/organizations/${seeded.orgSlug}/blog/${seeded.orgCategorySlug}/${slug}`;
+  return `/fr/${seeded.orgSlug}/blog/${seeded.orgCategorySlug}/${slug}`;
 }
 
 async function fillPostForm(
@@ -406,7 +406,7 @@ test.describe.serial('Blog surfaces', () => {
 
   test('organization public blog shows the org post only', async ({ page }) => {
     const response = await page.goto(
-      `/fr/organizations/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgPostTitle)}`,
+      `/fr/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgPostTitle)}`,
       { waitUntil: 'networkidle' },
     );
     expect(response?.status()).toBe(200);
@@ -419,7 +419,7 @@ test.describe.serial('Blog surfaces', () => {
   });
 
   test('organization public blog post detail redirects to the canonical category URL', async ({ page }) => {
-    const response = await page.goto(`/fr/organizations/${seeded.orgSlug}/blog/${seeded.orgPostSlug}`, { waitUntil: 'networkidle' });
+    const response = await page.goto(`/fr/${seeded.orgSlug}/blog/${seeded.orgPostSlug}`, { waitUntil: 'networkidle' });
     expect(response?.status()).toBe(200);
 
     await expect(page).toHaveURL(buildOrgPostUrl(seeded.orgPostSlug));
@@ -446,11 +446,11 @@ test.describe.serial('Blog surfaces', () => {
     const { context, page } = await createAuthenticatedPage(browser);
 
     try {
-      const response = await page.goto(`/fr/organizations/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
+      const response = await page.goto(`/fr/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
       expect(response?.status()).toBe(200);
 
       const table = page.locator('table');
-      await expect(page).toHaveURL(new RegExp(`/fr/organizations/${seeded.orgSlug}/admin/blog`));
+      await expect(page).toHaveURL(new RegExp(`/fr/${seeded.orgSlug}/admin/blog`));
       await expect(table).toContainText(seeded.orgPostTitle);
       await expect(table).not.toContainText(seeded.globalPostTitle);
     } finally {
@@ -675,14 +675,14 @@ test.describe.serial('Blog surfaces', () => {
     const { context, page: adminPage } = await createAuthenticatedPage(browser);
 
     try {
-      const createResponse = await adminPage.goto(`/fr/organizations/${seeded.orgSlug}/admin/blog/new`, { waitUntil: 'networkidle' });
+      const createResponse = await adminPage.goto(`/fr/${seeded.orgSlug}/admin/blog/new`, { waitUntil: 'networkidle' });
       expect(createResponse?.status()).toBe(200);
 
       await fillPostForm(adminPage, seeded.orgWorkflow);
       await submitPostForm(adminPage);
 
-      await expect(adminPage).toHaveURL(new RegExp(`/fr/organizations/${seeded.orgSlug}/admin/blog/[^/]+/edit`));
-      const match = adminPage.url().match(new RegExp(`/fr/organizations/${seeded.orgSlug}/admin/blog/([^/]+)/edit`));
+      await expect(adminPage).toHaveURL(new RegExp(`/fr/${seeded.orgSlug}/admin/blog/[^/]+/edit`));
+      const match = adminPage.url().match(new RegExp(`/fr/${seeded.orgSlug}/admin/blog/([^/]+)/edit`));
       seeded.orgWorkflow.id = match?.[1];
       expect(seeded.orgWorkflow.id).toBeTruthy();
       await assignCategoryToPost(seeded.orgWorkflow.id!, seeded.orgCategoryId);
@@ -698,7 +698,7 @@ test.describe.serial('Blog surfaces', () => {
       await submitPostForm(adminPage);
       await expect.poll(async () => getTranslationTitle(seeded.orgWorkflow.id!)).toBe(seeded.orgWorkflow.editedTitle);
 
-      await adminPage.goto(`/fr/organizations/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
+      await adminPage.goto(`/fr/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
       const row = adminPage.locator('tbody tr').filter({ hasText: seeded.orgWorkflow.editedTitle }).first();
       await expect(row).toBeVisible();
       await expect(row.getByRole('link', { name: /aperçu|preview/i })).toHaveAttribute(
@@ -713,7 +713,7 @@ test.describe.serial('Blog surfaces', () => {
     }
 
     const orgListResponse = await page.goto(
-      `/fr/organizations/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgWorkflow.editedTitle)}`,
+      `/fr/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgWorkflow.editedTitle)}`,
       { waitUntil: 'networkidle' },
     );
     expect(orgListResponse?.status()).toBe(200);
@@ -738,7 +738,7 @@ test.describe.serial('Blog surfaces', () => {
     const { context: cleanupContext, page: cleanupPage } = await createAuthenticatedPage(browser);
 
     try {
-      await cleanupPage.goto(`/fr/organizations/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
+      await cleanupPage.goto(`/fr/${seeded.orgSlug}/admin/blog`, { waitUntil: 'networkidle' });
       const row = cleanupPage.locator('tbody tr').filter({ hasText: seeded.orgWorkflow.editedTitle }).first();
       await expect(row).toBeVisible();
       cleanupPage.once('dialog', (dialog) => dialog.accept());
@@ -750,7 +750,7 @@ test.describe.serial('Blog surfaces', () => {
     }
 
     const deletedOrgResponse = await page.goto(
-      `/fr/organizations/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgWorkflow.editedTitle)}`,
+      `/fr/${seeded.orgSlug}/blog?q=${encodeURIComponent(seeded.orgWorkflow.editedTitle)}`,
       { waitUntil: 'networkidle' },
     );
     expect(deletedOrgResponse?.status()).toBe(200);

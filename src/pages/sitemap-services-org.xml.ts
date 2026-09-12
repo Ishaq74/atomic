@@ -17,7 +17,7 @@ export const GET: APIRoute = async ({ site }) => {
   for (const org of orgs) {
     for (const locale of LOCALES) {
       try {
-        const base = `/${locale}/organizations/${org.slug}/services`;
+        const base = `/${locale}/${org.slug}/services`;
         urls.push(urlEntry(baseUrl, base));
         const categories = await getServiceCategories(locale as Locale, org.id); for (const category of categories) urls.push(urlEntry(baseUrl, `${base}/${category.translation?.slug ?? category.category.slug}`));
         const tags = await getServiceTags(locale as Locale, org.id); for (const tag of tags) urls.push(urlEntry(baseUrl, `${base}/tags/${tag.translation?.slug ?? tag.tag.slug}`));

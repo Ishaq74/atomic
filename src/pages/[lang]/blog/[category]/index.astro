@@ -28,7 +28,7 @@ export const prerender = false;
 const locale = toLocale(Astro.params.lang);
 const blogT = await getBlogTranslations(locale);
 const baseUrl = `/${locale}/${blogT.routes.blog}`;
-const slugParam = Astro.params.slug;
+const slugParam = Astro.params.category;
 
 if (!slugParam) {
   return Astro.redirect(baseUrl);

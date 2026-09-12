@@ -27,8 +27,8 @@ const tenant = resolveBlogTenant({ organizationId: org.id });
 if (!(await hasBlogPermission(Astro, tenant, { blog: ["update"] }))) return Astro.redirect(`/${locale}/organizations/${orgSlug}/members`);
 
 const blogT = await getBlogTranslations(locale);
-const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/blog`;
-const basePublicUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
+const baseAdminUrl = `/${locale}/${org.slug}/admin/blog`;
+const basePublicUrl = `/${locale}/${org.slug}/${blogT.routes.blog}`;
 const [postAdminData, categoryRows, tagRows] = await Promise.all([
   getBlogPostEditorData(postId, locale),
   getBlogCategories(org.id, locale),

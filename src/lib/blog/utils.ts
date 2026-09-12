@@ -16,7 +16,7 @@ const BLOG_ROUTE_SEGMENTS: Record<Locale, string> = {
 
 export function buildBlogUrl(locale: Locale, organizationSlug: string | null, ...segments: (string | undefined)[]): string {
   const blogRoute = BLOG_ROUTE_SEGMENTS[locale];
-  const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/${blogRoute}` : `/${locale}/${blogRoute}`;
+  const base = organizationSlug ? `/${locale}/${organizationSlug}/${blogRoute}` : `/${locale}/${blogRoute}`;
   const path = segments.filter(Boolean).join("/");
   return path ? `${base}/${path}` : base;
 }
@@ -27,7 +27,7 @@ export function buildBlogHref(baseUrl: string, ...segments: (string | null | und
 }
 
 export function extractOrgSlugFromBaseUrl(baseUrl: string): string | null {
-  const match = baseUrl.match(/\/organizations\/([^/]+)\/blog(?:\/|$)/);
+  const match = baseUrl.match(/\/([^/]+)\/blog(?:\/|$)/);
   return match ? match[1] : null;
 }
 
@@ -65,7 +65,7 @@ export function buildBlogAuthorHref(baseUrl: string, authorSegment: string, user
 }
 
 export function buildBlogAdminUrl(locale: Locale, organizationSlug: string | null, ...segments: (string | undefined)[]): string {
-  const base = organizationSlug ? `/${locale}/organizations/${organizationSlug}/admin/blog` : `/${locale}/admin/blog`;
+  const base = organizationSlug ? `/${locale}/${organizationSlug}/admin/blog` : `/${locale}/admin/blog`;
   const path = segments.filter(Boolean).join("/");
   return path ? `${base}/${path}` : base;
 }

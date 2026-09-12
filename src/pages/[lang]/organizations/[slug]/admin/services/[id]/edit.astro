@@ -26,11 +26,11 @@ const [canUpdate, canPublish, canDelete, canCreate] = await Promise.all([
   hasServicePermission(Astro, tenant, { service: ["delete"] }),
   hasServicePermission(Astro, tenant, { service: ["create"] }),
 ]);
-if (!canUpdate) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
+if (!canUpdate) return Astro.redirect(`/${locale}/${orgSlug}/admin/services`);
 const item = await getServiceAdminById(Astro.params.id!, locale as Locale, org.id);
-if (!item) return Astro.redirect(`/${locale}/organizations/${orgSlug}/admin/services`);
+if (!item) return Astro.redirect(`/${locale}/${orgSlug}/admin/services`);
 const t = getServiceTranslations(locale as Locale);
-const baseAdminUrl = `/${locale}/organizations/${org.slug}/admin/services`;
+const baseAdminUrl = `/${locale}/${org.slug}/admin/services`;
 ---
 <BaseLayout title={`${t.admin.editService} — ${org.name}`} description={t.meta.description}>
   <AuthLayout title={org.name}>

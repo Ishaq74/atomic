@@ -1,9 +1,6 @@
 ---
-import { eq } from "drizzle-orm";
 import { LOCALES } from "@i18n/config";
 import { toLocale, getBlogTranslations } from "@i18n/utils";
-import { getDrizzle } from "@database/drizzle";
-import { organization } from "@database/schemas";
 import {
   getBlogCategories,
   getBlogCategoryBySlug,
@@ -29,28 +26,14 @@ import BlogAuthorPage from "@pages/blog/BlogAuthorPage.astro";
 export const prerender = false;
 
 const locale = toLocale(Astro.params.lang);
-const orgSlug = Astro.params.slug;
-const slugParam = Astro.params.blog;
 const blogT = await getBlogTranslations(locale);
+const baseUrl = `/${locale}/${blogT.routes.blog}`;
+const slugParam = `${blogT.routes.tags}/${Astro.params.tag}`;
 
-if (!orgSlug || !slugParam) {
-  Astro.response.status = 404;
-  return Astro.rewrite('/404');
+if (!slugParam) {
+  return Astro.redirect(baseUrl);
 }
 
-const db = getDrizzle();
-const [org] = await db
-  .select({ id: organization.id, name: organization.name, slug: organization.slug })
-  .from(organization)
-  .where(eq(organization.slug, orgSlug))
-  .limit(1);
-
-if (!org) {
-  Astro.response.status = 404;
-  return Astro.rewrite('/404');
-}
-
-const baseUrl = `/${locale}/organizations/${org.slug}/${blogT.routes.blog}`;
 const segments = slugParam.split("/").filter(Boolean);
 const page = Math.max(1, Number(Astro.url.searchParams.get("page") ?? "1") || 1);
 const searchQuery = Astro.url.searchParams.get("q")?.trim() || undefined;
@@ -72,6 +55,12 @@ interface ListingState {
   activeTagSlug?: string;
 }
 
+interface AuthorState {
+  author: NonNullable<Awaited<ReturnType<typeof getBlogAuthorByUsername>>>;
+  posts: Awaited<ReturnType<typeof getBlogPosts>>["items"];
+  meta: Awaited<ReturnType<typeof getBlogPosts>>["meta"];
+}
+
 interface PostState {
   data: NonNullable<Awaited<ReturnType<typeof getBlogPostBySlug>>>;
   comments: Awaited<ReturnType<typeof getBlogComments>>;
@@ -81,15 +70,9 @@ interface PostState {
   relatedPosts: Awaited<ReturnType<typeof getRelatedBlogPosts>>;
 }
 
-interface AuthorState {
-  author: NonNullable<Awaited<ReturnType<typeof getBlogAuthorByUsername>>>;
-  posts: Awaited<ReturnType<typeof getBlogPosts>>["items"];
-  meta: Awaited<ReturnType<typeof getBlogPosts>>["meta"];
-}
-
 const [categoryRows, tagRows] = await Promise.all([
-  getBlogCategories(org.id, locale),
-  getBlogTags(org.id, locale),
+  getBlogCategories(null, locale),
+  getBlogTags(null, locale),
 ]);
 
 const categories = categoryRows.map((item) => ({
@@ -109,7 +92,7 @@ const tags = tagRows.map((item) => ({
   color: item.color,
 }));
 
-let pageTitle = `${blogT.meta.title} — ${org.name}`;
+let pageTitle = blogT.meta.title;
 let pageDescription = blogT.meta.description;
 let pageAlternateUrls: Record<string, string> | undefined;
 let pageOgImage: string | undefined;
@@ -120,14 +103,21 @@ let postState: PostState | null = null;
 let authorState: AuthorState | null = null;
 
 async function getAlternateCategorySlugs(categoryId: string | null): Promise<Record<string, string | null>> {
-  const entries = await Promise.all(
+  // Resolve the category slug per locale in a single pass: fetch all categories
+  // once per locale (cached) and index by id, instead of re-querying per locale
+  // inside the loop. Avoids N redundant getBlogCategories calls.
+  const byLocale = await Promise.all(
     LOCALES.map(async (loc) => {
-      if (!categoryId) return [loc, null] as const;
-      const rows = await getBlogCategories(org.id, loc);
-      const match = rows.find((item) => item.id === categoryId);
-      return [loc, match?.slug ?? null] as const;
+      const rows = await getBlogCategories(null, loc);
+      const map = new Map(rows.map((item) => [item.id, item.slug]));
+      return [loc, map] as const;
     }),
   );
+  const slugByLocale = Object.fromEntries(byLocale.map(([loc, map]) => [loc, map]));
+  const entries = LOCALES.map((loc) => {
+    if (!categoryId) return [loc, null] as const;
+    return [loc, slugByLocale[loc].get(categoryId) ?? null] as const;
+  });
 
   return Object.fromEntries(entries);
 }
@@ -135,7 +125,7 @@ async function getAlternateCategorySlugs(categoryId: string | null): Promise<Rec
 async function getAlternateTagSlugs(tagId: string): Promise<Record<string, string | null>> {
   const entries = await Promise.all(
     LOCALES.map(async (loc) => {
-      const rows = await getBlogTags(org.id, loc);
+      const rows = await getBlogTags(null, loc);
       const match = rows.find((item) => item.id === tagId);
       return [loc, match?.slug ?? null] as const;
     }),
@@ -145,18 +135,18 @@ async function getAlternateTagSlugs(tagId: string): Promise<Record<string, strin
 }
 
 if (isLegacyCategoryRoute) {
-  return Astro.redirect(`${buildBlogCategoryUrl(locale, org.slug, segments[1])}${Astro.url.search}`, 301);
+  return Astro.redirect(`${buildBlogCategoryUrl(locale, null, segments[1])}${Astro.url.search}`, 301);
 }
 
 if (isCategorizedPostRoute) {
-  const category = await getBlogCategoryBySlug(org.id, locale, segments[0]);
+  const category = await getBlogCategoryBySlug(null, locale, segments[0]);
 
   if (!category) {
     Astro.response.status = 404;
     return Astro.rewrite('/404');
   }
 
-  const data = await getBlogPostBySlug(org.id, locale, segments[1]);
+  const data = await getBlogPostBySlug(null, locale, segments[1]);
 
   if (!data || !data.translation || !data.categories.some((item) => item.id === category.category.id)) {
     Astro.response.status = 404;
@@ -168,7 +158,7 @@ if (isCategorizedPostRoute) {
     getBlogReviews(data.post.id, { userId: user?.id }),
     getBlogReviewStats(data.post.id),
     getRelatedBlogPosts(
-      org.id,
+      null,
       locale,
       data.post.id,
       data.categories.map((item) => item.id),
@@ -184,7 +174,7 @@ if (isCategorizedPostRoute) {
       const translation = postAdminData?.translations.find((item: BlogPostTranslation) => item.locale === loc);
       const categorySlug = alternateCategorySlugs[loc];
       return translation
-        ? [loc, buildBlogPostUrl(loc, org.slug, translation.slug, categorySlug)]
+        ? [loc, buildBlogPostUrl(loc, null, translation.slug, categorySlug)]
         : null;
     }),
   );
@@ -201,7 +191,7 @@ if (isCategorizedPostRoute) {
     SAD: 0,
   } as Record<BlogReactionType, number>);
 
-  pageTitle = `${blogT.meta.postTitle(data.translation.title)} — ${org.name}`;
+  pageTitle = data.translation.metaTitle ?? blogT.meta.postTitle(data.translation.title);
   pageDescription = data.translation.metaDescription ?? data.translation.excerpt ?? blogT.meta.description;
   pageAlternateUrls = Object.fromEntries(
     alternateEntries.filter((entry): entry is [string, string] => entry !== null),
@@ -210,10 +200,10 @@ if (isCategorizedPostRoute) {
   pageOgType = "article";
 
   const breadcrumb = buildBreadcrumbSchema(locale, [
-    { name: org.name, item: baseUrl },
+    { name: blogT.meta.title, item: baseUrl },
     {
       name: category.translation?.name ?? category.category.slug,
-      item: buildBlogCategoryUrl(locale, org.slug, category.translation?.slug ?? category.category.slug),
+      item: buildBlogCategoryUrl(locale, null, category.translation?.slug ?? category.category.slug),
     },
     { name: data.translation.title, item: Astro.url.href },
   ]);
@@ -225,7 +215,6 @@ if (isCategorizedPostRoute) {
     datePublished: data.post.publishedAt?.toISOString(),
     dateModified: data.post.updatedAt?.toISOString?.() ?? undefined,
     author: data.author ? { "@type": "Person", name: data.author.name } : undefined,
-    publisher: { "@type": "Organization", name: org.name },
     image: pageOgImage,
     articleSection: data.categories.map((item) => item.name ?? item.slug),
     keywords: data.tags.map((item) => item.name ?? item.slug).join(", "),
@@ -241,27 +230,27 @@ if (isCategorizedPostRoute) {
     relatedPosts,
   };
 } else if (segments.length === 1) {
-  const category = await getBlogCategoryBySlug(org.id, locale, segments[0]);
+  const category = await getBlogCategoryBySlug(null, locale, segments[0]);
 
   if (category) {
-    const { items, meta } = await getBlogPosts(org.id, locale, {
+    const { items, meta } = await getBlogPosts(null, locale, {
       page,
       searchQuery,
       categorySlug: segments[0],
     });
 
     const alternateCategorySlugs = await getAlternateCategorySlugs(category.category.id);
-    pageTitle = `${blogT.meta.categoryTitle(category.translation?.name ?? category.category.slug)} — ${org.name}`;
+    pageTitle = blogT.meta.categoryTitle(category.translation?.name ?? category.category.slug);
     pageDescription = category.translation?.description ?? blogT.meta.description;
     pageAlternateUrls = Object.fromEntries(
       LOCALES.flatMap((loc) => {
         const slug = alternateCategorySlugs[loc];
-        return slug ? [[loc, buildBlogCategoryUrl(loc, org.slug, slug)]] : [];
+        return slug ? [[loc, buildBlogCategoryUrl(loc, null, slug)]] : [];
       }),
     );
     pageJsonLd = JSON.stringify([
       buildBreadcrumbSchema(locale, [
-        { name: org.name, item: baseUrl },
+        { name: blogT.meta.title, item: baseUrl },
         { name: category.translation?.name ?? category.category.slug, item: Astro.url.href },
       ]),
     ]);
@@ -274,7 +263,7 @@ if (isCategorizedPostRoute) {
       activeCategorySlug: segments[0],
     };
   } else {
-    const data = await getBlogPostBySlug(org.id, locale, segments[0]);
+    const data = await getBlogPostBySlug(null, locale, segments[0]);
 
     if (!data || !data.translation) {
       Astro.response.status = 404;
@@ -283,7 +272,7 @@ if (isCategorizedPostRoute) {
 
     if (data.categories[0]?.slug) {
       return Astro.redirect(
-        `${buildBlogPostUrl(locale, org.slug, data.translation.slug, data.categories[0].slug)}${Astro.url.search}`,
+        `${buildBlogPostUrl(locale, null, data.translation.slug, data.categories[0].slug)}${Astro.url.search}`,
         301,
       );
     }
@@ -293,7 +282,7 @@ if (isCategorizedPostRoute) {
       getBlogReviews(data.post.id, { userId: user?.id }),
       getBlogReviewStats(data.post.id),
       getRelatedBlogPosts(
-        org.id,
+        null,
         locale,
         data.post.id,
         data.categories.map((item) => item.id),
@@ -306,7 +295,7 @@ if (isCategorizedPostRoute) {
     const alternateEntries = await Promise.all(
       LOCALES.map(async (loc) => {
         const translation = postAdminData?.translations.find((item: BlogPostTranslation) => item.locale === loc);
-        return translation ? [loc, buildBlogPostUrl(loc, org.slug, translation.slug)] : null;
+        return translation ? [loc, buildBlogPostUrl(loc, null, translation.slug)] : null;
       }),
     );
 
@@ -322,7 +311,7 @@ if (isCategorizedPostRoute) {
       SAD: 0,
     } as Record<BlogReactionType, number>);
 
-    pageTitle = `${blogT.meta.postTitle(data.translation.title)} — ${org.name}`;
+    pageTitle = data.translation.metaTitle ?? blogT.meta.postTitle(data.translation.title);
     pageDescription = data.translation.metaDescription ?? data.translation.excerpt ?? blogT.meta.description;
     pageAlternateUrls = Object.fromEntries(
       alternateEntries.filter((entry): entry is [string, string] => entry !== null),
@@ -331,7 +320,7 @@ if (isCategorizedPostRoute) {
     pageOgType = "article";
 
     const breadcrumb = buildBreadcrumbSchema(locale, [
-      { name: org.name, item: baseUrl },
+      { name: blogT.meta.title, item: baseUrl },
       { name: data.translation.title, item: Astro.url.href },
     ]);
     const postSchema = generateSchemaMarkup("BlogPosting", {
@@ -342,7 +331,6 @@ if (isCategorizedPostRoute) {
       datePublished: data.post.publishedAt?.toISOString(),
       dateModified: data.post.updatedAt?.toISOString?.() ?? undefined,
       author: data.author ? { "@type": "Person", name: data.author.name } : undefined,
-      publisher: { "@type": "Organization", name: org.name },
       image: pageOgImage,
       articleSection: data.categories.map((item) => item.name ?? item.slug),
       keywords: data.tags.map((item) => item.name ?? item.slug).join(", "),
@@ -359,28 +347,28 @@ if (isCategorizedPostRoute) {
     };
   }
 } else if (isTagRoute) {
-  const tag = await getBlogTagBySlug(org.id, locale, segments[1]);
+  const tag = await getBlogTagBySlug(null, locale, segments[1]);
 
   if (!tag) {
     Astro.response.status = 404;
     return Astro.rewrite('/404');
   }
 
-  const { items, meta } = await getBlogPosts(org.id, locale, {
+  const { items, meta } = await getBlogPosts(null, locale, {
     page,
     searchQuery,
     tagSlug: segments[1],
   });
 
   const alternateTagSlugs = await getAlternateTagSlugs(tag.tag.id);
-  pageTitle = `${blogT.meta.tagTitle(tag.translation?.name ?? tag.tag.slug)} — ${org.name}`;
+  pageTitle = blogT.meta.tagTitle(tag.translation?.name ?? tag.tag.slug);
   pageDescription = blogT.meta.description;
   const alternateTagEntries = await Promise.all(
     LOCALES.map(async (loc) => {
       const slug = alternateTagSlugs[loc];
       if (!slug) return null;
       const locBlogT = await getBlogTranslations(loc);
-      return [loc, buildBlogTagUrl(loc, org.slug, locBlogT.routes.tags, slug)] as const;
+      return [loc, buildBlogTagUrl(loc, null, locBlogT.routes.tags, slug)] as const;
     }),
   );
   const compactAlternateTagEntries = alternateTagEntries.reduce<Array<readonly [string, string]>>((acc, entry) => {
@@ -392,7 +380,7 @@ if (isCategorizedPostRoute) {
   );
   pageJsonLd = JSON.stringify([
     buildBreadcrumbSchema(locale, [
-      { name: org.name, item: baseUrl },
+      { name: blogT.meta.title, item: baseUrl },
       { name: tag.translation?.name ?? tag.tag.slug, item: Astro.url.href },
     ]),
   ]);
@@ -405,24 +393,24 @@ if (isCategorizedPostRoute) {
     activeTagSlug: segments[1],
   };
 } else if (isAuthorRoute) {
-  const author = await getBlogAuthorByUsername(org.id, segments[1]);
+  const author = await getBlogAuthorByUsername(null, segments[1]);
 
   if (!author) {
     Astro.response.status = 404;
     return Astro.rewrite('/404');
   }
 
-  const { items, meta } = await getBlogPosts(org.id, locale, {
+  const { items, meta } = await getBlogPosts(null, locale, {
     page,
     searchQuery,
     authorId: author.id,
   });
 
-  pageTitle = `${author.name} — ${org.name}`;
+  pageTitle = blogT.meta.title ? `${author.name} — ${blogT.meta.title}` : author.name;
   pageDescription = blogT.meta.description;
   pageJsonLd = JSON.stringify([
     buildBreadcrumbSchema(locale, [
-      { name: org.name, item: baseUrl },
+      { name: blogT.meta.title, item: baseUrl },
       { name: author.name, item: Astro.url.href },
     ]),
   ]);
@@ -455,7 +443,6 @@ if (isCategorizedPostRoute) {
       baseUrl={baseUrl}
       absoluteUrl={Astro.url.href}
       user={user}
-      organizationId={org.id}
     />
   ) : listingState ? (
     <BlogListingPage
@@ -468,11 +455,10 @@ if (isCategorizedPostRoute) {
       categories={categories}
       tags={tags}
       baseUrl={baseUrl}
-      organizationSlug={org.slug}
+      organizationSlug={null}
       searchQuery={searchQuery}
       activeCategorySlug={listingState.activeCategorySlug}
       activeTagSlug={listingState.activeTagSlug}
-      organizationName={org.name}
     />
   ) : authorState ? (
     <BlogAuthorPage
@@ -493,7 +479,6 @@ if (isCategorizedPostRoute) {
       tags={tags}
       baseUrl={baseUrl}
       searchQuery={searchQuery}
-      organizationName={org.name}
     />
   ) : null}
 </BaseLayout>
